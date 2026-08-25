@@ -1,0 +1,600 @@
+<script>
+(function () {
+  'use strict';
+
+  var Estado = {
+    vista: 'hub',
+    contexto: null,
+    hub: null,
+    carregando: false,
+    deptAberto: null,
+    filtros: { texto: '', tema: '', divisao: '', area: '', status: '', responsavel: '' },
+    ordem: { campo: 'prazo', dir: 'asc' },
+    form: {},
+  };
+
+    var ICONES = {
+      menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+      tela: '<path d="M8 3H4v4M16 3h4v4M8 21H4v-4M16 21h4v-4"/>',
+      producao: '<path d="M4 19h16M6 19V9l5-4 5 4v10M10 19v-5h4v5"/>',
+    qualidade: '<path d="M12 3l8 4v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/>',
+    manutencao: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-1.8-1.8 2.1-2.1z"/>',
+    ehs: '<path d="M12 3l8 4v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V7l8-4z"/>',
+    logistica: '<path d="M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>',
+    engenharia: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+    pcp: '<path d="M4 5h16v4H4zM4 11h10v8H4zM16 11h4v8h-4z"/>',
+    melhoria: '<path d="M12 3v18M5 10l7-7 7 7"/>',
+    geral: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  };
+
+  function svg(nome, extra) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+      (ICONES[nome] || ICONES.geral) + '</svg>' + (extra || '');
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  function escapar(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function chamar(nome) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      var runner = google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(reject);
+      runner[nome].apply(runner, args);
+    });
+  }
+
+  function toast(msg, erro) {
+    var el = $('toast');
+    el.hidden = false;
+    el.className = 'toast' + (erro ? ' erro' : '');
+    el.textContent = msg;
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.hidden = true; }, 4200);
+  }
+
+  function setPilula(ok, texto) {
+    var p = $('pilula-estado');
+    p.className = 'pilula' + (ok === true ? ' ok' : ok === false ? ' erro' : '');
+    $('pilula-texto').textContent = texto;
+  }
+
+  function iconeNav(nome) {
+    var mapa = {
+      hub: 'geral', planos: 'pcp', dept: 'producao',
+      ctrl: 'qualidade', fontes: 'logistica', mail: 'ehs',
+    };
+    return svg(mapa[nome] || 'geral');
+  }
+
+  function renderNav() {
+    var itens = [
+      ['hub', 'Visão consolidada'],
+      ['planos', 'Planos de ação'],
+      ['dept', 'Departamentos'],
+      ['ctrl', 'Controles-chave'],
+      ['fontes', 'Fontes de importação'],
+      ['mail', 'Follow-up e gatilho'],
+    ];
+    $('nav').innerHTML =
+      '<div class="nav-titulo">Menu</div>' +
+      itens.map(function (it) {
+        return '<button type="button" class="nav-item' + (Estado.vista === it[0] ? ' ativo' : '') +
+          '" data-vista="' + it[0] + '">' + iconeNav(it[0]) + '<span>' + it[1] + '</span></button>';
+      }).join('');
+  }
+
+  function titulos() {
+    var mapa = {
+      hub: ['Visão consolidada', 'Controles-chave por departamento e planos de ação da empresa'],
+      planos: ['Planos de ação', 'Consolidado importado das Google Sheets de origem'],
+      dept: ['Departamentos', 'Cadastre as áreas que aparecem no hub'],
+      ctrl: ['Controles-chave', 'Links oficiais de cada departamento'],
+      fontes: ['Fontes de importação', 'Google Sheets de onde os planos de ação são lidos'],
+      mail: ['Follow-up e gatilho', 'E-mail diário após 1 dia de atraso, até reprogramarem o prazo'],
+    };
+    var t = mapa[Estado.vista] || mapa.hub;
+    $('topo-titulo').textContent = t[0];
+    $('topo-sub').textContent = t[1];
+  }
+
+  function kpisHtml(k) {
+    k = k || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
+    return '<div class="kpis">' +
+      kpi('Ações', k.total) +
+      kpi('Em aberto', k.abertos) +
+      kpi('Atrasadas', k.atrasados, 'risco') +
+      kpi('Sem e-mail', k.semEmail, 'alerta') +
+      kpi('Concluídas', k.concluidos, 'ok') +
+      '</div>';
+  }
+  function kpi(rotulo, valor, cls) {
+    return '<div class="kpi' + (cls ? ' ' + cls : '') + '"><div class="kpi-rotulo">' +
+      rotulo + '</div><div class="kpi-valor">' + valor + '</div></div>';
+  }
+
+  function deptCards() {
+    var hub = Estado.hub;
+    var controles = hub.controles || [];
+    return '<div class="secao-cab"><div><div class="secao-titulo">Controles-chave por departamento</div>' +
+      '<div class="secao-apoio">Clique no departamento para abrir os links oficiais</div></div></div>' +
+      '<div class="grade-dept">' +
+      (hub.departamentos || []).map(function (d) {
+        var n = controles.filter(function (c) { return c.departamento_id === d.id; }).length;
+        return '<button type="button" class="card-dept" data-dept="' + escapar(d.id) +
+          '" style="--dept-cor:' + escapar(d.cor) + '">' +
+          '<div class="card-dept-icone">' + svg(d.icone) + '</div>' +
+          '<h3>' + escapar(d.nome) + '</h3>' +
+          '<p>' + escapar(d.descricao) + '</p>' +
+          '<div class="card-dept-meta"><span>' + n + ' controle' + (n === 1 ? '' : 's') +
+          '</span>Abrir →</div></button>';
+      }).join('') + '</div>';
+  }
+
+  function unicos(lista, campo) {
+    var set = {}; var out = [];
+    (lista || []).forEach(function (p) {
+      var v = p[campo];
+      if (!v || set[v]) return;
+      set[v] = 1; out.push(v);
+    });
+    out.sort(function (a, b) { return String(a).localeCompare(String(b), 'pt-BR'); });
+    return out;
+  }
+
+  function sel(id, label, valores, atual) {
+    return '<select class="select" id="' + id + '" aria-label="' + label + '">' +
+      '<option value="">' + label + '</option>' +
+      valores.map(function (v) {
+        return '<option value="' + escapar(v) + '"' + (atual === v ? ' selected' : '') + '>' +
+          escapar(v) + '</option>';
+      }).join('') + '</select>';
+  }
+
+  function aplicaFiltros(lista) {
+    var f = Estado.filtros;
+    var q = (f.texto || '').toLowerCase();
+    return (lista || []).filter(function (p) {
+      if (f.tema && p.tema !== f.tema) return false;
+      if (f.divisao && p.divisao !== f.divisao) return false;
+      if (f.area && p.area !== f.area) return false;
+      if (f.status && p.status !== f.status) return false;
+      if (f.responsavel && p.responsavel !== f.responsavel) return false;
+      if (!q) return true;
+      return [p.tema, p.divisao, p.area, p.oque, p.como, p.responsavel, p.email, p.status, p.comentarios]
+        .join(' ').toLowerCase().indexOf(q) !== -1;
+    });
+  }
+
+  function aplicaOrdem(lista) {
+    var campo = Estado.ordem.campo;
+    var dir = Estado.ordem.dir === 'desc' ? -1 : 1;
+    return lista.slice().sort(function (a, b) {
+      var va = a[campo] || '';
+      var vb = b[campo] || '';
+      if (campo === 'prazo') { va = a.prazo || ''; vb = b.prazo || ''; }
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+  }
+
+  function th(campo, rotulo) {
+    var ativo = Estado.ordem.campo === campo;
+    return '<th data-ord="' + campo + '">' + rotulo +
+      (ativo ? '<span class="ord">' + (Estado.ordem.dir === 'asc' ? '↑' : '↓') + '</span>' : '') +
+      '</th>';
+  }
+
+  function tabelaPlanos() {
+    var todos = Estado.hub.planos || [];
+    var filtrados = aplicaOrdem(aplicaFiltros(todos));
+    var cab =
+      '<div class="painel-topo">' +
+      '<input class="busca" id="filtro-texto" placeholder="Buscar tema, área, o quê, responsável…" value="' +
+      escapar(Estado.filtros.texto) + '">' +
+      sel('filtro-tema', 'Tema', unicos(todos, 'tema'), Estado.filtros.tema) +
+      sel('filtro-divisao', 'Divisão', unicos(todos, 'divisao'), Estado.filtros.divisao) +
+      sel('filtro-area', 'Área', unicos(todos, 'area'), Estado.filtros.area) +
+      sel('filtro-status', 'Status', unicos(todos, 'status'), Estado.filtros.status) +
+      sel('filtro-resp', 'Responsável', unicos(todos, 'responsavel'), Estado.filtros.responsavel) +
+      '<button type="button" class="botao" id="limpar-filtros">Limpar</button>' +
+      '</div>';
+
+    if (!filtrados.length) {
+      return '<div class="painel">' + cab + '<div class="vazio">Nenhuma ação com esses filtros.</div></div>';
+    }
+
+    var linhas = filtrados.map(function (p) {
+      var emailCel = p.tem_email
+        ? escapar(p.email)
+        : '<span class="aviso-email" tabindex="0" data-tip="' + escapar(p.tooltip_email) +
+          '" title="' + escapar(p.tooltip_email) + '">' + svg('ehs') + '</span>';
+      return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
+        '<td>' + escapar(p.tema) + '</td>' +
+        '<td>' + escapar(p.divisao) + '</td>' +
+        '<td>' + escapar(p.area) + '</td>' +
+        '<td class="principal">' + escapar(p.oque) + '</td>' +
+        '<td>' + escapar(p.como) + '</td>' +
+        '<td>' + escapar(p.responsavel) + '</td>' +
+        '<td>' + emailCel + '</td>' +
+        '<td>' + escapar(p.prazo_br) + '</td>' +
+        '<td><span class="selo ' + p.status_classe + '">' + escapar(p.status) + '</span></td>' +
+        '<td>' + escapar(p.comentarios) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    return '<div class="painel">' + cab +
+      '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
+      th('tema', 'Tema') + th('divisao', 'Divisão') + th('area', 'Área') +
+      th('oque', 'O quê?') + th('como', 'Como') + th('responsavel', 'Responsável') +
+      th('email', 'E-mail') + th('prazo', 'Prazo') + th('status', 'Status') +
+      th('comentarios', 'Comentários') +
+      '</tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+      '<div class="painel-topo" style="border-top:1px solid var(--linha);border-bottom:0">' +
+      '<div class="secao-apoio">' + filtrados.length + ' de ' + todos.length + ' ações</div></div></div>';
+  }
+
+  function abrirDept(id) {
+    var d = (Estado.hub.departamentos || []).filter(function (x) { return x.id === id; })[0];
+    if (!d) return;
+    Estado.deptAberto = d;
+    var links = (Estado.hub.controles || []).filter(function (c) { return c.departamento_id === id; });
+    $('drawer-kicker').textContent = 'Controles-chave';
+    $('drawer-titulo').textContent = d.nome;
+    $('drawer-sub').textContent = d.descricao || 'Clique no nome para abrir o link cadastrado.';
+    $('drawer-corpo').innerHTML = links.length
+      ? links.map(function (c) {
+          var href = c.url || '#';
+          return '<a class="link-controle" href="' + escapar(href) + '" target="_blank" rel="noopener">' +
+            '<strong>' + escapar(c.nome) + '</strong>' +
+            '<span>' + escapar(c.descricao || '') + '</span>' +
+            '<em>Abrir controle →</em></a>';
+        }).join('')
+      : '<div class="vazio">Nenhum controle cadastrado neste departamento.</div>';
+    $('drawer').hidden = false;
+    $('drawer-fundo').hidden = false;
+    $('drawer').classList.add('aberto');
+    $('drawer-fundo').classList.add('aberto');
+  }
+
+  function fecharDrawer() {
+    $('drawer').hidden = true;
+    $('drawer-fundo').hidden = true;
+    $('drawer').classList.remove('aberto');
+    $('drawer-fundo').classList.remove('aberto');
+    Estado.deptAberto = null;
+  }
+
+  function campo(nome, rotulo, valor, extra) {
+    extra = extra || {};
+    var tag = extra.area
+      ? '<textarea name="' + nome + '">' + escapar(valor || '') + '</textarea>'
+      : extra.opcoes
+        ? '<select name="' + nome + '">' + extra.opcoes + '</select>'
+        : '<input name="' + nome + '" value="' + escapar(valor || '') + '"' +
+          (extra.tipo ? ' type="' + extra.tipo + '"' : '') + '>';
+    return '<label class="' + (extra.span2 ? 'span2' : '') + '">' + rotulo + tag + '</label>';
+  }
+
+  function opcoesDept(selId) {
+    return '<option value="">Departamento</option>' +
+      (Estado.hub.departamentos || []).map(function (d) {
+        return '<option value="' + escapar(d.id) + '"' + (selId === d.id ? ' selected' : '') + '>' +
+          escapar(d.nome) + '</option>';
+      }).join('');
+  }
+
+  function formDept() {
+    var f = Estado.form || {};
+    return '<form class="form-grid" id="form-entidade">' +
+      campo('nome', 'Nome', f.nome) +
+      campo('icone', 'Ícone (producao, qualidade, manutencao, ehs, logistica, engenharia, pcp, melhoria)', f.icone) +
+      campo('descricao', 'Descrição', f.descricao, { span2: true }) +
+      campo('cor', 'Cor', f.cor || '#E4002B', { tipo: 'color' }) +
+      campo('ordem', 'Ordem', f.ordem || 1, { tipo: 'number' }) +
+      campo('ativo', 'Ativo', f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
+      '<div class="acoes-form"><button class="botao primario" type="submit">Salvar</button>' +
+      '<button class="botao" type="button" id="form-cancelar">Limpar</button></div></form>';
+  }
+
+  function formCtrl() {
+    var f = Estado.form || {};
+    return '<form class="form-grid" id="form-entidade">' +
+      campo('departamento_id', 'Departamento', f.departamento_id, { opcoes: opcoesDept(f.departamento_id) }) +
+      campo('nome', 'Nome do controle', f.nome) +
+      campo('url', 'Link', f.url, { span2: true }) +
+      campo('descricao', 'Descrição', f.descricao, { span2: true }) +
+      campo('ordem', 'Ordem', f.ordem || 1, { tipo: 'number' }) +
+      campo('ativo', 'Ativo', f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
+      '<div class="acoes-form"><button class="botao primario" type="submit">Salvar</button>' +
+      '<button class="botao" type="button" id="form-cancelar">Limpar</button></div></form>';
+  }
+
+  function formFonte() {
+    var f = Estado.form || {};
+    return '<form class="form-grid" id="form-entidade">' +
+      campo('nome', 'Nome da fonte', f.nome) +
+      campo('aba', 'Aba (opcional)', f.aba) +
+      campo('referencia', 'URL ou ID da Google Sheet', f.referencia, { span2: true }) +
+      campo('linha_cabecalho', 'Linha do cabeçalho', f.linha_cabecalho || 1, { tipo: 'number' }) +
+      campo('ativo', 'Ativo', f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
+      '<div class="acoes-form"><button class="botao primario" type="submit">Salvar</button>' +
+      '<button class="botao" type="button" id="form-cancelar">Limpar</button></div></form>';
+  }
+
+  function listaAdmin(itens, render, tipo) {
+    if (!itens || !itens.length) return '<div class="vazio">Nada cadastrado ainda.</div>';
+    return '<div class="admin-lista">' + itens.map(function (it) {
+      return '<div class="linha-admin">' +
+        '<div>' + render(it) + '</div>' +
+        '<div><button class="botao" data-edit="' + tipo + '" data-id="' + escapar(it.id) + '">Editar</button> ' +
+        '<button class="botao perigo" data-del="' + tipo + '" data-id="' + escapar(it.id) + '">Excluir</button></div>' +
+        '</div>';
+    }).join('') + '</div>';
+  }
+
+  function vistaHub() {
+    return kpisHtml(Estado.hub.kpis) + deptCards() +
+      '<div class="secao-cab"><div><div class="secao-titulo">Planos de ação consolidados</div>' +
+      '<div class="secao-apoio">Cabeçalho: Tema, Divisão, Área, O quê?, Como, Responsável, E-mail, Prazo, Status, Comentários</div></div></div>' +
+      tabelaPlanos();
+  }
+
+  function vistaPlanos() {
+    return kpisHtml(Estado.hub.kpis) + tabelaPlanos();
+  }
+
+  function vistaDept() {
+    var lista = Estado.hub.departamentosAdmin || Estado.hub.departamentos || [];
+    return formDept() + listaAdmin(lista, function (d) {
+      return '<strong>' + escapar(d.nome) + '</strong><small>' + escapar(d.descricao) + ' · ' +
+        escapar(d.icone) + ' · ' + (LogicaSim(d.ativo) ? 'ativo' : 'inativo') + '</small>';
+    }, 'dept');
+  }
+
+  function vistaCtrl() {
+    var lista = Estado.hub.controlesAdmin || Estado.hub.controles || [];
+    var depts = {};
+    (Estado.hub.departamentos || []).forEach(function (d) { depts[d.id] = d.nome; });
+    return formCtrl() + listaAdmin(lista, function (c) {
+      return '<strong>' + escapar(c.nome) + '</strong><small>' +
+        escapar(depts[c.departamento_id] || c.departamento_id) + ' · ' + escapar(c.url) + '</small>';
+    }, 'ctrl');
+  }
+
+  function vistaFontes() {
+    var lista = Estado.hub.fontes || [];
+    return '<div class="painel-topo"><button class="botao primario" id="btn-importar">Importar agora</button>' +
+      '<div class="secao-apoio">A origem precisa ter as colunas Tema, Divisão, Área, O quê?, Como, Responsável, E-mail, Prazo, Status, Comentários — a ordem pode variar.</div></div>' +
+      formFonte() + listaAdmin(lista, function (f) {
+        return '<strong>' + escapar(f.nome) + '</strong><small>' +
+          escapar(f.referencia) + (f.aba ? ' · aba ' + escapar(f.aba) : '') +
+          (f.ultimo_status ? ' · ' + escapar(f.ultimo_status) + ' ' + escapar(f.ultimo_detalhe) : '') +
+          '</small>';
+      }, 'fonte');
+  }
+
+  function vistaMail() {
+    var g = (Estado.hub && Estado.hub.gatilho) || { ativo: false, hora: 8 };
+    return '<div class="painel"><div class="painel-topo" style="flex-direction:column;align-items:flex-start">' +
+      '<div class="secao-titulo">Regra de follow-up</div>' +
+      '<div class="secao-apoio">Quando o prazo é atingido, o OpsHub espera 1 dia e então envia um e-mail por dia ao responsável, até a data ser reprogramada na planilha de origem. Sem e-mail cadastrado, nada é enviado — a linha mostra o aviso no tooltip.</div>' +
+      '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">Gatilho ' + (g.ativo ? 'ativo' : 'inativo') +
+      ' · disparo às ' + g.hora + 'h</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button class="botao primario" id="btn-gatilho">Criar gatilho diário</button>' +
+      '<button class="botao" id="btn-remover-gatilho">Remover gatilhos</button>' +
+      '<button class="botao" id="btn-followup">Enviar follow-ups agora</button>' +
+      '</div></div></div>';
+  }
+
+  function LogicaSim(v) {
+    var s = String(v || '').toLowerCase();
+    return s === 'sim' || s === 'true' || s === '1' || v === true;
+  }
+
+  function render() {
+    renderNav();
+    titulos();
+    var html = '';
+    if (!Estado.hub) html = '<div class="esqueleto" style="height:240px"></div>';
+    else if (Estado.vista === 'planos') html = vistaPlanos();
+    else if (Estado.vista === 'dept') html = vistaDept();
+    else if (Estado.vista === 'ctrl') html = vistaCtrl();
+    else if (Estado.vista === 'fontes') html = vistaFontes();
+    else if (Estado.vista === 'mail') html = vistaMail();
+    else html = vistaHub();
+    $('conteudo').innerHTML = html;
+  }
+
+  function lerForm(form) {
+    var d = {};
+    Array.prototype.forEach.call(form.elements, function (el) {
+      if (!el.name) return;
+      d[el.name] = el.value;
+    });
+    if (Estado.form && Estado.form.id) d.id = Estado.form.id;
+    return d;
+  }
+
+  function ligar() {
+    document.addEventListener('click', function (e) {
+      var nav = e.target.closest('[data-vista]');
+      if (nav) {
+        Estado.vista = nav.getAttribute('data-vista');
+        Estado.form = {};
+        render();
+        return;
+      }
+      var dept = e.target.closest('[data-dept]');
+      if (dept) { abrirDept(dept.getAttribute('data-dept')); return; }
+      if (e.target.closest('#drawer-fechar') || e.target.closest('#drawer-fundo')) {
+        e.preventDefault();
+        fecharDrawer();
+        return;
+      }
+      var ord = e.target.closest('[data-ord]');
+      if (ord) {
+        var campo = ord.getAttribute('data-ord');
+        if (Estado.ordem.campo === campo) Estado.ordem.dir = Estado.ordem.dir === 'asc' ? 'desc' : 'asc';
+        else { Estado.ordem.campo = campo; Estado.ordem.dir = 'asc'; }
+        render();
+        return;
+      }
+      if (e.target.closest('#limpar-filtros')) {
+        Estado.filtros = { texto: '', tema: '', divisao: '', area: '', status: '', responsavel: '' };
+        render();
+        return;
+      }
+      if (e.target.closest('#botao-sidebar')) {
+        $('casca').classList.toggle('sidebar-recolhida');
+        return;
+      }
+      if (e.target.closest('#botao-atualizar')) { carregar(true); return; }
+      if (e.target.closest('#botao-tela')) {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+        return;
+      }
+      if (e.target.closest('#form-cancelar')) { Estado.form = {}; render(); return; }
+      if (e.target.closest('#btn-importar')) {
+        setPilula(null, 'Importando');
+        chamar('apiImportarAgora').then(function (r) {
+          toast('Importação: ' + (r.linhas || 0) + ' linhas' + (r.avisos && r.avisos.length ? ' · ' + r.avisos.join('; ') : ''));
+          return carregar(true);
+        }).catch(function (err) { toast(err.message || err, true); });
+        return;
+      }
+      if (e.target.closest('#btn-followup')) {
+        chamar('apiEnviarFollowUpsAgora').then(function (r) {
+          toast('Follow-up: ' + r.enviados + ' enviado(s), ' + r.pulados + ' ignorado(s).');
+        }).catch(function (err) { toast(err.message || err, true); });
+        return;
+      }
+      if (e.target.closest('#btn-gatilho')) {
+        chamar('apiCriarGatilho').then(function (r) {
+          toast(r.mensagem);
+          if (Estado.hub) Estado.hub.gatilho = r.gatilho;
+          render();
+        }).catch(function (err) { toast(err.message || err, true); });
+        return;
+      }
+      if (e.target.closest('#btn-remover-gatilho')) {
+        chamar('apiRemoverGatilhos').then(function (r) {
+          toast(r.mensagem);
+          if (Estado.hub) Estado.hub.gatilho = r.gatilho;
+          render();
+        }).catch(function (err) { toast(err.message || err, true); });
+        return;
+      }
+      var edit = e.target.closest('[data-edit]');
+      if (edit) {
+        var tipo = edit.getAttribute('data-edit');
+        var id = edit.getAttribute('data-id');
+        var lista = tipo === 'dept' ? (Estado.hub.departamentosAdmin || Estado.hub.departamentos)
+          : tipo === 'ctrl' ? (Estado.hub.controlesAdmin || Estado.hub.controles)
+          : Estado.hub.fontes;
+        Estado.form = (lista || []).filter(function (x) { return String(x.id) === String(id); })[0] || {};
+        render();
+        return;
+      }
+      var del = e.target.closest('[data-del]');
+      if (del) {
+        var t2 = del.getAttribute('data-del');
+        var id2 = del.getAttribute('data-id');
+        if (!confirm('Excluir este registro?')) return;
+        var api = t2 === 'dept' ? 'apiExcluirDepartamento' : t2 === 'ctrl' ? 'apiExcluirControle' : 'apiExcluirFonte';
+        chamar(api, id2).then(function (hub) { Estado.hub = hub; Estado.form = {}; render(); toast('Removido.'); })
+          .catch(function (err) { toast(err.message || err, true); });
+      }
+    });
+
+    document.addEventListener('submit', function (e) {
+      var form = e.target.closest('#form-entidade');
+      if (!form) return;
+      e.preventDefault();
+      var d = lerForm(form);
+      var api = Estado.vista === 'dept' ? 'apiSalvarDepartamento'
+        : Estado.vista === 'ctrl' ? 'apiSalvarControle' : 'apiSalvarFonte';
+      chamar(api, d).then(function (hub) {
+        Estado.hub = hub; Estado.form = {}; render(); toast('Salvo.');
+      }).catch(function (err) { toast(err.message || err, true); });
+    });
+
+    document.addEventListener('input', function (e) {
+      if (e.target.id === 'filtro-texto') {
+        Estado.filtros.texto = e.target.value;
+        renderTabelaSo();
+      }
+    });
+    document.addEventListener('change', function (e) {
+      var mapa = {
+        'filtro-tema': 'tema',
+        'filtro-divisao': 'divisao',
+        'filtro-area': 'area',
+        'filtro-status': 'status',
+        'filtro-resp': 'responsavel',
+      };
+      if (mapa[e.target.id]) {
+        Estado.filtros[mapa[e.target.id]] = e.target.value;
+        render();
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') fecharDrawer();
+    });
+  }
+
+  function renderTabelaSo() {
+    if (Estado.vista !== 'hub' && Estado.vista !== 'planos') return;
+    render();
+    var busca = $('filtro-texto');
+    if (busca) {
+      busca.focus();
+      var v = busca.value;
+      busca.value = '';
+      busca.value = v;
+    }
+  }
+
+  function carregar(silencioso) {
+    Estado.carregando = true;
+    if (!silencioso) setPilula(null, 'Sincronizando');
+    return chamar('apiHub').then(function (hub) {
+      Estado.hub = hub;
+      Estado.carregando = false;
+      setPilula(true, 'Atualizado');
+      render();
+    }).catch(function (err) {
+      Estado.carregando = false;
+      setPilula(false, 'Erro');
+      toast(err.message || String(err), true);
+    });
+  }
+
+  function iniciar() {
+    ligar();
+    $('botao-sidebar').innerHTML = svg('menu');
+    $('botao-tela').innerHTML = svg('tela');
+    $('botao-atualizar').innerHTML = svg('pcp') + ' Atualizar';
+    chamar('apiContexto').then(function (ctx) {
+      Estado.contexto = ctx;
+      $('usuario-nome').textContent = ctx.usuario.nome;
+      $('usuario-email').textContent = ctx.usuario.email || 'conta Google';
+      $('usuario-iniciais').textContent = ctx.usuario.iniciais;
+      $('rodape-versao').textContent = ctx.app.nome + ' · v' + ctx.app.versao;
+    }).catch(function () {});
+    carregar();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
+  else iniciar();
+})();
+</script>
