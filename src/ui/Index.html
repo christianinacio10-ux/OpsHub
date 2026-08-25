@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <?!= include('ui/Estilos'); ?>
+</head>
+<body>
+  <div class="casca" id="casca">
+    <aside class="lateral">
+      <div class="marca">
+        <div class="marca-linha">
+          <div class="marca-logo" role="img" aria-label="Avery Dennison"></div>
+          <button type="button" class="botao botao-sidebar" id="botao-sidebar" title="Recolher menu"></button>
+        </div>
+        <div class="marca-textos">
+          <div class="marca-nome">OpsHub</div>
+          <div class="marca-sub">Hub operacional da planta</div>
+        </div>
+      </div>
+
+      <div class="cartao-usuario">
+        <div class="avatar" id="usuario-iniciais">--</div>
+        <div class="usuario-dados">
+          <div class="usuario-nome" id="usuario-nome">Carregando</div>
+          <div class="usuario-papel" id="usuario-email">&nbsp;</div>
+        </div>
+      </div>
+
+      <nav id="nav"></nav>
+
+      <div class="lateral-rodape">
+        <div id="rodape-versao">&nbsp;</div>
+        <div>Avery Dennison · Plant Manager</div>
+      </div>
+    </aside>
+
+    <main class="principal">
+      <header class="topo">
+        <div>
+          <div class="topo-titulo" id="topo-titulo">Visão consolidada</div>
+          <div class="topo-sub" id="topo-sub">Controles-chave e planos de ação</div>
+        </div>
+        <div class="topo-direita">
+          <span class="pilula" id="pilula-estado">
+            <span class="ponto"></span><span id="pilula-texto">Sincronizando</span>
+          </span>
+          <button class="botao" id="botao-tela" title="Tela cheia"></button>
+          <button class="botao primario" id="botao-atualizar">Atualizar</button>
+        </div>
+      </header>
+      <div class="area-conteudo">
+        <div class="conteudo" id="conteudo">
+          <div class="esqueleto" style="height:110px;margin-bottom:16px"></div>
+          <div class="esqueleto" style="height:280px"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="drawer-fundo" id="drawer-fundo" hidden></div>
+  <aside class="drawer" id="drawer" hidden>
+    <div class="drawer-topo">
+      <div>
+        <div class="drawer-kicker" id="drawer-kicker">Departamento</div>
+        <h2 class="drawer-titulo" id="drawer-titulo"></h2>
+        <p class="drawer-sub" id="drawer-sub"></p>
+      </div>
+      <button type="button" class="botao" id="drawer-fechar" title="Fechar">Fechar</button>
+    </div>
+    <div class="drawer-corpo" id="drawer-corpo"></div>
+  </aside>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script>
+    var PARAMETROS = <?!= JSON.stringify(parametros || {}) ?>;
+  </script>
+  <?!= include('ui/App'); ?>
+</body>
+</html>
