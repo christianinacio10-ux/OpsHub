@@ -83,7 +83,10 @@ body { overflow: hidden; }
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; width: 100%;
 }
-.botao-sidebar { width: 34px; padding: 0; justify-content: center; flex-shrink: 0; }
+.botao-sidebar {
+  width: 34px; padding: 0; justify-content: center; flex-shrink: 0;
+  background: var(--superficie-2);
+}
 .marca-logo {
   display: block; flex: 1; min-width: 0; height: 52px;
   background-image: var(--logo-avery);
@@ -143,11 +146,13 @@ body { overflow: hidden; }
 }
 
 .casca.sidebar-recolhida { --lateral: 72px; }
+.casca.sidebar-recolhida .marca-logo,
 .casca.sidebar-recolhida .marca-textos,
 .casca.sidebar-recolhida .usuario-dados,
 .casca.sidebar-recolhida .nav-titulo,
 .casca.sidebar-recolhida .nav-item > span,
 .casca.sidebar-recolhida .lateral-rodape { display: none; }
+.casca.sidebar-recolhida .marca-linha { justify-content: center; }
 .casca.sidebar-recolhida .cartao-usuario { justify-content: center; padding: 10px; }
 .casca.sidebar-recolhida .nav-item { justify-content: center; }
 
@@ -360,16 +365,20 @@ table.dados tr.risco td { background: rgba(255,90,106,.05); }
 .drawer-fundo {
   position: fixed; inset: 0; background: rgba(0,0,0,.45);
   z-index: 20; backdrop-filter: blur(4px);
+  display: none;
 }
+.drawer-fundo.aberto { display: block; }
 .drawer {
   position: fixed; top: 0; right: 0; bottom: 0;
   width: min(460px, 100%);
   background: #0E1219;
   border-left: 1px solid var(--linha);
   z-index: 21;
-  display: flex; flex-direction: column;
+  display: none;
+  flex-direction: column;
   box-shadow: var(--sombra-3);
 }
+.drawer.aberto { display: flex; }
 .drawer-topo {
   padding: 22px 22px 16px; display: flex; justify-content: space-between;
   gap: 12px; border-bottom: 1px solid var(--linha);
@@ -950,11 +959,15 @@ table.dados tr.risco td { background: rgba(255,90,106,.05); }
       : '<div class="vazio">Nenhum controle cadastrado neste departamento.</div>';
     $('drawer').hidden = false;
     $('drawer-fundo').hidden = false;
+    $('drawer').classList.add('aberto');
+    $('drawer-fundo').classList.add('aberto');
   }
 
   function fecharDrawer() {
     $('drawer').hidden = true;
     $('drawer-fundo').hidden = true;
+    $('drawer').classList.remove('aberto');
+    $('drawer-fundo').classList.remove('aberto');
     Estado.deptAberto = null;
   }
 
@@ -1121,7 +1134,11 @@ table.dados tr.risco td { background: rgba(255,90,106,.05); }
       }
       var dept = e.target.closest('[data-dept]');
       if (dept) { abrirDept(dept.getAttribute('data-dept')); return; }
-      if (e.target.closest('#drawer-fechar') || e.target.id === 'drawer-fundo') { fecharDrawer(); return; }
+      if (e.target.closest('#drawer-fechar') || e.target.closest('#drawer-fundo')) {
+        e.preventDefault();
+        fecharDrawer();
+        return;
+      }
       var ord = e.target.closest('[data-ord]');
       if (ord) {
         var campo = ord.getAttribute('data-ord');

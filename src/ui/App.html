@@ -260,11 +260,15 @@
       : '<div class="vazio">Nenhum controle cadastrado neste departamento.</div>';
     $('drawer').hidden = false;
     $('drawer-fundo').hidden = false;
+    $('drawer').classList.add('aberto');
+    $('drawer-fundo').classList.add('aberto');
   }
 
   function fecharDrawer() {
     $('drawer').hidden = true;
     $('drawer-fundo').hidden = true;
+    $('drawer').classList.remove('aberto');
+    $('drawer-fundo').classList.remove('aberto');
     Estado.deptAberto = null;
   }
 
@@ -431,7 +435,11 @@
       }
       var dept = e.target.closest('[data-dept]');
       if (dept) { abrirDept(dept.getAttribute('data-dept')); return; }
-      if (e.target.closest('#drawer-fechar') || e.target.id === 'drawer-fundo') { fecharDrawer(); return; }
+      if (e.target.closest('#drawer-fechar') || e.target.closest('#drawer-fundo')) {
+        e.preventDefault();
+        fecharDrawer();
+        return;
+      }
       var ord = e.target.closest('[data-ord]');
       if (ord) {
         var campo = ord.getAttribute('data-ord');
