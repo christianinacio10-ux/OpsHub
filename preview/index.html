@@ -141,20 +141,7 @@ body { overflow: hidden; }
   font-weight: 530; font-size: 13px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.usuario-papel, .usuario-dados { min-width: 0; }
-.usuario-papel {
-  display: inline-block;
-  max-width: 100%;
-  margin-top: 5px;
-  background: #ffffff;
-  color: #1A1918;
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.35;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.usuario-dados { min-width: 0; }
 
 .nav-titulo {
   font-size: 11px; font-weight: 500; letter-spacing: .12em;
@@ -313,14 +300,14 @@ body { overflow: hidden; }
   gap: 10px; margin-bottom: 12px;
 }
 .card-dept {
-  text-align: left; cursor: pointer; font-family: var(--fonte);
+  text-align: left; cursor: grab; font-family: var(--fonte);
   background: var(--superficie);
   border: 1px solid var(--linha);
   border-radius: var(--raio);
   padding: 18px 18px 16px;
   color: var(--tinta);
-  transition: background var(--transicao), border-color var(--transicao);
-  position: relative; overflow: hidden;
+  transition: background var(--transicao), border-color var(--transicao), opacity var(--transicao);
+  position: relative; overflow: visible;
   box-shadow: var(--sombra-1);
 }
 .card-dept:hover {
@@ -329,6 +316,8 @@ body { overflow: hidden; }
   border-color: var(--linha-forte);
   box-shadow: var(--sombra-1);
 }
+.card-dept:active { cursor: grabbing; }
+.card-dept.arrastando { opacity: .42; }
 .card-dept::before { display: none; }
 .card-dept-badge {
   position: absolute; top: 10px; right: 10px;
@@ -340,14 +329,48 @@ body { overflow: hidden; }
   display: inline-flex; align-items: center;
   pointer-events: none;
 }
+.card-dept-topo {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px; position: relative;
+}
 .card-dept-icone {
   width: 36px; height: 36px; border-radius: 10px;
   display: grid; place-items: center;
   background: color-mix(in srgb, var(--dept-cor, var(--marca)) 10%, var(--superficie-2));
   color: color-mix(in srgb, var(--dept-cor, var(--marca)) 55%, #D9D2CB);
-  margin-bottom: 14px;
+  margin-bottom: 0; border: 0; padding: 0; cursor: pointer;
+  font-family: var(--fonte);
 }
+.card-dept-icone:hover { background: color-mix(in srgb, var(--dept-cor, var(--marca)) 18%, var(--superficie-2)); }
 .card-dept-icone svg { width: 18px; height: 18px; stroke-width: 1.6; }
+.card-dept-cor {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid var(--linha-forte);
+  background: var(--dept-cor, var(--marca));
+  padding: 0; cursor: pointer; position: relative; overflow: hidden;
+  flex-shrink: 0;
+}
+.card-dept-cor input[type="color"] {
+  position: absolute; inset: -6px; width: 34px; height: 34px;
+  border: 0; padding: 0; cursor: pointer; opacity: 0;
+}
+.seletor-icone {
+  position: absolute; left: 0; top: calc(100% + 6px); z-index: 8;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+  min-width: 196px;
+  background: var(--superficie-2); border: 1px solid var(--linha-forte);
+  padding: 8px; border-radius: 12px; box-shadow: var(--sombra-3);
+}
+.seletor-icone-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; text-align: left; font-family: var(--fonte);
+  background: transparent; border: 0; color: var(--tinta-2);
+  padding: 7px 8px; border-radius: 8px; cursor: pointer; font-size: 12px;
+}
+.seletor-icone-item:hover, .seletor-icone-item.ativo {
+  background: rgba(237,232,224,.06); color: var(--tinta);
+}
+.seletor-icone-item svg { width: 16px; height: 16px; flex-shrink: 0; }
 .card-dept h3 { margin: 0 0 5px; font-size: 15px; font-weight: 520; letter-spacing: -.02em; }
 .card-dept p { margin: 0; color: var(--tinta-3); font-size: 12.5px; min-height: 36px; line-height: 1.45; }
 .card-dept-meta {
@@ -455,7 +478,7 @@ table.dados tr.risco td { box-shadow: none; }
 
 .drawer-fundo {
   position: fixed; inset: 0; background: rgba(12, 11, 10, .55);
-  z-index: 20; backdrop-filter: blur(8px);
+  z-index: 20; backdrop-filter: blur(3px);
   display: none;
 }
 .drawer-fundo.aberto { display: block; }
@@ -474,6 +497,7 @@ table.dados tr.risco td { box-shadow: none; }
   overflow: hidden;
 }
 .drawer.largo { width: min(1100px, 94vw); }
+.drawer.extra-largo { width: min(1280px, 96vw); }
 .drawer.aberto { display: flex; }
 .drawer-topo {
   padding: 22px 24px 16px; display: flex; justify-content: space-between;
@@ -491,6 +515,38 @@ table.dados tr.risco td { box-shadow: none; }
 .arvores-duplas {
   display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
   min-height: 280px;
+}
+.arvores-triplas {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
+  min-height: 280px;
+}
+.drawer-gestao {
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--linha);
+}
+.drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
+.rotulo-com-ajuda {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.ajuda-btn {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1px solid var(--linha-forte);
+  background: rgba(237,232,224,.06);
+  color: var(--tinta-2);
+  font-size: 11px; font-weight: 600; line-height: 1;
+  cursor: help; position: relative;
+  font-family: var(--fonte); padding: 0;
+  display: inline-grid; place-items: center;
+}
+.ajuda-btn:hover::after, .ajuda-btn:focus::after {
+  content: attr(data-tip);
+  position: absolute; left: 0; bottom: calc(100% + 8px);
+  width: max-content; max-width: 260px;
+  background: #2A2927; color: var(--tinta);
+  border: 1px solid var(--linha-forte);
+  padding: 9px 11px; border-radius: 10px;
+  font-size: 12px; font-weight: 400; line-height: 1.4;
+  box-shadow: var(--sombra-3); z-index: 24;
+  text-transform: none; letter-spacing: 0; white-space: normal;
 }
 .arvore-col {
   border: 1px solid var(--linha);
@@ -708,8 +764,8 @@ table.dados tr.risco td { box-shadow: none; }
   .form-grid label.span2 { grid-column: span 1; }
   .conteudo { padding: 18px; }
   .topo { padding: 16px 18px; }
-  .arvores-duplas { grid-template-columns: 1fr; }
-  .drawer { width: min(920px, 96vw); max-height: 90vh; }
+  .arvores-duplas, .arvores-triplas { grid-template-columns: 1fr; }
+  .drawer, .drawer.largo, .drawer.extra-largo { width: min(920px, 96vw); max-height: 90vh; }
 }
 </style>
 
@@ -732,7 +788,6 @@ table.dados tr.risco td { box-shadow: none; }
         <div class="avatar" id="usuario-iniciais">--</div>
         <div class="usuario-dados">
           <div class="usuario-nome" id="usuario-nome">Carregando</div>
-          <div class="usuario-papel" id="usuario-email">&nbsp;</div>
         </div>
       </div>
 
@@ -830,6 +885,8 @@ table.dados tr.risco td { box-shadow: none; }
     { id: 'C12', departamento_id: 'D-PCP', nome: 'Plano mestre Smartrac', descricao: 'MPS da linha Smartrac', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'MPS' },
     { id: 'C10', departamento_id: 'D-CI', nome: 'A3 consolidado', descricao: 'Planos de ação por tema da planta', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'A3' },
     { id: 'C13', departamento_id: 'D-CI', nome: 'A3 Smartrac', descricao: 'Planos de ação da operação Smartrac', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'A3' },
+    { id: 'C14', departamento_id: 'D-PROD', nome: 'KPI da planta', descricao: 'Indicadores consolidados Solutions', url: 'https://docs.google.com/spreadsheets', ordem: 3, ativo: 'SIM', negocio: 'Solutions', pasta: 'Planta' },
+    { id: 'C15', departamento_id: 'D-EHS', nome: 'DDS da planta', descricao: 'Diálogo diário de segurança da planta', url: 'https://docs.google.com/spreadsheets', ordem: 3, ativo: 'SIM', negocio: '', pasta: 'Campo' },
   ];
 
   function plano(id, o) {
@@ -863,6 +920,17 @@ table.dados tr.risco td { box-shadow: none; }
     { id: 'F1', nome: 'A3 Qualidade', referencia: 'https://docs.google.com/spreadsheets/d/exemplo', aba: 'Planos', linha_cabecalho: 1, ativo: true, ultima_execucao: '', ultimo_status: '', ultimo_detalhe: '' },
   ];
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
+  var temasFollowUp = [];
+
+  function temasDistintos() {
+    var set = {}; var out = [];
+    planos.forEach(function (p) {
+      if (!p.tema || set[p.tema]) return;
+      set[p.tema] = 1; out.push(p.tema);
+    });
+    out.sort(function (a, b) { return String(a).localeCompare(String(b), 'pt-BR'); });
+    return out;
+  }
 
   function hub() {
     var atrasados = planos.filter(function (p) { return p.status === 'Atrasado'; }).length;
@@ -879,6 +947,8 @@ table.dados tr.risco td { box-shadow: none; }
       }),
       planos: planos,
       kpis: { total: planos.length, atrasados: atrasados, abertos: abertos, semEmail: semEmail, concluidos: concluidos },
+      temasDistintos: temasDistintos(),
+      temasFollowUp: temasFollowUp.slice(),
       fontes: fontes,
       departamentosAdmin: departamentos,
       controlesAdmin: controles,
@@ -891,8 +961,8 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.2.1' },
-        usuario: { email: 'plant.manager@averydennison.com', nome: 'Plant Manager', iniciais: 'PM' },
+        app: { nome: 'OpsHub', versao: '1.3.0' },
+        usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
     },
@@ -913,6 +983,18 @@ table.dados tr.risco td { box-shadow: none; }
     },
     apiExcluirControle: function (id) {
       controles = controles.filter(function (d) { return d.id !== id; });
+      return hub();
+    },
+    apiReordenarDepartamentos: function (ids) {
+      departamentos = (ids || []).map(function (id, i) {
+        var d = departamentos.filter(function (x) { return x.id === id; })[0];
+        if (d) d.ordem = i + 1;
+        return d;
+      }).filter(Boolean);
+      return hub();
+    },
+    apiSalvarTemasFollowUp: function (temas) {
+      temasFollowUp = Array.isArray(temas) ? temas.slice() : [];
       return hub();
     },
     apiSalvarFonte: function (reg) {
@@ -984,7 +1066,24 @@ table.dados tr.risco td { box-shadow: none; }
     filtroAberto: null,
     ordem: { campo: 'prazo', dir: 'asc' },
     form: { tipo: '', data: {} },
+    formDrawer: { tipo: '', data: {} },
+    seletorIcone: null,
+    arrastouDept: false,
+    dragId: null,
   };
+
+  var ICONES_DEPT = [
+    ['producao', 'Produção'],
+    ['qualidade', 'Qualidade'],
+    ['manutencao', 'Manutenção'],
+    ['ehs', 'EHS'],
+    ['logistica', 'Logística'],
+    ['engenharia', 'Engenharia'],
+    ['pcp', 'PCP'],
+    ['melhoria', 'Melhoria'],
+  ];
+
+  var PASTA_AJUDA = 'Agrupa o arquivo como pasta de computador. Ex.: Linha / Programa cria Linha → Programa → arquivo. Vazio = raiz da coluna. Não é pasta do Drive.';
 
   function filtrosVazios() {
     return {
@@ -1005,9 +1104,9 @@ table.dados tr.risco td { box-shadow: none; }
       producao: '<path d="M4 19h16M6 19V9l5-4 5 4v10M10 19v-5h4v5"/>',
     qualidade: '<path d="M12 3l8 4v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/>',
     manutencao: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-1.8-1.8 2.1-2.1z"/>',
-    ehs: '<path d="M12 3l8 4v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V7l8-4z"/>',
+    ehs: '<path d="M3 16h18"/><path d="M5 16a7 7 0 0 1 14 0"/><path d="M12 9V5M9 5h6"/><path d="M2.5 16h19v2.2c0 .7-.6 1.3-1.3 1.3H3.8c-.7 0-1.3-.6-1.3-1.3V16z"/>',
     logistica: '<path d="M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>',
-    engenharia: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+    engenharia: '<path d="M4 20V8l12 12H4z"/><path d="M7 20v-8l8 8"/><circle cx="16" cy="6" r="1.5"/><path d="M16 7.5L12.5 18M16 7.5L20.5 18"/><path d="M13.8 13.5h4.4"/>',
     pcp: '<path d="M4 5h16v4H4zM4 11h10v8H4zM16 11h4v8h-4z"/>',
     melhoria: '<path d="M12 3v18M5 10l7-7 7 7"/>',
     geral: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
@@ -1015,6 +1114,7 @@ table.dados tr.risco td { box-shadow: none; }
     pasta: '<path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>',
     'pasta-aberta': '<path d="M3 7h6l2 2h10v2H4l-1 8V7z"/><path d="M3 19h16l2-8H5"/>',
     arquivo: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
+    ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.8.4-1.4 1-1.4 1.9V14M12 17h.01"/>',
   };
 
   function svg(nome, extra) {
@@ -1028,6 +1128,13 @@ table.dados tr.risco td { box-shadow: none; }
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function tituloNome(v) {
+    return String(v == null ? '' : v).replace(/\s+/g, ' ').trim().split(' ')
+      .filter(Boolean)
+      .map(function (p) { return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); })
+      .join(' ');
   }
 
   function chamar(nome) {
@@ -1111,7 +1218,7 @@ table.dados tr.risco td { box-shadow: none; }
     var mapa = {
       hub: ['OpsHub', 'Controles-chave por departamento'],
       planos: ['Planos de ação', 'Resumo das ações e filtro por tema'],
-      config: ['Configurações', 'Departamentos, controles-chave, fontes de importação e follow-up'],
+      config: ['Configurações', 'Departamentos, fontes de importação e follow-up'],
     };
     var t = mapa[Estado.vista] || mapa.hub;
     $('topo-titulo').textContent = t[0];
@@ -1137,21 +1244,35 @@ table.dados tr.risco td { box-shadow: none; }
     var hub = Estado.hub;
     var controles = hub.controles || [];
     return '<div class="secao-cab"><div><div class="secao-titulo">Controles-chave por departamento</div>' +
-      '<div class="secao-apoio">Clique no departamento para abrir os links oficiais</div></div></div>' +
+      '<div class="secao-apoio">Arraste para reordenar. Clique no ícone ou na cor para editar. Clique no card para abrir os arquivos.</div></div></div>' +
       '<div class="grade-dept">' +
       (hub.departamentos || []).map(function (d) {
         var n = controles.filter(function (c) { return c.departamento_id === d.id; }).length;
         var badge = d.bandeira
           ? '<span class="card-dept-badge">' + escapar(d.bandeira) + '</span>'
           : '';
-        return '<button type="button" class="card-dept" data-dept="' + escapar(d.id) +
-          '" style="--dept-cor:' + escapar(d.cor) + '">' +
+        var picker = Estado.seletorIcone === d.id
+          ? '<div class="seletor-icone">' + ICONES_DEPT.map(function (it) {
+              return '<button type="button" class="seletor-icone-item' + (d.icone === it[0] ? ' ativo' : '') +
+                '" data-escolher-icone="' + it[0] + '" data-dept-id="' + escapar(d.id) + '" title="' + escapar(it[1]) + '">' +
+                svg(it[0]) + '<span>' + escapar(it[1]) + '</span></button>';
+            }).join('') + '</div>'
+          : '';
+        return '<article class="card-dept" data-dept="' + escapar(d.id) +
+          '" style="--dept-cor:' + escapar(d.cor) + '" draggable="true" tabindex="0">' +
           badge +
-          '<div class="card-dept-icone">' + svg(d.icone) + '</div>' +
+          '<div class="card-dept-topo">' +
+          '<button type="button" class="card-dept-icone" data-icone-dept="' + escapar(d.id) +
+          '" title="Trocar ícone">' + svg(d.icone) + '</button>' +
+          '<label class="card-dept-cor" title="Cor do card">' +
+          '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
+          '</label>' +
+          picker +
+          '</div>' +
           '<h3>' + escapar(d.nome) + '</h3>' +
           '<p>' + escapar(d.descricao) + '</p>' +
           '<div class="card-dept-meta"><span>' + n + ' controle' + (n === 1 ? '' : 's') +
-          '</span>Abrir</div></button>';
+          '</span>Abrir</div></article>';
       }).join('') + '</div>';
   }
 
@@ -1341,10 +1462,10 @@ table.dados tr.risco td { box-shadow: none; }
 
   function negocioEfetivo(c, dept) {
     var n = String((c && c.negocio) || '').trim();
-    if (n === 'Apparel' || n === 'Smartrac') return n;
+    if (n === 'Apparel' || n === 'Smartrac' || n === 'Solutions') return n;
     var b = String((dept && dept.bandeira) || '').trim();
     if (b === 'Apparel' || b === 'Smartrac') return b;
-    return '';
+    return 'Solutions';
   }
 
   function montarArvoreUi(controles) {
@@ -1401,10 +1522,50 @@ table.dados tr.risco td { box-shadow: none; }
       '<div class="arvore-col-corpo">' + inner + '</div></div>';
   }
 
+  function formDrawerCtrl(dept) {
+    var f = Estado.formDrawer && Estado.formDrawer.tipo === 'ctrl' ? (Estado.formDrawer.data || {}) : {};
+    return '<form class="form-grid" data-entidade="ctrl">' +
+      (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
+      '<input type="hidden" name="departamento_id" value="' + escapar(dept.id) + '">' +
+      campo('nome', 'Nome', f.nome) +
+      campo('url', 'URL', f.url) +
+      campo('descricao', 'Descrição', f.descricao, { span2: true }) +
+      campo('negocio', 'Negócio', f.negocio, {
+        opcoes: '<option value="">Negócio</option>' +
+          ['Apparel', 'Smartrac', 'Solutions'].map(function (v) {
+            return '<option value="' + v + '"' + (f.negocio === v ? ' selected' : '') + '>' + v + '</option>';
+          }).join(''),
+      }) +
+      campo('pasta', 'Pasta na árvore', f.pasta, { ajuda: PASTA_AJUDA }) +
+      '<div class="acoes-form"><button class="botao primario" type="submit">' +
+      (f.id ? 'Atualizar arquivo' : 'Incluir arquivo') + '</button>' +
+      (f.id ? '<button class="botao" type="button" data-form-cancelar-drawer>Cancelar</button>' : '') +
+      '</div></form>';
+  }
+
+  function listaArquivosDrawer(dept, links) {
+    if (!links.length) {
+      return '<div class="vazio">Nenhum arquivo ainda. Inclua abaixo.</div>';
+    }
+    return '<div class="admin-lista">' + links.map(function (c) {
+      return '<div class="linha-admin">' +
+        '<div><strong>' + escapar(c.nome) + '</strong><small>' +
+        escapar(negocioEfetivo(c, dept) || '—') +
+        (c.pasta ? ' · ' + escapar(c.pasta) : '') +
+        '</small></div>' +
+        '<div><button type="button" class="botao" data-edit-ctrl-drawer="' + escapar(c.id) + '">Editar</button> ' +
+        '<button type="button" class="botao perigo" data-del-ctrl-drawer="' + escapar(c.id) + '">Excluir</button></div>' +
+        '</div>';
+    }).join('') + '</div>';
+  }
+
   function abrirDept(id) {
     var d = (Estado.hub.departamentos || []).filter(function (x) { return x.id === id; })[0];
     if (!d) return;
-    if (!Estado.deptAberto || Estado.deptAberto.id !== id) Estado.pastasAbertas = {};
+    if (!Estado.deptAberto || Estado.deptAberto.id !== id) {
+      Estado.pastasAbertas = {};
+      Estado.formDrawer = { tipo: '', data: {} };
+    }
     Estado.deptAberto = d;
     var links = (Estado.hub.controles || []).filter(function (c) { return c.departamento_id === id; });
     var bandeira = d.bandeira || '';
@@ -1412,16 +1573,25 @@ table.dados tr.risco td { box-shadow: none; }
     $('drawer-kicker').textContent = bandeira ? ('Controles-chave · ' + bandeira) : 'Controles-chave';
     $('drawer-titulo').textContent = d.nome;
     $('drawer-sub').textContent = d.descricao || 'Clique no nome do arquivo para abrir o link cadastrado.';
+    $('drawer').classList.remove('largo', 'extra-largo');
+    var arvores;
     if (solutions) {
-      $('drawer').classList.add('largo');
-      $('drawer-corpo').innerHTML = '<div class="arvores-duplas">' +
+      $('drawer').classList.add('extra-largo');
+      arvores = '<div class="arvores-triplas">' +
         blocoArvore('Apparel', links.filter(function (c) { return negocioEfetivo(c, d) === 'Apparel'; })) +
         blocoArvore('Smartrac', links.filter(function (c) { return negocioEfetivo(c, d) === 'Smartrac'; })) +
+        blocoArvore('Solutions', links.filter(function (c) { return negocioEfetivo(c, d) === 'Solutions'; })) +
         '</div>';
     } else {
-      $('drawer').classList.remove('largo');
-      $('drawer-corpo').innerHTML = blocoArvore(bandeira || '', links);
+      arvores = blocoArvore(bandeira || '', links);
     }
+    $('drawer-corpo').innerHTML = arvores +
+      '<div class="drawer-gestao">' +
+      '<div class="secao-titulo">Arquivos deste departamento</div>' +
+      '<div class="secao-apoio">Inclua, edite ou exclua os controles-chave aqui. O nome na árvore abre o link.</div>' +
+      formDrawerCtrl(d) +
+      listaArquivosDrawer(d, links) +
+      '</div>';
     $('drawer').hidden = false;
     $('drawer-fundo').hidden = false;
     $('drawer').classList.add('aberto');
@@ -1434,7 +1604,9 @@ table.dados tr.risco td { box-shadow: none; }
     $('drawer').classList.remove('aberto');
     $('drawer-fundo').classList.remove('aberto');
     $('drawer').classList.remove('largo');
+    $('drawer').classList.remove('extra-largo');
     Estado.deptAberto = null;
+    Estado.formDrawer = { tipo: '', data: {} };
   }
 
   function campo(nome, rotulo, valor, extra) {
@@ -1445,15 +1617,12 @@ table.dados tr.risco td { box-shadow: none; }
         ? '<select name="' + nome + '">' + extra.opcoes + '</select>'
         : '<input name="' + nome + '" value="' + escapar(valor || '') + '"' +
           (extra.tipo ? ' type="' + extra.tipo + '"' : '') + '>';
-    return '<label class="' + (extra.span2 ? 'span2' : '') + '">' + rotulo + tag + '</label>';
-  }
-
-  function opcoesDept(selId) {
-    return '<option value="">Departamento</option>' +
-      (Estado.hub.departamentos || []).map(function (d) {
-        return '<option value="' + escapar(d.id) + '"' + (selId === d.id ? ' selected' : '') + '>' +
-          escapar(d.nome) + '</option>';
-      }).join('');
+    var rotuloHtml = extra.ajuda
+      ? ('<span class="rotulo-com-ajuda">' + rotulo +
+        '<button type="button" class="ajuda-btn" data-tip="' + escapar(extra.ajuda) +
+        '" title="' + escapar(extra.ajuda) + '">?</button></span>')
+      : rotulo;
+    return '<label class="' + (extra.span2 ? 'span2' : '') + '">' + rotuloHtml + tag + '</label>';
   }
 
   function dadosForm(tipo) {
@@ -1465,37 +1634,13 @@ table.dados tr.risco td { box-shadow: none; }
     return '<form class="form-grid" data-entidade="dept">' +
       (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
       campo('nome', 'Nome', f.nome) +
-      campo('icone', 'Ícone (producao, qualidade, manutencao, ehs, logistica, engenharia, pcp, melhoria)', f.icone) +
       campo('descricao', 'Descrição', f.descricao, { span2: true }) +
-      campo('cor', 'Cor', f.cor || '#E4002B', { tipo: 'color' }) +
-      campo('bandeira', 'Bandeira', f.bandeira, {
-        opcoes: '<option value="">Bandeira</option>' +
+      campo('bandeira', 'Divisão', f.bandeira, {
+        opcoes: '<option value="">Divisão</option>' +
           ['Apparel', 'Smartrac', 'Solutions'].map(function (v) {
             return '<option value="' + v + '"' + (f.bandeira === v ? ' selected' : '') + '>' + v + '</option>';
           }).join(''),
       }) +
-      campo('ordem', 'Ordem', f.ordem || 1, { tipo: 'number' }) +
-      campo('ativo', 'Ativo', f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
-      '<div class="acoes-form"><button class="botao primario" type="submit">Salvar</button>' +
-      '<button class="botao" type="button" data-form-cancelar>Limpar</button></div></form>';
-  }
-
-  function formCtrl() {
-    var f = dadosForm('ctrl');
-    return '<form class="form-grid" data-entidade="ctrl">' +
-      (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
-      campo('departamento_id', 'Departamento', f.departamento_id, { opcoes: opcoesDept(f.departamento_id) }) +
-      campo('nome', 'Nome do controle', f.nome) +
-      campo('url', 'Link', f.url, { span2: true }) +
-      campo('negocio', 'Negócio (Apparel ou Smartrac)', f.negocio, {
-        opcoes: '<option value="">Herdar da área</option>' +
-          ['Apparel', 'Smartrac'].map(function (v) {
-            return '<option value="' + v + '"' + (f.negocio === v ? ' selected' : '') + '>' + v + '</option>';
-          }).join(''),
-      }) +
-      campo('pasta', 'Pasta na árvore (ex.: Linha / Programa)', f.pasta) +
-      campo('descricao', 'Descrição', f.descricao, { span2: true }) +
-      campo('ordem', 'Ordem', f.ordem || 1, { tipo: 'number' }) +
       campo('ativo', 'Ativo', f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">Salvar</button>' +
       '<button class="botao" type="button" data-form-cancelar>Limpar</button></div></form>';
@@ -1535,9 +1680,9 @@ table.dados tr.risco td { box-shadow: none; }
 
   function vistaConfig() {
     var aba = Estado.configAba || 'dept';
+    if (aba === 'ctrl') aba = 'dept';
     var itens = [
       ['dept', 'Departamentos'],
-      ['ctrl', 'Controles-chave'],
       ['fontes', 'Fontes de importação'],
       ['mail', 'Follow-up e gatilho'],
     ];
@@ -1546,14 +1691,12 @@ table.dados tr.risco td { box-shadow: none; }
         '" data-config-aba="' + it[0] + '">' + it[1] + '</button>';
     }).join('') + '</div>';
     var titulosCfg = {
-      dept: ['Departamentos', 'Cadastre as áreas do OpsHub e a bandeira Apparel, Smartrac ou Solutions'],
-      ctrl: ['Controles-chave', 'Links oficiais. Em Solutions, indique o negócio e a pasta da árvore'],
+      dept: ['Departamentos', 'Cadastre as áreas do OpsHub e a divisão Apparel, Smartrac ou Solutions'],
       fontes: ['Fontes de importação', 'Google Sheets de onde os planos de ação são lidos'],
       mail: ['Follow-up e gatilho', 'E-mail diário após 1 dia de atraso, até reprogramarem o prazo'],
     };
     var t = titulosCfg[aba] || titulosCfg.dept;
-    var corpo = aba === 'ctrl' ? vistaCtrl()
-      : aba === 'fontes' ? vistaFontes()
+    var corpo = aba === 'fontes' ? vistaFontes()
       : aba === 'mail' ? vistaMail()
       : vistaDept();
     return tabs + '<section class="bloco-config">' +
@@ -1566,22 +1709,9 @@ table.dados tr.risco td { box-shadow: none; }
     var lista = Estado.hub.departamentosAdmin || Estado.hub.departamentos || [];
     return formDept() + listaAdmin(lista, function (d) {
       return '<strong>' + escapar(d.nome) + '</strong><small>' + escapar(d.descricao) + ' · ' +
-        escapar(d.bandeira || 'sem bandeira') + ' · ' + escapar(d.icone) + ' · ' +
+        escapar(d.bandeira || 'sem divisão') + ' · ' +
         (LogicaSim(d.ativo) ? 'ativo' : 'inativo') + '</small>';
     }, 'dept');
-  }
-
-  function vistaCtrl() {
-    var lista = Estado.hub.controlesAdmin || Estado.hub.controles || [];
-    var depts = {};
-    (Estado.hub.departamentos || []).forEach(function (d) { depts[d.id] = d.nome; });
-    return formCtrl() + listaAdmin(lista, function (c) {
-      return '<strong>' + escapar(c.nome) + '</strong><small>' +
-        escapar(depts[c.departamento_id] || c.departamento_id) +
-        (c.negocio ? ' · ' + escapar(c.negocio) : '') +
-        (c.pasta ? ' · ' + escapar(c.pasta) : '') +
-        ' · ' + escapar(c.url) + '</small>';
-    }, 'ctrl');
   }
 
   function vistaFontes() {
@@ -1596,11 +1726,30 @@ table.dados tr.risco td { box-shadow: none; }
       }, 'fonte');
   }
 
+  function chipsFollowUp() {
+    var temas = (Estado.hub && Estado.hub.temasDistintos) || unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
+    var habilitados = (Estado.hub && Estado.hub.temasFollowUp) || [];
+    var todos = !habilitados.length;
+    return '<div class="temas-barra" style="margin-top:8px">' +
+      '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">Temas que recebem e-mail</div>' +
+      '<div class="secao-apoio" style="margin-bottom:10px">Ligue ou desligue quais temas entram no follow-up. Com todos ligados, o comportamento é o de sempre: qualquer tema atrasado dispara.</div>' +
+      '<div class="temas-chips">' +
+      (temas.length
+        ? temas.map(function (t) {
+            var on = todos || habilitados.indexOf(t) !== -1;
+            return '<button type="button" class="chip-tema' + (on ? ' ativo' : '') +
+              '" data-followup-tema="' + escapar(t) + '">' + escapar(t) + '</button>';
+          }).join('')
+        : '<div class="secao-apoio">Importe planos para ver os temas.</div>') +
+      '</div></div>';
+  }
+
   function vistaMail() {
     var g = (Estado.hub && Estado.hub.gatilho) || { ativo: false, hora: 8 };
     return '<div class="painel"><div class="painel-topo" style="flex-direction:column;align-items:flex-start">' +
       '<div class="secao-titulo">Regra de follow-up</div>' +
       '<div class="secao-apoio">Quando o prazo é atingido, o OpsHub espera 1 dia e então envia um e-mail por dia ao responsável, até a data ser reprogramada na planilha de origem. Sem e-mail cadastrado, nada é enviado — a linha mostra o aviso no tooltip.</div>' +
+      chipsFollowUp() +
       '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">Gatilho ' + (g.ativo ? 'ativo' : 'inativo') +
       ' · disparo às ' + g.hora + 'h</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
@@ -1686,13 +1835,76 @@ table.dados tr.risco td { box-shadow: none; }
     }
   }
 
+  function aplicarHubMantendoDrawer(hub, imp) {
+    var deptId = Estado.deptAberto && Estado.deptAberto.id;
+    var formDrawer = Estado.formDrawer;
+    aplicarHub(hub, imp);
+    Estado.formDrawer = formDrawer || { tipo: '', data: {} };
+    if (deptId) abrirDept(deptId);
+  }
+
+  function salvarDeptCampo(id, patch) {
+    var d = ((Estado.hub && Estado.hub.departamentos) || []).filter(function (x) { return x.id === id; })[0] || {};
+    var reg = { id: id };
+    Object.keys(patch).forEach(function (k) { reg[k] = patch[k]; });
+    if (d.nome && patch.nome === undefined) reg.nome = d.nome;
+    chamar('apiSalvarDepartamento', Object.assign({}, d, reg)).then(function (hub) {
+      Estado.seletorIcone = null;
+      aplicarHub(hub);
+    }).catch(function (err) { toast(err.message || err, true); });
+  }
+
+  function toggleFollowUpTema(nome) {
+    var temas = (Estado.hub.temasDistintos) || unicos((Estado.hub.planos) || [], 'tema');
+    var habilitados = Estado.hub.temasFollowUp || [];
+    var atuais = !habilitados.length ? temas.slice() : habilitados.slice();
+    var idx = atuais.indexOf(nome);
+    if (idx === -1) atuais.push(nome);
+    else atuais = atuais.filter(function (t) { return t !== nome; });
+    var valor = atuais.length === temas.length ? [] : atuais;
+    chamar('apiSalvarTemasFollowUp', valor).then(function (hub) {
+      aplicarHub(hub);
+      toast('Temas de follow-up atualizados.');
+    }).catch(function (err) { toast(err.message || err, true); });
+  }
+
   function ligar() {
     document.addEventListener('click', function (e) {
+      if (e.target.closest('.ajuda-btn')) {
+        e.preventDefault();
+        return;
+      }
+      var iconeBtn = e.target.closest('[data-icone-dept]');
+      if (iconeBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var iconeId = iconeBtn.getAttribute('data-icone-dept');
+        Estado.seletorIcone = Estado.seletorIcone === iconeId ? null : iconeId;
+        render();
+        return;
+      }
+      var escolher = e.target.closest('[data-escolher-icone]');
+      if (escolher) {
+        e.preventDefault();
+        e.stopPropagation();
+        salvarDeptCampo(escolher.getAttribute('data-dept-id'), { icone: escolher.getAttribute('data-escolher-icone') });
+        return;
+      }
+      if (e.target.closest('.card-dept-cor') || e.target.closest('[data-cor-input]')) {
+        e.stopPropagation();
+        return;
+      }
+      var followTema = e.target.closest('[data-followup-tema]');
+      if (followTema) {
+        toggleFollowUpTema(followTema.getAttribute('data-followup-tema'));
+        return;
+      }
       var nav = e.target.closest('[data-vista]');
       if (nav) {
         Estado.vista = nav.getAttribute('data-vista');
         Estado.form = { tipo: '', data: {} };
         Estado.filtroAberto = null;
+        Estado.seletorIcone = null;
         render();
         return;
       }
@@ -1749,8 +1961,45 @@ table.dados tr.risco td { box-shadow: none; }
         if (Estado.deptAberto) abrirDept(Estado.deptAberto.id);
         return;
       }
+      var editDrawer = e.target.closest('[data-edit-ctrl-drawer]');
+      if (editDrawer) {
+        var idEdit = editDrawer.getAttribute('data-edit-ctrl-drawer');
+        var itemEdit = ((Estado.hub && Estado.hub.controles) || []).filter(function (x) {
+          return String(x.id) === String(idEdit);
+        })[0] || {};
+        Estado.formDrawer = { tipo: 'ctrl', data: itemEdit };
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id);
+        return;
+      }
+      var delDrawer = e.target.closest('[data-del-ctrl-drawer]');
+      if (delDrawer) {
+        if (!confirm('Excluir este arquivo?')) return;
+        var idDel = delDrawer.getAttribute('data-del-ctrl-drawer');
+        chamar('apiExcluirControle', idDel).then(function (hub) {
+          Estado.formDrawer = { tipo: '', data: {} };
+          aplicarHubMantendoDrawer(hub);
+          toast('Removido.');
+        }).catch(function (err) { toast(err.message || err, true); });
+        return;
+      }
+      if (e.target.closest('[data-form-cancelar-drawer]')) {
+        Estado.formDrawer = { tipo: '', data: {} };
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id);
+        return;
+      }
+      if (Estado.seletorIcone && !e.target.closest('.seletor-icone') && !e.target.closest('[data-icone-dept]')) {
+        Estado.seletorIcone = null;
+        render();
+      }
       var dept = e.target.closest('[data-dept]');
-      if (dept) { abrirDept(dept.getAttribute('data-dept')); return; }
+      if (dept) {
+        if (Estado.arrastouDept) {
+          Estado.arrastouDept = false;
+          return;
+        }
+        abrirDept(dept.getAttribute('data-dept'));
+        return;
+      }
       if (e.target.closest('#drawer-fechar') || e.target.closest('#drawer-fundo')) {
         e.preventDefault();
         fecharDrawer();
@@ -1758,9 +2007,9 @@ table.dados tr.risco td { box-shadow: none; }
       }
       var ord = e.target.closest('[data-ord]');
       if (ord) {
-        var campo = ord.getAttribute('data-ord');
-        if (Estado.ordem.campo === campo) Estado.ordem.dir = Estado.ordem.dir === 'asc' ? 'desc' : 'asc';
-        else { Estado.ordem.campo = campo; Estado.ordem.dir = 'asc'; }
+        var campoOrd = ord.getAttribute('data-ord');
+        if (Estado.ordem.campo === campoOrd) Estado.ordem.dir = Estado.ordem.dir === 'asc' ? 'desc' : 'asc';
+        else { Estado.ordem.campo = campoOrd; Estado.ordem.dir = 'asc'; }
         render();
         return;
       }
@@ -1819,11 +2068,10 @@ table.dados tr.risco td { box-shadow: none; }
         var tipo = edit.getAttribute('data-edit');
         var id = edit.getAttribute('data-id');
         var lista = tipo === 'dept' ? (Estado.hub.departamentosAdmin || Estado.hub.departamentos)
-          : tipo === 'ctrl' ? (Estado.hub.controlesAdmin || Estado.hub.controles)
           : Estado.hub.fontes;
         var item = (lista || []).filter(function (x) { return String(x.id) === String(id); })[0] || {};
         Estado.form = { tipo: tipo, data: item };
-        Estado.configAba = tipo === 'ctrl' ? 'ctrl' : tipo === 'fonte' ? 'fontes' : 'dept';
+        Estado.configAba = tipo === 'fonte' ? 'fontes' : 'dept';
         render();
         return;
       }
@@ -1832,7 +2080,7 @@ table.dados tr.risco td { box-shadow: none; }
         var t2 = del.getAttribute('data-del');
         var id2 = del.getAttribute('data-id');
         if (!confirm('Excluir este registro?')) return;
-        var api = t2 === 'dept' ? 'apiExcluirDepartamento' : t2 === 'ctrl' ? 'apiExcluirControle' : 'apiExcluirFonte';
+        var api = t2 === 'dept' ? 'apiExcluirDepartamento' : 'apiExcluirFonte';
         chamar(api, id2).then(function (hub) {
           Estado.hub = hub;
           Estado.form = { tipo: '', data: {} };
@@ -1853,7 +2101,12 @@ table.dados tr.risco td { box-shadow: none; }
       if (api === 'apiSalvarFonte') ocupar(true, 'Importando planos…');
       chamar(api, d).then(function (hub) {
         Estado.form = { tipo: '', data: {} };
-        aplicarHub(hub, hub.importacao);
+        if (tipo === 'ctrl' && Estado.deptAberto) {
+          Estado.formDrawer = { tipo: '', data: {} };
+          aplicarHubMantendoDrawer(hub, hub.importacao);
+        } else {
+          aplicarHub(hub, hub.importacao);
+        }
         if (api !== 'apiSalvarFonte') toast('Salvo.');
       }).catch(function (err) {
         ocupar(false);
@@ -1867,15 +2120,77 @@ table.dados tr.risco td { box-shadow: none; }
         renderTabelaSo();
       }
     });
+    document.addEventListener('change', function (e) {
+      var cor = e.target.getAttribute && e.target.getAttribute('data-cor-input');
+      if (!cor) return;
+      salvarDeptCampo(cor, { cor: e.target.value });
+    });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
+        if (Estado.seletorIcone) {
+          Estado.seletorIcone = null;
+          render();
+          return;
+        }
         if (Estado.filtroAberto) {
           Estado.filtroAberto = null;
           render();
           return;
         }
         fecharDrawer();
+        return;
       }
+      if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('card-dept')) {
+        if (e.target.closest('[data-icone-dept], .card-dept-cor, .seletor-icone')) return;
+        e.preventDefault();
+        abrirDept(e.target.getAttribute('data-dept'));
+      }
+    });
+
+    document.addEventListener('dragstart', function (e) {
+      var card = e.target.closest('.card-dept');
+      if (!card) return;
+      if (e.target.closest('button, input, label, a, .seletor-icone')) {
+        e.preventDefault();
+        return;
+      }
+      Estado.arrastouDept = false;
+      Estado.dragId = card.getAttribute('data-dept');
+      e.dataTransfer.setData('text/plain', Estado.dragId);
+      e.dataTransfer.effectAllowed = 'move';
+      card.classList.add('arrastando');
+    });
+    document.addEventListener('dragend', function (e) {
+      var card = e.target.closest('.card-dept');
+      if (card) card.classList.remove('arrastando');
+      Estado.dragId = null;
+      setTimeout(function () { Estado.arrastouDept = false; }, 0);
+    });
+    document.addEventListener('dragover', function (e) {
+      var grade = e.target.closest('.grade-dept');
+      if (!grade || !Estado.dragId) return;
+      e.preventDefault();
+      Estado.arrastouDept = true;
+      var card = e.target.closest('.card-dept');
+      var dragging = grade.querySelector('.card-dept.arrastando');
+      if (!dragging || !card || card === dragging) return;
+      var rect = card.getBoundingClientRect();
+      var depois = (e.clientY - rect.top) > rect.height / 2;
+      if (depois) grade.insertBefore(dragging, card.nextSibling);
+      else grade.insertBefore(dragging, card);
+    });
+    document.addEventListener('drop', function (e) {
+      var grade = e.target.closest('.grade-dept');
+      if (!grade) return;
+      e.preventDefault();
+      var ids = Array.prototype.map.call(grade.querySelectorAll('.card-dept'), function (el) {
+        return el.getAttribute('data-dept');
+      });
+      Estado.dragId = null;
+      chamar('apiReordenarDepartamentos', ids).then(function (hub) {
+        aplicarHub(hub);
+        toast('Ordem dos departamentos atualizada.');
+      }).catch(function (err) { toast(err.message || err, true); });
     });
   }
 
@@ -1922,9 +2237,8 @@ table.dados tr.risco td { box-shadow: none; }
     $('botao-atualizar').innerHTML = svg('atualizar') + ' Atualizar';
     chamar('apiContexto').then(function (ctx) {
       Estado.contexto = ctx;
-      $('usuario-nome').textContent = ctx.usuario.nome;
-      $('usuario-email').textContent = ctx.usuario.email || 'conta Google';
-      $('usuario-iniciais').textContent = ctx.usuario.iniciais;
+      $('usuario-nome').textContent = tituloNome((ctx.usuario && ctx.usuario.nome) || '');
+      $('usuario-iniciais').textContent = (ctx.usuario && ctx.usuario.iniciais) || '--';
       $('rodape-versao').textContent = ctx.app.nome + ' · v' + ctx.app.versao;
     }).catch(function () {});
     carregar();

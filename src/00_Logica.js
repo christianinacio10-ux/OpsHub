@@ -232,7 +232,35 @@ var Logica = (function () {
    * Depois, um e-mail por dia civil ate o prazo ser reprogramado para
    * o futuro (ou a acao ser encerrada). Sem e-mail cadastrado: nao envia.
    */
-  function elegivelFollowUp(acao, hoje) {
+  function tituloNome(v) {
+    return texto(v).split(/\s+/).filter(Boolean).map(function (p) {
+      return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    }).join(' ');
+  }
+
+  function parseTemasFollowUp(valor) {
+    if (Array.isArray(valor)) return valor.map(texto).filter(Boolean);
+    var s = texto(valor);
+    if (!s) return [];
+    if (s.charAt(0) === '[') {
+      try {
+        var arr = JSON.parse(s);
+        if (Array.isArray(arr)) return arr.map(texto).filter(Boolean);
+      } catch (e) {}
+    }
+    return s.split(/[,;|\n]/).map(texto).filter(Boolean);
+  }
+
+  function temaFollowUpHabilitado(tema, habilitados) {
+    if (!habilitados || !habilitados.length) return true;
+    var t = texto(tema);
+    for (var i = 0; i < habilitados.length; i++) {
+      if (texto(habilitados[i]) === t) return true;
+    }
+    return false;
+  }
+
+  function elegivelFollowUp(acao, hoje, temasHabilitados) {
     hoje = paraData(hoje) || paraData(new Date());
     var email = texto(acao && acao.email).toLowerCase();
     if (!emailValido(email)) {
@@ -240,6 +268,9 @@ var Logica = (function () {
     }
     if (encerrada(acao && acao.status)) {
       return { ok: false, motivo: 'encerrada' };
+    }
+    if (!temaFollowUpHabilitado(acao && acao.tema, temasHabilitados)) {
+      return { ok: false, motivo: 'tema_desligado' };
     }
     var prazo = paraData(acao && acao.prazo);
     if (!prazo) {
@@ -430,10 +461,10 @@ var Logica = (function () {
 
   function negocioDoControle(controle, bandeiraDept) {
     var n = normalizarBandeira(controle && controle.negocio);
-    if (n === 'Apparel' || n === 'Smartrac') return n;
+    if (n) return n;
     var b = normalizarBandeira(bandeiraDept);
     if (b === 'Apparel' || b === 'Smartrac') return b;
-    return '';
+    return 'Solutions';
   }
 
   function partesPasta(pasta) {
@@ -470,12 +501,14 @@ var Logica = (function () {
   function separarPorNegocio(controles, bandeiraDept) {
     var apparel = [];
     var smartrac = [];
+    var solutions = [];
     (controles || []).forEach(function (c) {
       var n = negocioDoControle(c, bandeiraDept);
       if (n === 'Smartrac') smartrac.push(c);
       else if (n === 'Apparel') apparel.push(c);
+      else solutions.push(c);
     });
-    return { apparel: apparel, smartrac: smartrac };
+    return { apparel: apparel, smartrac: smartrac, solutions: solutions };
   }
 
   function prepararAcaoParaUi(p, hoje) {
@@ -588,6 +621,7 @@ var Logica = (function () {
   return {
     COLUNAS_PLANO: COLUNAS_PLANO,
     texto: texto,
+    tituloNome: tituloNome,
     sim: sim,
     slug: slug,
     emailValido: emailValido,
@@ -605,6 +639,8 @@ var Logica = (function () {
     statusEfetivo: statusEfetivo,
     tituloStatus: tituloStatus,
     classeStatus: classeStatus,
+    parseTemasFollowUp: parseTemasFollowUp,
+    temaFollowUpHabilitado: temaFollowUpHabilitado,
     elegivelFollowUp: elegivelFollowUp,
     linhaFonteParaPlano: linhaFonteParaPlano,
     mesclarImportacao: mesclarImportacao,

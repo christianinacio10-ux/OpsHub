@@ -13,12 +13,13 @@ function enviarFollowUps() {
   instalarSistema();
   var hoje = hojeLocal_();
   var planos = Cadastros.planos();
+  var temasHabilitados = Logica.parseTemasFollowUp(Cadastros.config().texto('followup_temas', ''));
   var enviados = 0;
   var pulados = 0;
   var erros = 0;
 
   planos.forEach(function (plano) {
-    var dec = Logica.elegivelFollowUp(plano, hoje);
+    var dec = Logica.elegivelFollowUp(plano, hoje, temasHabilitados);
     if (!dec.ok) {
       pulados++;
       return;

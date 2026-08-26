@@ -19,7 +19,7 @@ function identificarUsuario_() {
   var email = '';
   var nome = '';
   try { email = Session.getActiveUser().getEmail() || Session.getEffectiveUser().getEmail() || ''; } catch (e) {}
-  nome = email ? email.split('@')[0].replace(/[._]/g, ' ') : 'Visitante';
+  nome = Logica.tituloNome(email ? email.split('@')[0].replace(/[._]/g, ' ') : 'Visitante');
   var partes = nome.split(' ').filter(Boolean);
   var iniciais = partes.slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('') || '--';
   return { email: email, nome: nome, iniciais: iniciais };
@@ -64,6 +64,8 @@ function apiHub() {
     return Logica.prepararAcaoParaUi(p, hoje);
   });
   var kpis = Logica.kpis(Cadastros.planos(), hoje);
+  var temasDistintos = Logica.unicos(planos, 'tema');
+  var temasFollowUp = Logica.parseTemasFollowUp(Cadastros.config().texto('followup_temas', ''));
   var fontes = Cadastros.fontes().map(function (f) {
     return {
       id: f.id,
@@ -83,6 +85,8 @@ function apiHub() {
     controles: controles,
     planos: planos,
     kpis: kpis,
+    temasDistintos: temasDistintos,
+    temasFollowUp: temasFollowUp,
     fontes: fontes,
     departamentosAdmin: Repo.ler(ABAS.departamentos),
     controlesAdmin: Repo.ler(ABAS.controles),
@@ -100,11 +104,37 @@ function apiExcluirDepartamento(id) {
 }
 
 function apiSalvarControle(reg) {
-  if (reg) {
-    reg.negocio = Logica.normalizarBandeira(reg.negocio);
-    if (reg.negocio === 'Solutions') reg.negocio = '';
-  }
+  if (reg) reg.negocio = Logica.normalizarBandeira(reg.negocio);
   return salvarEntidade_(ABAS.controles, reg, ['id', 'departamento_id', 'nome', 'descricao', 'url', 'ordem', 'ativo', 'negocio', 'pasta'], 'C');
+}
+
+function apiReordenarDepartamentos(ids) {
+  ids = ids || [];
+  ids.forEach(function (id, i) {
+    var lista = Repo.ler(ABAS.departamentos);
+    var atual = lista.filter(function (r) { return String(r.id) === String(id); })[0];
+    if (atual) Repo.atualizarRegistro(ABAS.departamentos, atual._linha, { ordem: i + 1 });
+  });
+  Repo.limparMemoria();
+  return apiHub();
+}
+
+function apiSalvarTemasFollowUp(temas) {
+  var lista = Logica.parseTemasFollowUp(temas);
+  var valor = lista.length ? JSON.stringify(lista) : '';
+  var linhas = Repo.ler(ABAS.config);
+  var atual = linhas.filter(function (l) { return String(l.chave) === 'followup_temas'; })[0];
+  if (atual) {
+    Repo.atualizarRegistro(ABAS.config, atual._linha, { valor: valor });
+  } else {
+    Repo.acrescentar(ABAS.config, [{
+      chave: 'followup_temas',
+      valor: valor,
+      descricao: 'Temas que recebem e-mail de follow-up (vazio = todos)',
+    }]);
+  }
+  Repo.limparMemoria();
+  return apiHub();
 }
 
 function apiExcluirControle(id) {
