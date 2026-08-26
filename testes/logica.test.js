@@ -146,5 +146,6 @@ assert.ok(htmlMail.indexOf('OPSHUB') !== -1);
 assert.ok(htmlMail.indexOf('Ação com prazo vencido') !== -1);
 assert.ok(htmlMail.indexOf('ana@avery.com') !== -1);
 assert.ok(htmlMail.indexOf('cid:logoAvery') !== -1);
+assert.ok(htmlMail.indexOf('border:1px solid #C9C3BB') !== -1);
 
 console.log('ok — ' + module.filename);
