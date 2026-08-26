@@ -292,7 +292,7 @@ body { overflow: hidden; }
 .grade-dept {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 10px; margin-bottom: 36px;
+  gap: 10px; margin-bottom: 12px;
 }
 .card-dept {
   text-align: left; cursor: pointer; font-family: var(--fonte);
@@ -334,12 +334,15 @@ body { overflow: hidden; }
   border: 1px solid var(--linha);
   border-radius: var(--raio);
   box-shadow: var(--sombra-1);
-  overflow: hidden;
+  overflow: visible;
 }
 .painel-topo {
   padding: 14px 16px; border-bottom: 1px solid var(--linha);
   display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
   background: rgba(255,255,255,.01);
+  position: relative;
+  z-index: 4;
+  border-radius: var(--raio) var(--raio) 0 0;
 }
 .busca {
   flex: 1; min-width: 220px; height: 36px;
@@ -376,11 +379,12 @@ table.dados td {
   vertical-align: top; color: var(--tinta-2);
   font-weight: 400;
 }
+table.dados tbody tr:nth-child(odd) td { background: var(--superficie); }
+table.dados tbody tr:nth-child(even) td { background: #161514; }
 table.dados tr:last-child td { border-bottom: 0; }
-table.dados tr:hover td { background: rgba(237,232,224,.025); }
+table.dados tbody tr:hover td { background: var(--superficie-3); }
 table.dados td.principal { color: var(--tinta); font-weight: 500; }
-table.dados tr.risco td { background: transparent; }
-table.dados tr.risco td.principal { color: var(--tinta); }
+table.dados tr.risco td { box-shadow: none; }
 
 .selo {
   display: inline-flex; align-items: center; gap: 7px;
@@ -521,6 +525,75 @@ table.dados tr.risco td.principal { color: var(--tinta); }
 .linha-admin:last-child { border-bottom: 0; }
 .linha-admin strong { display: block; font-weight: 520; }
 .linha-admin small { color: var(--tinta-3); }
+
+.temas-barra { margin: 0 0 18px; }
+.temas-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-tema {
+  height: 32px; padding: 0 13px; border-radius: 999px;
+  border: 1px solid var(--linha); background: transparent;
+  color: var(--tinta-2); font-size: 12.5px; font-weight: 450;
+  cursor: pointer; font-family: var(--fonte);
+  transition: background var(--transicao), color var(--transicao), border-color var(--transicao);
+}
+.chip-tema:hover { background: rgba(237,232,224,.05); color: var(--tinta); border-color: var(--linha-forte); }
+.chip-tema.ativo {
+  background: rgba(237,232,224,.08);
+  border-color: var(--linha-forte);
+  color: var(--tinta);
+}
+.chip-tema.todos.ativo {
+  background: var(--marca-suave);
+  border-color: rgba(228, 0, 43, .28);
+  color: #F4D5DA;
+}
+
+.filtro-excel { position: relative; }
+.filtro-excel-btn {
+  height: 36px; border-radius: var(--raio-p); border: 1px solid var(--linha);
+  background: var(--bg); color: var(--tinta-2);
+  padding: 0 10px 0 12px; font-family: var(--fonte); font-size: 12.5px;
+  max-width: 220px; display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; white-space: nowrap;
+}
+.filtro-excel.aberto .filtro-excel-btn,
+.filtro-excel-btn:hover { border-color: var(--linha-forte); color: var(--tinta); }
+.filtro-excel-seta { font-size: 10px; color: var(--tinta-3); margin-left: auto; }
+.filtro-excel-painel {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 12;
+  min-width: 220px; max-width: 280px; max-height: 280px; overflow: auto;
+  background: var(--superficie-2); border: 1px solid var(--linha-forte);
+  border-radius: var(--raio-p); box-shadow: var(--sombra-3);
+  padding: 6px 0;
+}
+.filtro-excel-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 12px; cursor: pointer; font-size: 12.5px; color: var(--tinta-2);
+  background: transparent; border: 0; font-family: var(--fonte); text-align: left;
+}
+.filtro-excel-item:hover { background: rgba(237,232,224,.05); color: var(--tinta); }
+.filtro-excel-item.todos {
+  border-bottom: 1px solid var(--linha); font-weight: 520; color: var(--tinta);
+  margin-bottom: 4px;
+}
+.filtro-excel-vazio { padding: 10px 12px; color: var(--tinta-3); font-size: 12.5px; }
+.caixa {
+  width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;
+  border: 1px solid var(--linha-forte); background: transparent;
+  position: relative;
+}
+.caixa.marcada { background: var(--marca); border-color: var(--marca); }
+.caixa.marcada::after {
+  content: ''; position: absolute; left: 3px; top: 1px;
+  width: 5px; height: 8px;
+  border: solid #fff; border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.config-ancoras {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px;
+}
+.bloco-config { margin-bottom: 40px; }
+.bloco-config .form-grid { margin-top: 0; }
 
 .botao.ocupado { pointer-events: none; opacity: .72; }
 .botao.ocupado svg { animation: giro 0.8s linear infinite; }

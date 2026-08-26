@@ -305,18 +305,46 @@ var Logica = (function () {
     });
   }
 
+  /**
+   * Eixo de filtro estilo Excel:
+   * - null/undefined: sem restrição (todas as caixas marcadas)
+   * - []: nenhum valor (nenhuma linha passa)
+   * - ['A','B']: união (OR) desses valores
+   * Aceita também string única (API antiga: { tema: 'OEE' }).
+   */
+  function eixoDe(filtros, plural, singular) {
+    if (!filtros) return null;
+    if (Object.prototype.hasOwnProperty.call(filtros, plural)) return filtros[plural];
+    if (Array.isArray(filtros[singular])) return filtros[singular];
+    if (filtros[singular]) return [filtros[singular]];
+    return null;
+  }
+
+  function passaEixo(selecionados, valor) {
+    if (selecionados == null) return true;
+    if (!selecionados.length) return false;
+    return selecionados.indexOf(texto(valor)) !== -1;
+  }
+
   function filtrarPlanos(lista, filtros) {
     filtros = filtros || {};
     var q = slug(filtros.texto);
+    var temas = eixoDe(filtros, 'temas', 'tema');
+    var todosTemas = !!filtros.todosTemas;
+    var temaObrigatorio = !!filtros.temaObrigatorio;
+    if (temaObrigatorio && !todosTemas && (!temas || !temas.length)) return [];
+
+    var divisoes = eixoDe(filtros, 'divisoes', 'divisao');
+    var areas = eixoDe(filtros, 'areas', 'area');
+    var statuses = eixoDe(filtros, 'statuses', 'status');
+    var responsaveis = eixoDe(filtros, 'responsaveis', 'responsavel');
+
     return (lista || []).filter(function (p) {
-      if (filtros.tema && texto(p.tema) !== filtros.tema) return false;
-      if (filtros.divisao && texto(p.divisao) !== filtros.divisao) return false;
-      if (filtros.area && texto(p.area) !== filtros.area) return false;
-      if (filtros.status) {
-        var st = statusEfetivo(p, filtros.hoje);
-        if (st !== filtros.status) return false;
-      }
-      if (filtros.responsavel && texto(p.responsavel) !== filtros.responsavel) return false;
+      if (!todosTemas && !passaEixo(temas, p.tema)) return false;
+      if (!passaEixo(divisoes, p.divisao)) return false;
+      if (!passaEixo(areas, p.area)) return false;
+      if (!passaEixo(statuses, statusEfetivo(p, filtros.hoje))) return false;
+      if (!passaEixo(responsaveis, p.responsavel)) return false;
       if (filtros.semEmail && emailValido(p.email)) return false;
       if (!q) return true;
       var blob = slug([
@@ -443,6 +471,8 @@ var Logica = (function () {
     elegivelFollowUp: elegivelFollowUp,
     linhaFonteParaPlano: linhaFonteParaPlano,
     mesclarImportacao: mesclarImportacao,
+    eixoDe: eixoDe,
+    passaEixo: passaEixo,
     filtrarPlanos: filtrarPlanos,
     ordenarPlanos: ordenarPlanos,
     unicos: unicos,

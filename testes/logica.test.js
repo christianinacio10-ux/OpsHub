@@ -67,6 +67,25 @@ var planos = [
 ];
 var filtrado = Logica.filtrarPlanos(planos, { texto: 'uptime', hoje: hoje });
 assert.strictEqual(filtrado.length, 1);
+
+assert.strictEqual(Logica.filtrarPlanos(planos, { temaObrigatorio: true, hoje: hoje }).length, 0, 'sem tema selecionado a tabela fica vazia');
+assert.strictEqual(Logica.filtrarPlanos(planos, { temas: ['OEE'], temaObrigatorio: true, hoje: hoje }).length, 1);
+assert.strictEqual(Logica.filtrarPlanos(planos, { temas: ['OEE', 'EHS'], temaObrigatorio: true, hoje: hoje }).length, 2);
+assert.strictEqual(Logica.filtrarPlanos(planos, { todosTemas: true, temaObrigatorio: true, hoje: hoje }).length, 2);
+assert.strictEqual(
+  Logica.filtrarPlanos(planos, { todosTemas: true, areas: ['Produção'], temaObrigatorio: true, hoje: hoje }).length,
+  1
+);
+assert.strictEqual(
+  Logica.filtrarPlanos(planos, { todosTemas: true, areas: [], temaObrigatorio: true, hoje: hoje }).length,
+  0,
+  'eixo Excel sem nenhum valor marcado esconde as linhas'
+);
+assert.strictEqual(Logica.passaEixo(null, 'x'), true);
+assert.strictEqual(Logica.passaEixo([], 'x'), false);
+assert.strictEqual(Logica.passaEixo(['OEE'], 'OEE'), true);
+assert.deepStrictEqual(Logica.eixoDe({ tema: 'OEE' }, 'temas', 'tema'), ['OEE']);
+assert.strictEqual(Logica.eixoDe({ temas: null }, 'temas', 'tema'), null);
 var k = Logica.kpis(planos, hoje);
 assert.strictEqual(k.atrasados, 1);
 assert.strictEqual(k.semEmail, 1);
