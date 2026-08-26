@@ -28,7 +28,7 @@
   };
 
   function svg(nome, extra) {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">' +
       (ICONES[nome] || ICONES.geral) + '</svg>' + (extra || '');
   }
 
@@ -83,7 +83,7 @@
       ['mail', 'Follow-up e gatilho'],
     ];
     $('nav').innerHTML =
-      '<div class="nav-titulo">Menu</div>' +
+      '<div class="nav-titulo">Navegar</div>' +
       itens.map(function (it) {
         return '<button type="button" class="nav-item' + (Estado.vista === it[0] ? ' ativo' : '') +
           '" data-vista="' + it[0] + '">' + iconeNav(it[0]) + '<span>' + it[1] + '</span></button>';
@@ -133,7 +133,7 @@
           '<h3>' + escapar(d.nome) + '</h3>' +
           '<p>' + escapar(d.descricao) + '</p>' +
           '<div class="card-dept-meta"><span>' + n + ' controle' + (n === 1 ? '' : 's') +
-          '</span>Abrir →</div></button>';
+          '</span>Abrir</div></button>';
       }).join('') + '</div>';
   }
 
@@ -253,9 +253,9 @@
       ? links.map(function (c) {
           var href = c.url || '#';
           return '<a class="link-controle" href="' + escapar(href) + '" target="_blank" rel="noopener">' +
-            '<strong>' + escapar(c.nome) + '</strong>' +
-            '<span>' + escapar(c.descricao || '') + '</span>' +
-            '<em>Abrir controle →</em></a>';
+            '<div><strong>' + escapar(c.nome) + '</strong>' +
+            '<span>' + escapar(c.descricao || '') + '</span></div>' +
+            '<em aria-hidden="true">→</em></a>';
         }).join('')
       : '<div class="vazio">Nenhum controle cadastrado neste departamento.</div>';
     $('drawer').hidden = false;
@@ -343,7 +343,7 @@
   function vistaHub() {
     return kpisHtml(Estado.hub.kpis) + deptCards() +
       '<div class="secao-cab"><div><div class="secao-titulo">Planos de ação consolidados</div>' +
-      '<div class="secao-apoio">Cabeçalho: Tema, Divisão, Área, O quê?, Como, Responsável, E-mail, Prazo, Status, Comentários</div></div></div>' +
+      '<div class="secao-apoio">Importados das planilhas de origem · filtre e ordene pelas colunas</div></div></div>' +
       tabelaPlanos();
   }
 

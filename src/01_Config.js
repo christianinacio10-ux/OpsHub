@@ -46,14 +46,14 @@ var CONFIG_PADRAO = [
 
 var SEMENTES = {
   departamentos: [
-    ['D-PROD', 'Produção', 'Controles de chão de fábrica e desempenho da linha', 'producao', '#E4002B', 1, 'SIM'],
-    ['D-QUAL', 'Qualidade', 'NC, auditorias e controle de processo', 'qualidade', '#5B8CFF', 2, 'SIM'],
-    ['D-MAN', 'Manutenção', 'PCM, CMMS e confiabilidade', 'manutencao', '#F5C14A', 3, 'SIM'],
-    ['D-EHS', 'EHS', 'Segurança, meio ambiente e saúde ocupacional', 'ehs', '#3DDC97', 4, 'SIM'],
-    ['D-LOG', 'Logística', 'Armazém, expedição e materiais', 'logistica', '#7C6CFF', 5, 'SIM'],
-    ['D-ENG', 'Engenharia', 'Processo, industrialização e projetos', 'engenharia', '#38BDF8', 6, 'SIM'],
-    ['D-PCP', 'PCP', 'Planejamento, programação e controle da produção', 'pcp', '#FB923C', 7, 'SIM'],
-    ['D-CI', 'Melhoria Contínua', 'Kaizen, A3 e planos de ação corporativos', 'melhoria', '#F472B6', 8, 'SIM'],
+    ['D-PROD', 'Produção', 'Controles de chão de fábrica e desempenho da linha', 'producao', '#B42336', 1, 'SIM'],
+    ['D-QUAL', 'Qualidade', 'NC, auditorias e controle de processo', 'qualidade', '#7A8BA3', 2, 'SIM'],
+    ['D-MAN', 'Manutenção', 'PCM, CMMS e confiabilidade', 'manutencao', '#C4B5A0', 3, 'SIM'],
+    ['D-EHS', 'EHS', 'Segurança, meio ambiente e saúde ocupacional', 'ehs', '#8FA393', 4, 'SIM'],
+    ['D-LOG', 'Logística', 'Armazém, expedição e materiais', 'logistica', '#8B8499', 5, 'SIM'],
+    ['D-ENG', 'Engenharia', 'Processo, industrialização e projetos', 'engenharia', '#7E9AAB', 6, 'SIM'],
+    ['D-PCP', 'PCP', 'Planejamento, programação e controle da produção', 'pcp', '#C4A484', 7, 'SIM'],
+    ['D-CI', 'Melhoria Contínua', 'Kaizen, A3 e planos de ação corporativos', 'melhoria', '#B0899A', 8, 'SIM'],
   ],
   controles: [
     ['C1', 'D-PROD', 'Controle Hora por Hora', 'Painel de produção por máquina e turno', 'https://docs.google.com/spreadsheets', 1, 'SIM'],
