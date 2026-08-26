@@ -56,7 +56,12 @@ var cabeca = [
 ].join('\n');
 
 var dest = path.join(raiz, 'Appscript.txt');
-fs.writeFileSync(dest, cabeca + '\n' + pacote + '\n' + jsFiles);
+fs.writeFileSync(
+  dest,
+  cabeca + '\n' +
+  'var LOGO_AVERY_B64 = ' + JSON.stringify(logoB64) + ';\n\n' +
+  pacote + '\n' + jsFiles
+);
 console.log('escreveu', dest, fs.statSync(dest).size, 'bytes');
 
 var mock = ler('testes/preview-mock.js');
@@ -70,3 +75,24 @@ var previewIndex = index
 
 fs.writeFileSync(path.join(raiz, 'preview/index.html'), previewIndex);
 console.log('escreveu preview/index.html', previewIndex.length, 'bytes');
+
+var Logica = require(path.join(src, '00_Logica.js'));
+var emailPreview = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">' +
+  '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+  '<title>Follow-up OpsHub</title></head>' +
+  '<body style="margin:0;background:#ffffff">' +
+  Logica.htmlFollowUp({
+    plano: {
+      tema: 'Segurança', divisao: 'Operations', area: 'EHS',
+      oque: 'Eliminar desvio de bloqueio LOTO na DDA2',
+      como: 'Padronizar checklist de LOTO e treinar turno 1 e 2',
+      responsavel: 'Ana Souza', status: 'Atrasado', comentarios: 'Treinamento agendado',
+    },
+    dec: { email: 'ana.souza@averydennison.com', diasAtraso: 2 },
+    hoje: new Date(),
+    prazo: '24/08/2026',
+    logoSrc: logoUri,
+  }) +
+  '</body></html>';
+fs.writeFileSync(path.join(raiz, 'preview/email.html'), emailPreview);
+console.log('escreveu preview/email.html', emailPreview.length, 'bytes');
