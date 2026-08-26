@@ -506,6 +506,83 @@ var Logica = (function () {
     };
   }
 
+  function escaparHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function linhaHtmlFollowUp_(rotulo, valor) {
+    var v = texto(valor) || '—';
+    return '<tr><td style="padding:9px 0;color:#8A847C;width:140px;vertical-align:top;font-size:14px">' +
+      escaparHtml(rotulo) + '</td><td style="padding:9px 0;color:#F4F6FA;font-size:14px">' +
+      escaparHtml(v) + '</td></tr>';
+  }
+
+  /**
+   * HTML do e-mail de follow-up. Fundo externo claro; marca em quadro branco
+   * com letra vermelha; e-mail do responsável num card branco; dados da ação
+   * no card escuro ("Ação com prazo vencido").
+   */
+  function htmlFollowUp(opts) {
+    opts = opts || {};
+    var plano = opts.plano || {};
+    var dec = opts.dec || {};
+    var hoje = opts.hoje;
+    var prazo = opts.prazo || formatarDataBr(paraData(plano.prazo));
+    var emailPessoa = texto(opts.email || dec.email || plano.email);
+    var logoSrc = texto(opts.logoSrc);
+    var atraso = dec.diasAtraso != null ? dec.diasAtraso + ' dia(s)' : '';
+    if (atraso && hoje) atraso += ' em ' + formatarDataBr(paraData(hoje));
+
+    var marca = logoSrc
+      ? ('<img src="' + escaparHtml(logoSrc) + '" alt="Avery Dennison" width="120" height="28" ' +
+        'style="height:28px;width:auto;border:0;vertical-align:middle;margin-right:12px">' )
+      : '';
+    marca += '<span style="color:#E4002B;font-size:22px;font-weight:600;letter-spacing:-0.03em;' +
+      'font-family:Segoe UI,Arial,sans-serif;vertical-align:middle">OPSHUB</span>';
+
+    return [
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;margin:0;padding:0">',
+      '<tr><td align="center" style="padding:28px 16px;background:#ffffff">',
+      '<table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%">',
+      '<tr><td style="padding:0 0 14px">',
+      '<div style="background:#ffffff;border:1px solid #E8E4DF;border-radius:12px;padding:16px 20px;' +
+        'font-family:Segoe UI,Arial,sans-serif">',
+      marca,
+      '</div></td></tr>',
+      emailPessoa
+        ? ('<tr><td style="padding:0 0 16px"><div style="display:inline-block;background:#ffffff;' +
+          'border:1px solid #E8E4DF;border-radius:10px;padding:8px 14px;' +
+          'font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#1A1918">' +
+          escaparHtml(emailPessoa) + '</div></td></tr>')
+        : '',
+      '<tr><td>',
+      '<div style="background:#10141C;border:1px solid #2A3142;border-radius:16px;overflow:hidden;' +
+        'font-family:Segoe UI,Arial,sans-serif;color:#F4F6FA">',
+      '<div style="background:#E4002B;height:6px;line-height:6px;font-size:0">&nbsp;</div>',
+      '<div style="padding:28px">',
+      '<h1 style="font-size:22px;margin:0 0 8px;font-weight:600;letter-spacing:-0.03em;color:#F4F6FA">Ação com prazo vencido</h1>',
+      '<p style="color:#A8B2C5;margin:0 0 20px;font-size:14px;line-height:1.5">Este follow-up é enviado a partir de 1 dia de atraso, uma vez por dia, até o prazo ser reprogramado.</p>',
+      '<table style="width:100%;border-collapse:collapse">',
+      linhaHtmlFollowUp_('Tema', plano.tema),
+      linhaHtmlFollowUp_('Divisão', plano.divisao),
+      linhaHtmlFollowUp_('Área', plano.area),
+      linhaHtmlFollowUp_('O quê?', plano.oque),
+      linhaHtmlFollowUp_('Como', plano.como),
+      linhaHtmlFollowUp_('Responsável', plano.responsavel),
+      linhaHtmlFollowUp_('Prazo', prazo),
+      linhaHtmlFollowUp_('Atraso', atraso),
+      linhaHtmlFollowUp_('Status', plano.status),
+      linhaHtmlFollowUp_('Comentários', plano.comentarios),
+      '</table>',
+      '<p style="color:#6E7890;font-size:12px;margin:24px 0 0">Reprograme a data na planilha de origem para interromper estes e-mails.</p>',
+      '</div></div>',
+      '</td></tr></table>',
+      '</td></tr></table>',
+    ].join('');
+  }
+
   return {
     COLUNAS_PLANO: COLUNAS_PLANO,
     texto: texto,
@@ -543,6 +620,8 @@ var Logica = (function () {
     partesPasta: partesPasta,
     montarArvore: montarArvore,
     separarPorNegocio: separarPorNegocio,
+    htmlFollowUp: htmlFollowUp,
+    escaparHtml: escaparHtml,
   };
 })();
 

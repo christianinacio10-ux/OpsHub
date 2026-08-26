@@ -131,4 +131,20 @@ var cab = Logica.escolherLinhaCabecalho([
 assert.strictEqual(cab.linha, 2);
 assert.strictEqual(cab.mapa.oque, 3);
 
+var htmlMail = Logica.htmlFollowUp({
+  plano: {
+    tema: 'EHS', divisao: 'Operations', area: 'EHS', oque: 'LOTO',
+    como: 'Treinar', responsavel: 'Ana', status: 'Atrasado', comentarios: '',
+  },
+  dec: { email: 'ana@avery.com', diasAtraso: 2 },
+  hoje: hoje,
+  logoSrc: 'cid:logoAvery',
+});
+assert.ok(htmlMail.indexOf('#07080C') === -1);
+assert.ok(htmlMail.indexOf('background:#ffffff') !== -1);
+assert.ok(htmlMail.indexOf('OPSHUB') !== -1);
+assert.ok(htmlMail.indexOf('Ação com prazo vencido') !== -1);
+assert.ok(htmlMail.indexOf('ana@avery.com') !== -1);
+assert.ok(htmlMail.indexOf('cid:logoAvery') !== -1);
+
 console.log('ok — ' + module.filename);

@@ -98,7 +98,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.2.0' },
+        app: { nome: 'OpsHub', versao: '1.2.1' },
         usuario: { email: 'plant.manager@averydennison.com', nome: 'Plant Manager', iniciais: 'PM' },
         gatilho: gatilho,
       };
