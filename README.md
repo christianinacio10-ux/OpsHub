@@ -40,7 +40,7 @@ node testes/empacotar.js
 | `_CONFIG` | Timezone, hora do gatilho, nome do remetente, temas de follow-up |
 | `EMAILS_ENVIADOS` / `_LOG` | Auditoria (ocultas) |
 
-A primeira instalação já cria departamentos típicos de planta e alguns links de exemplo. Troque as URLs pelos controles reais.
+A primeira instalação (quando as abas ainda não existem) cria departamentos típicos de planta e alguns links de exemplo. Se você apagar esses cadastros, o painel **não** os recoloca — o vazio é respeitado. Troque as URLs pelos controles reais, ou cadastre os seus.
 
 ## Importar planos de outras Sheets
 
