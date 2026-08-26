@@ -504,6 +504,30 @@ table.dados tr.risco td.principal { color: var(--tinta); }
 .linha-admin strong { display: block; font-weight: 520; }
 .linha-admin small { color: var(--tinta-3); }
 
+.botao.ocupado { pointer-events: none; opacity: .72; }
+.botao.ocupado svg { animation: giro 0.8s linear infinite; }
+@keyframes giro { to { transform: rotate(360deg); } }
+
+.overlay-carga {
+  position: fixed; inset: 0; z-index: 35;
+  background: rgba(12, 11, 10, .42);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+}
+.overlay-carga[hidden] { display: none !important; }
+.overlay-carga-caixa {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--superficie); border: 1px solid var(--linha-forte);
+  color: var(--tinta); padding: 14px 18px; border-radius: 14px;
+  box-shadow: var(--sombra-3); font-size: 13.5px;
+}
+.overlay-carga-giro {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--linha-forte);
+  border-top-color: var(--marca);
+  animation: giro 0.7s linear infinite;
+}
+
 @media (max-width: 980px) {
   .casca { grid-template-columns: 1fr; }
   .lateral { display: none; }

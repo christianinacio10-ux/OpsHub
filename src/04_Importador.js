@@ -1,9 +1,9 @@
 function importarTodasAsFontes() {
   instalarSistema();
-  var fontes = Cadastros.fontes().filter(function (f) { return Logica.sim(f.ativo); });
+  var fontes = Cadastros.fontes().filter(function (f) { return Logica.fonteAtiva(f); });
   if (!fontes.length) {
     Repo.registrarLog('importar', 'OK', 'Nenhuma fonte ativa.');
-    return { fontes: 0, linhas: 0, avisos: ['Nenhuma fonte ativa em FONTES_PLANOS.'] };
+    return { fontes: 0, linhas: 0, avisos: ['Nenhuma fonte ativa em Fontes de importação. Cadastre a URL da Google Sheet lá.'] };
   }
 
   var avisos = [];
@@ -17,12 +17,15 @@ function importarTodasAsFontes() {
       total += novos.length;
       Repo.atualizarRegistro(ABAS.fontes, fonte._linha, {
         ultima_execucao: new Date(),
-        ultimo_status: 'OK',
+        ultimo_status: novos.length ? 'OK' : 'VAZIO',
         ultimo_detalhe: novos.length + ' linhas',
       });
+      if (!novos.length) {
+        avisos.push((fonte.nome || fonte.id) + ': a planilha abriu, mas nenhuma linha de ação foi lida. Confira o cabeçalho (Tema, O quê?, …).');
+      }
     } catch (e) {
       var msg = e && e.message ? e.message : String(e);
-      avisos.push(fonte.nome + ': ' + msg);
+      avisos.push((fonte.nome || fonte.id) + ': ' + msg);
       Repo.atualizarRegistro(ABAS.fontes, fonte._linha, {
         ultima_execucao: new Date(),
         ultimo_status: 'ERRO',
@@ -51,35 +54,69 @@ function importarTodasAsFontes() {
 
   Repo.substituirAba(ABAS.planos, final);
   Repo.limparMemoria();
-  Repo.registrarLog('importar', 'OK', total + ' linhas de ' + fontes.length + ' fontes');
+  Repo.registrarLog('importar', avisos.length ? 'AVISO' : 'OK', total + ' linhas de ' + fontes.length + ' fontes');
   return { fontes: fontes.length, linhas: total, avisos: avisos };
 }
 
-function lerFonte_(fonte) {
-  var id = Logica.extrairIdPlanilha(fonte.referencia);
-  if (!id) throw new Error('Referencia invalida. Cole a URL ou o ID da planilha.');
-
-  var ss;
-  try {
-    ss = SpreadsheetApp.openById(id);
-  } catch (e) {
-    throw new Error('Sem acesso a planilha. Compartilhe com a conta que autorizou o OpsHub.');
+function abrirPlanilhaOrigem_(ref) {
+  var s = Logica.texto(ref);
+  if (!s) throw new Error('Cole a URL ou o ID da Google Sheet na fonte.');
+  if (/\/spreadsheets\/d\/e\//.test(s)) {
+    throw new Error('Esse link é o de publicação (/d/e/…), não o da planilha. Abra o arquivo em docs.google.com/spreadsheets/d/ID/edit e copie essa URL.');
   }
+  if (/^https?:\/\//i.test(s)) {
+    try { return SpreadsheetApp.openByUrl(s); } catch (e1) {
+      var idUrl = Logica.extrairIdPlanilha(s);
+      if (idUrl) {
+        try { return SpreadsheetApp.openById(idUrl); } catch (e2) {}
+      }
+      throw new Error('Sem acesso à planilha. Compartilhe com a conta que autorizou o OpsHub (pelo menos leitura).');
+    }
+  }
+  var id = Logica.extrairIdPlanilha(s);
+  if (!id) throw new Error('Referência inválida. Cole a URL completa da Google Sheet.');
+  try {
+    return SpreadsheetApp.openById(id);
+  } catch (e) {
+    throw new Error('Sem acesso à planilha. Compartilhe com a conta que autorizou o OpsHub.');
+  }
+}
 
+function abaOrigem_(ss, fonte) {
   var nomeAba = Logica.texto(fonte.aba);
-  var aba = nomeAba ? ss.getSheetByName(nomeAba) : ss.getSheets()[0];
-  if (!aba) throw new Error('Aba "' + nomeAba + '" nao encontrada.');
+  if (nomeAba) {
+    var porNome = ss.getSheetByName(nomeAba);
+    if (porNome) return porNome;
+    throw new Error('Aba "' + nomeAba + '" não encontrada em ' + ss.getName() + '.');
+  }
+  var gid = Logica.extrairGid(fonte.referencia);
+  if (gid !== null && !isNaN(gid)) {
+    var folhas = ss.getSheets();
+    for (var i = 0; i < folhas.length; i++) {
+      if (folhas[i].getSheetId() === gid) return folhas[i];
+    }
+  }
+  return ss.getSheets()[0];
+}
 
-  var cabLinha = Math.max(1, Number(fonte.linha_cabecalho || 1) || 1);
+function lerFonte_(fonte) {
+  var ss = abrirPlanilhaOrigem_(fonte.referencia);
+  var aba = abaOrigem_(ss, fonte);
+  var cabLinhaPref = Math.max(1, Number(fonte.linha_cabecalho || 1) || 1);
   var ultima = aba.getLastRow();
   var ultimaCol = aba.getLastColumn();
-  if (ultima < cabLinha + 1) return [];
+  if (ultima < 2 || ultimaCol < 1) return [];
 
-  var cabecalhos = aba.getRange(cabLinha, 1, 1, ultimaCol).getValues()[0];
-  var mapa = Logica.mapearColunas(cabecalhos);
-  if (mapa.oque === undefined && mapa.tema === undefined) {
-    throw new Error('Nao achei as colunas Tema / O quê?. Confira o cabecalho da aba origem.');
+  var scan = Math.min(8, ultima);
+  var topo = aba.getRange(1, 1, scan, ultimaCol).getValues();
+  var escolhido = Logica.escolherLinhaCabecalho(topo, cabLinhaPref);
+  if (escolhido.score < 2 && escolhido.mapa.oque === undefined && escolhido.mapa.tema === undefined) {
+    throw new Error('Não achei as colunas Tema / O quê? na aba "' + aba.getName() + '". Confira o cabeçalho.');
   }
+
+  var cabLinha = escolhido.linha;
+  var mapa = escolhido.mapa;
+  if (ultima < cabLinha + 1) return [];
 
   var qtd = ultima - cabLinha;
   var valores = aba.getRange(cabLinha + 1, 1, qtd, ultimaCol).getValues();

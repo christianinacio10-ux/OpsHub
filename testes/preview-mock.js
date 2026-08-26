@@ -129,6 +129,11 @@
       return hub();
     },
     apiImportarAgora: function () { return { fontes: fontes.length, linhas: planos.length, avisos: [] }; },
+    apiAtualizar: function () {
+      var h = hub();
+      h.importacao = { fontes: fontes.length, linhas: planos.length, avisos: [] };
+      return h;
+    },
     apiEnviarFollowUpsAgora: function () { return { enviados: 1, pulados: planos.length - 1, erros: 0 }; },
     apiCriarGatilho: function () {
       gatilho = { ativo: true, quantidade: 1, hora: 8 };
@@ -157,7 +162,8 @@
         var err = this._err;
         try {
           var out = api[nome].apply(null, args);
-          setTimeout(function () { ok(out); }, 30);
+          var delay = (nome === 'apiAtualizar') ? 700 : 40;
+          setTimeout(function () { ok(out); }, delay);
         } catch (e) {
           setTimeout(function () { err(e); }, 30);
         }

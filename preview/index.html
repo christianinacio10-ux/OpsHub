@@ -510,6 +510,30 @@ table.dados tr.risco td.principal { color: var(--tinta); }
 .linha-admin strong { display: block; font-weight: 520; }
 .linha-admin small { color: var(--tinta-3); }
 
+.botao.ocupado { pointer-events: none; opacity: .72; }
+.botao.ocupado svg { animation: giro 0.8s linear infinite; }
+@keyframes giro { to { transform: rotate(360deg); } }
+
+.overlay-carga {
+  position: fixed; inset: 0; z-index: 35;
+  background: rgba(12, 11, 10, .42);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+}
+.overlay-carga[hidden] { display: none !important; }
+.overlay-carga-caixa {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--superficie); border: 1px solid var(--linha-forte);
+  color: var(--tinta); padding: 14px 18px; border-radius: 14px;
+  box-shadow: var(--sombra-3); font-size: 13.5px;
+}
+.overlay-carga-giro {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--linha-forte);
+  border-top-color: var(--marca);
+  animation: giro 0.7s linear infinite;
+}
+
 @media (max-width: 980px) {
   .casca { grid-template-columns: 1fr; }
   .lateral { display: none; }
@@ -589,6 +613,12 @@ table.dados tr.risco td.principal { color: var(--tinta); }
   </aside>
 
   <div class="toast" id="toast" hidden></div>
+  <div class="overlay-carga" id="overlay-carga" hidden>
+    <div class="overlay-carga-caixa" role="status" aria-live="polite">
+      <span class="overlay-carga-giro" aria-hidden="true"></span>
+      <span id="overlay-texto">Atualizando…</span>
+    </div>
+  </div>
 
   <script>
     var PARAMETROS = {}; var PREVIEW = true;
@@ -724,6 +754,11 @@ table.dados tr.risco td.principal { color: var(--tinta); }
       return hub();
     },
     apiImportarAgora: function () { return { fontes: fontes.length, linhas: planos.length, avisos: [] }; },
+    apiAtualizar: function () {
+      var h = hub();
+      h.importacao = { fontes: fontes.length, linhas: planos.length, avisos: [] };
+      return h;
+    },
     apiEnviarFollowUpsAgora: function () { return { enviados: 1, pulados: planos.length - 1, erros: 0 }; },
     apiCriarGatilho: function () {
       gatilho = { ativo: true, quantidade: 1, hora: 8 };
@@ -752,7 +787,8 @@ table.dados tr.risco td.principal { color: var(--tinta); }
         var err = this._err;
         try {
           var out = api[nome].apply(null, args);
-          setTimeout(function () { ok(out); }, 30);
+          var delay = (nome === 'apiAtualizar') ? 700 : 40;
+          setTimeout(function () { ok(out); }, delay);
         } catch (e) {
           setTimeout(function () { err(e); }, 30);
         }
@@ -779,6 +815,7 @@ table.dados tr.risco td.principal { color: var(--tinta); }
     var ICONES = {
       menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
       tela: '<path d="M8 3H4v4M16 3h4v4M8 21H4v-4M16 21h4v-4"/>',
+      atualizar: '<path d="M4.5 12a7.5 7.5 0 0 1 12.7-5.4M19.5 12a7.5 7.5 0 0 1-12.7 5.4"/><path d="M17 3.5v4h-4M7 20.5v-4h4"/>',
       producao: '<path d="M4 19h16M6 19V9l5-4 5 4v10M10 19v-5h4v5"/>',
     qualidade: '<path d="M12 3l8 4v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/>',
     manutencao: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-1.8-1.8 2.1-2.1z"/>',
@@ -820,6 +857,39 @@ table.dados tr.risco td.principal { color: var(--tinta); }
     el.textContent = msg;
     clearTimeout(toast._t);
     toast._t = setTimeout(function () { el.hidden = true; }, 4200);
+  }
+
+  function ocupar(ligado, texto) {
+    Estado.carregando = !!ligado;
+    var overlay = $('overlay-carga');
+    var botao = $('botao-atualizar');
+    if (overlay) overlay.hidden = !ligado;
+    if ($('overlay-texto') && texto) $('overlay-texto').textContent = texto;
+    if (botao) {
+      botao.disabled = !!ligado;
+      if (ligado) botao.classList.add('ocupado');
+      else botao.classList.remove('ocupado');
+    }
+    if (ligado) setPilula(null, texto || 'Atualizando');
+  }
+
+  function mensagemImportacao(imp) {
+    if (!imp) return '';
+    var avisos = (imp.avisos || []).join(' · ');
+    if (!imp.fontes) return avisos || 'Nenhuma fonte de plano cadastrada.';
+    var base = imp.linhas
+      ? ('Planos atualizados: ' + imp.linhas + ' linha' + (imp.linhas === 1 ? '' : 's') + ' de ' + imp.fontes + ' fonte' + (imp.fontes === 1 ? '' : 's') + '.')
+      : 'A fonte foi lida, mas nenhuma ação veio. Confira o cabeçalho da planilha origem.';
+    return avisos ? base + ' ' + avisos : base;
+  }
+
+  function aplicarHub(hub, imp) {
+    Estado.hub = hub;
+    ocupar(false);
+    setPilula(true, 'Atualizado');
+    render();
+    var msg = mensagemImportacao(imp || hub.importacao);
+    if (msg) toast(msg, !!(imp || hub.importacao) && (imp || hub.importacao).linhas === 0);
   }
 
   function setPilula(ok, texto) {
@@ -1220,7 +1290,10 @@ table.dados tr.risco td.principal { color: var(--tinta); }
         $('casca').classList.toggle('sidebar-recolhida');
         return;
       }
-      if (e.target.closest('#botao-atualizar')) { carregar(true); return; }
+      if (e.target.closest('#botao-atualizar')) {
+        atualizarTudo();
+        return;
+      }
       if (e.target.closest('#botao-tela')) {
         if (!document.fullscreenElement) document.documentElement.requestFullscreen();
         else document.exitFullscreen();
@@ -1228,11 +1301,7 @@ table.dados tr.risco td.principal { color: var(--tinta); }
       }
       if (e.target.closest('#form-cancelar')) { Estado.form = {}; render(); return; }
       if (e.target.closest('#btn-importar')) {
-        setPilula(null, 'Importando');
-        chamar('apiImportarAgora').then(function (r) {
-          toast('Importação: ' + (r.linhas || 0) + ' linhas' + (r.avisos && r.avisos.length ? ' · ' + r.avisos.join('; ') : ''));
-          return carregar(true);
-        }).catch(function (err) { toast(err.message || err, true); });
+        atualizarTudo();
         return;
       }
       if (e.target.closest('#btn-followup')) {
@@ -1286,9 +1355,15 @@ table.dados tr.risco td.principal { color: var(--tinta); }
       var d = lerForm(form);
       var api = Estado.vista === 'dept' ? 'apiSalvarDepartamento'
         : Estado.vista === 'ctrl' ? 'apiSalvarControle' : 'apiSalvarFonte';
+      if (api === 'apiSalvarFonte') ocupar(true, 'Importando planos…');
       chamar(api, d).then(function (hub) {
-        Estado.hub = hub; Estado.form = {}; render(); toast('Salvo.');
-      }).catch(function (err) { toast(err.message || err, true); });
+        Estado.form = {};
+        aplicarHub(hub, hub.importacao);
+        if (api !== 'apiSalvarFonte') toast('Salvo.');
+      }).catch(function (err) {
+        ocupar(false);
+        toast(err.message || err, true);
+      });
     });
 
     document.addEventListener('input', function (e) {
@@ -1327,16 +1402,25 @@ table.dados tr.risco td.principal { color: var(--tinta); }
     }
   }
 
-  function carregar(silencioso) {
-    Estado.carregando = true;
-    if (!silencioso) setPilula(null, 'Sincronizando');
-    return chamar('apiHub').then(function (hub) {
-      Estado.hub = hub;
-      Estado.carregando = false;
-      setPilula(true, 'Atualizado');
-      render();
+  function atualizarTudo() {
+    if (Estado.carregando) return;
+    ocupar(true, 'Importando planos…');
+    return chamar('apiAtualizar').then(function (hub) {
+      aplicarHub(hub, hub.importacao);
     }).catch(function (err) {
-      Estado.carregando = false;
+      ocupar(false);
+      setPilula(false, 'Erro');
+      toast(err.message || String(err), true);
+    });
+  }
+
+  function carregar() {
+    if (Estado.carregando) return;
+    ocupar(true, 'Carregando…');
+    return chamar('apiHub').then(function (hub) {
+      aplicarHub(hub);
+    }).catch(function (err) {
+      ocupar(false);
       setPilula(false, 'Erro');
       toast(err.message || String(err), true);
     });
@@ -1346,7 +1430,7 @@ table.dados tr.risco td.principal { color: var(--tinta); }
     ligar();
     $('botao-sidebar').innerHTML = svg('menu');
     $('botao-tela').innerHTML = svg('tela');
-    $('botao-atualizar').innerHTML = svg('pcp') + ' Atualizar';
+    $('botao-atualizar').innerHTML = svg('atualizar') + ' Atualizar';
     chamar('apiContexto').then(function (ctx) {
       Estado.contexto = ctx;
       $('usuario-nome').textContent = ctx.usuario.nome;
