@@ -1,6 +1,6 @@
 /**
- * Configuracao central. Nomes de abas, esquema e sementes da primeira
- * instalacao. Cadastros reais (links, fontes, planos) vivem na planilha.
+ * Configuracao central. Nomes de abas, esquema e sementes so da primeira
+ * criacao das abas. Cadastros reais (links, fontes, planos) vivem na planilha.
  */
 var APP = {
   nome: 'OpsHub',
