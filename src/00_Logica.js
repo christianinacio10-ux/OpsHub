@@ -238,10 +238,37 @@ var Logica = (function () {
     }).join(' ');
   }
 
+  function itensDeLista_(valor) {
+    var extraido = [];
+    var n = valor && valor.length;
+    if (typeof n === 'number') {
+      for (var i = 0; i < n; i++) extraido.push(texto(valor[i]));
+      return extraido.filter(Boolean);
+    }
+    var keys = [];
+    for (var k in valor) {
+      if (Object.prototype.hasOwnProperty.call(valor, k) && /^\d+$/.test(k)) keys.push(k);
+    }
+    if (!keys.length) return [];
+    keys.sort(function (a, b) { return Number(a) - Number(b); });
+    return keys.map(function (k) { return texto(valor[k]); }).filter(Boolean);
+  }
+
+  /**
+   * google.script.run nao entrega Array de verdade (vira objeto com
+   * indices, Java List, ou JSON parseado). Por isso o cliente manda
+   * { json: '["Tema"]' } e daqui extraimos sempre uma lista JS.
+   */
   function parseTemasFollowUp(valor) {
-    if (Array.isArray(valor)) return valor.map(texto).filter(Boolean);
+    if (valor == null || valor === '') return [];
+    if (typeof valor === 'object') {
+      if (typeof valor.json === 'string') return parseTemasFollowUp(valor.json);
+      if (Array.isArray(valor)) return valor.map(texto).filter(Boolean);
+      return itensDeLista_(valor);
+    }
     var s = texto(valor);
-    if (!s) return [];
+    if (s.indexOf('OPSHUB_TEMAS:') === 0) s = s.slice(13);
+    if (!s || s === '[]') return [];
     if (s.charAt(0) === '[') {
       try {
         var arr = JSON.parse(s);
