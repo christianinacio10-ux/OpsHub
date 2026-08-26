@@ -73,6 +73,12 @@
   </aside>
 
   <div class="toast" id="toast" hidden></div>
+  <div class="overlay-carga" id="overlay-carga" hidden>
+    <div class="overlay-carga-caixa" role="status" aria-live="polite">
+      <span class="overlay-carga-giro" aria-hidden="true"></span>
+      <span id="overlay-texto">Atualizando…</span>
+    </div>
+  </div>
 
   <script>
     var PARAMETROS = <?!= JSON.stringify(parametros || {}) ?>;

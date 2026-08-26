@@ -14,11 +14,11 @@ var Logica = (function () {
     tema: ['tema', 'theme', 'assunto'],
     divisao: ['divisao', 'divisão', 'division', 'bu'],
     area: ['area', 'área', 'setor', 'department', 'departamento'],
-    oque: ['oque', 'o que', 'o quê', 'o quê?', 'o que?', 'what', 'acao', 'ação', 'descricao', 'descrição', 'titulo', 'título'],
-    como: ['como', 'how', 'plano', 'contramedida', 'acao corretiva', 'ação corretiva'],
-    responsavel: ['responsavel', 'responsável', 'owner', 'dono', 'resp'],
+    oque: ['oque', 'o que', 'o quê', 'what', 'descricao', 'descrição', 'titulo', 'título', 'action item'],
+    como: ['como', 'how', 'contramedida', 'acao corretiva', 'ação corretiva', 'countermeasure'],
+    responsavel: ['responsavel', 'responsável', 'owner', 'dono', 'pic'],
     email: ['email', 'e-mail', 'e mail', 'mail', 'correio'],
-    prazo: ['prazo', 'due', 'due date', 'deadline', 'data', 'data limite', 'vencimento'],
+    prazo: ['prazo', 'due date', 'deadline', 'data limite', 'data prazo', 'vencimento', 'target date'],
     status: ['status', 'situacao', 'situação', 'estado'],
     comentarios: ['comentarios', 'comentários', 'comments', 'obs', 'observacao', 'observação', 'observacoes', 'observações'],
     id: ['id', 'codigo', 'código', 'chave'],
@@ -56,6 +56,16 @@ var Logica = (function () {
     return slug(texto(v).replace(/\?/g, ''));
   }
 
+  function aliasBate(chave, alias) {
+    var a = cabecalhoChave(alias);
+    if (!chave || !a) return false;
+    if (chave === a) return true;
+    if (a.length >= 5 && (chave.indexOf(a + ' ') === 0 || chave.indexOf(' ' + a + ' ') !== -1 || chave.slice(-a.length - 1) === ' ' + a)) {
+      return true;
+    }
+    return false;
+  }
+
   function mapearColunas(cabecalhos) {
     var mapa = {};
     var usados = {};
@@ -66,7 +76,7 @@ var Logica = (function () {
         if (mapa[campo] !== undefined) return;
         var lista = ALIASES[campo];
         for (var k = 0; k < lista.length; k++) {
-          if (chave === lista[k] || chave.indexOf(lista[k]) === 0) {
+          if (aliasBate(chave, lista[k])) {
             mapa[campo] = i;
             usados[i] = true;
             return;
@@ -75,6 +85,41 @@ var Logica = (function () {
       });
     });
     return mapa;
+  }
+
+  function pontuarMapa(mapa) {
+    var n = 0;
+    COLUNAS_PLANO.forEach(function (c) { if (mapa[c] !== undefined) n++; });
+    if (mapa.oque !== undefined) n += 2;
+    if (mapa.tema !== undefined) n += 1;
+    return n;
+  }
+
+  function escolherLinhaCabecalho(linhas, preferida) {
+    var pref = Math.max(1, Number(preferida || 1) || 1);
+    var melhor = null;
+    for (var i = 0; i < (linhas || []).length; i++) {
+      var mapa = mapearColunas(linhas[i]);
+      var cand = { linha: i + 1, mapa: mapa, score: pontuarMapa(mapa) };
+      if (!melhor || cand.score > melhor.score || (cand.score === melhor.score && cand.linha === pref)) {
+        melhor = cand;
+      }
+    }
+    if (!melhor) return { linha: pref, mapa: {}, score: 0 };
+    return melhor;
+  }
+
+  function fonteAtiva(f) {
+    var s = texto(f && f.ativo);
+    if (!s) return true;
+    var k = s.toLowerCase();
+    if (k === 'nao' || k === 'não' || k === 'no' || k === 'false' || k === '0' || k === 'inativo') return false;
+    return sim(s);
+  }
+
+  function extrairGid(ref) {
+    var m = texto(ref).match(/[?&#]gid=([0-9]+)/);
+    return m ? Number(m[1]) : null;
   }
 
   /**
@@ -333,7 +378,10 @@ var Logica = (function () {
   function extrairIdPlanilha(ref) {
     var s = texto(ref);
     if (!s) return '';
+    if (/\/spreadsheets\/d\/e\//.test(s)) return '';
     var m = s.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (m) return m[1];
+    m = s.match(/[?&]id=([a-zA-Z0-9-_]{20,})/);
     if (m) return m[1];
     m = s.match(/^[a-zA-Z0-9-_]{20,}$/);
     return m ? s : '';
@@ -379,6 +427,9 @@ var Logica = (function () {
     slug: slug,
     emailValido: emailValido,
     mapearColunas: mapearColunas,
+    escolherLinhaCabecalho: escolherLinhaCabecalho,
+    fonteAtiva: fonteAtiva,
+    extrairGid: extrairGid,
     paraData: paraData,
     ymd: ymd,
     formatarDataBr: formatarDataBr,

@@ -75,4 +75,22 @@ var ui = Logica.prepararAcaoParaUi(planos[0], hoje);
 assert.strictEqual(ui.tem_email, false);
 assert.ok(ui.tooltip_email.indexOf('não há e-mail') !== -1 || ui.tooltip_email.indexOf('nao ha e-mail') !== -1 || ui.tooltip_email.indexOf('e-mail cadastrado') !== -1);
 
+assert.strictEqual(Logica.fonteAtiva({ ativo: '' }), true);
+assert.strictEqual(Logica.fonteAtiva({ ativo: 'NAO' }), false);
+assert.strictEqual(Logica.fonteAtiva({ ativo: 'SIM' }), true);
+assert.strictEqual(Logica.extrairGid('https://docs.google.com/spreadsheets/d/abcDEF123_-xyzxyzxyzxyz/edit#gid=42'), 42);
+assert.strictEqual(Logica.extrairIdPlanilha('https://docs.google.com/spreadsheets/d/e/2PACX-xxx/pubhtml'), '');
+
+var mapaAcao = Logica.mapearColunas(['Tema', 'Ação corretiva', 'O quê?', 'Prazo']);
+assert.strictEqual(mapaAcao.como, 1);
+assert.strictEqual(mapaAcao.oque, 2);
+assert.strictEqual(mapaAcao.prazo, 3);
+
+var cab = Logica.escolherLinhaCabecalho([
+  ['Planos 2026', '', '', ''],
+  ['Tema', 'Divisão', 'Área', 'O quê?', 'Como', 'Responsável', 'E-mail', 'Prazo', 'Status', 'Comentários'],
+], 1);
+assert.strictEqual(cab.linha, 2);
+assert.strictEqual(cab.mapa.oque, 3);
+
 console.log('ok — ' + module.filename);

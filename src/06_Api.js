@@ -68,7 +68,7 @@ function apiHub() {
       referencia: Logica.texto(f.referencia),
       aba: Logica.texto(f.aba),
       linha_cabecalho: f.linha_cabecalho || 1,
-      ativo: Logica.sim(f.ativo),
+      ativo: Logica.fonteAtiva(f),
       ultima_execucao: f.ultima_execucao ? String(f.ultima_execucao) : '',
       ultimo_status: Logica.texto(f.ultimo_status),
       ultimo_detalhe: Logica.texto(f.ultimo_detalhe),
@@ -104,10 +104,11 @@ function apiExcluirControle(id) {
 }
 
 function apiSalvarFonte(reg) {
-  if (reg && reg.referencia && !Logica.extrairIdPlanilha(reg.referencia)) {
+  if (reg && reg.referencia && !Logica.extrairIdPlanilha(reg.referencia) && !/^https?:\/\//i.test(String(reg.referencia || ''))) {
     throw new Error('Cole a URL completa ou o ID da Google Sheet.');
   }
-  return salvarEntidade_(ABAS.fontes, reg, ['id', 'nome', 'referencia', 'aba', 'linha_cabecalho', 'ativo'], 'F');
+  salvarEntidade_(ABAS.fontes, reg, ['id', 'nome', 'referencia', 'aba', 'linha_cabecalho', 'ativo'], 'F');
+  return apiAtualizar();
 }
 
 function apiExcluirFonte(id) {
@@ -116,6 +117,13 @@ function apiExcluirFonte(id) {
 
 function apiImportarAgora() {
   return importarTodasAsFontes();
+}
+
+function apiAtualizar() {
+  var imp = importarTodasAsFontes();
+  var hub = apiHub();
+  hub.importacao = imp;
+  return hub;
 }
 
 function apiEnviarFollowUpsAgora() {
@@ -139,7 +147,7 @@ function salvarEntidade_(abaNome, reg, campos, prefixo) {
     if (c === 'id') registro.id = id;
     else if (reg[c] !== undefined) registro[c] = reg[c];
   });
-  if (registro.ativo === true || registro.ativo === 'SIM') registro.ativo = 'SIM';
+  if (registro.ativo === true || registro.ativo === 'SIM' || registro.ativo === undefined || registro.ativo === '') registro.ativo = 'SIM';
   if (registro.ativo === false || registro.ativo === 'NAO' || registro.ativo === 'NÃO') registro.ativo = 'NAO';
 
   var lista = Repo.ler(abaNome);
