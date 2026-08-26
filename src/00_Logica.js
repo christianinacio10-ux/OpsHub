@@ -255,32 +255,33 @@ var Logica = (function () {
   }
 
   /**
-   * Exemplos so entram na primeira criacao da aba. Aba ja existente
-   * e vazia (o usuario apagou os cadastros) permanece vazia.
+   * google.script.run nao entrega Array de verdade e ainda parseia
+   * string que parece JSON. O cliente manda "TEMAS\\nNome1\\nNome2",
+   * um texto que o GAS nao transforma sozinho.
    */
-  function deveAplicarSemente(abasRecemCriadas, nomeAba, quantidade) {
-    if (!nomeAba) return false;
-    var recem = abasRecemCriadas || [];
-    var criada = false;
-    for (var i = 0; i < recem.length; i++) {
-      if (recem[i] === nomeAba) { criada = true; break; }
-    }
-    return criada && !(Number(quantidade) > 0);
+  function serializarTemasFollowUp(lista) {
+    var nomes = [];
+    (lista || []).forEach(function (t) {
+      var s = texto(t);
+      if (s) nomes.push(s);
+    });
+    return 'TEMAS\n' + nomes.join('\n');
   }
 
-  /**
-   * google.script.run nao entrega Array de verdade (vira objeto com
-   * indices, Java List, ou JSON parseado). Por isso o cliente manda
-   * { json: '["Tema"]' } e daqui extraimos sempre uma lista JS.
-   */
   function parseTemasFollowUp(valor) {
     if (valor == null || valor === '') return [];
     if (typeof valor === 'object') {
-      if (typeof valor.json === 'string') return parseTemasFollowUp(valor.json);
+      if (valor.json != null) return parseTemasFollowUp(valor.json);
       if (Array.isArray(valor)) return valor.map(texto).filter(Boolean);
       return itensDeLista_(valor);
     }
-    var s = texto(valor);
+    var s = String(valor).replace(/\u00a0/g, ' ');
+    if (s.indexOf('TEMAS') === 0 && (s.length === 5 || s.charAt(5) === '\n' || s.charAt(5) === '\t')) {
+      s = s.slice(5).replace(/^[\n\t]/, '');
+      if (!s.trim()) return [];
+      return s.split(/[\n\t]/).map(texto).filter(Boolean);
+    }
+    s = texto(s);
     if (s.indexOf('OPSHUB_TEMAS:') === 0) s = s.slice(13);
     if (!s || s === '[]') return [];
     if (s.charAt(0) === '[') {
@@ -682,7 +683,7 @@ var Logica = (function () {
     tituloStatus: tituloStatus,
     classeStatus: classeStatus,
     parseTemasFollowUp: parseTemasFollowUp,
-    deveAplicarSemente: deveAplicarSemente,
+    serializarTemasFollowUp: serializarTemasFollowUp,
     temaFollowUpHabilitado: temaFollowUpHabilitado,
     elegivelFollowUp: elegivelFollowUp,
     linhaFonteParaPlano: linhaFonteParaPlano,

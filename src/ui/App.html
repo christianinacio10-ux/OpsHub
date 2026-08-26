@@ -87,12 +87,19 @@
   }
 
   function chamar(nome) {
-    var args = Array.prototype.slice.call(arguments, 1);
+    var a = Array.prototype.slice.call(arguments, 1);
     return new Promise(function (resolve, reject) {
-      var runner = google.script.run
+      var r = google.script.run
         .withSuccessHandler(resolve)
         .withFailureHandler(reject);
-      runner[nome].apply(runner, args);
+      if (typeof r[nome] !== 'function') {
+        reject(new Error('API indisponível: ' + nome));
+        return;
+      }
+      if (a.length === 0) r[nome]();
+      else if (a.length === 1) r[nome](a[0]);
+      else if (a.length === 2) r[nome](a[0], a[1]);
+      else r[nome](a[0], a[1], a[2]);
     });
   }
 
@@ -873,19 +880,23 @@
       else proximo.push(atuais[i]);
     }
     if (!ligado) proximo.push(nome);
-    var valor = proximo.length === temas.length ? [] : proximo;
+    var valor = proximo.slice();
     var anterior = listaTemas(Estado.hub.temasFollowUp);
     Estado.hub.temasFollowUp = valor.slice();
     Estado.configAba = 'mail';
     render();
-    chamar('apiSalvarTemasFollowUp', { json: JSON.stringify(valor) }).then(function (hub) {
+    chamar('apiSalvarTemasFollowUp', 'TEMAS\n' + valor.join('\n')).then(function (hub) {
       Estado.configAba = 'mail';
-      if (hub && Object.prototype.hasOwnProperty.call(hub, 'temasFollowUp')) {
-        Estado.hub.temasFollowUp = listaTemas(hub.temasFollowUp);
+      if (!hub) return;
+      var voltou = listaTemas(hub.temasFollowUp);
+      if (valor.length && !voltou.length) {
+        Estado.hub.temasFollowUp = valor.slice();
         render();
-      } else if (hub) {
-        aplicarHub(hub);
+        toast('Não foi possível gravar os temas de follow-up.', true);
+        return;
       }
+      Estado.hub.temasFollowUp = voltou;
+      render();
     }).catch(function (err) {
       Estado.hub.temasFollowUp = anterior;
       Estado.configAba = 'mail';
