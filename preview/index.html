@@ -298,7 +298,7 @@ body { overflow: hidden; }
 .grade-dept {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 10px; margin-bottom: 36px;
+  gap: 10px; margin-bottom: 12px;
 }
 .card-dept {
   text-align: left; cursor: pointer; font-family: var(--fonte);
@@ -340,12 +340,15 @@ body { overflow: hidden; }
   border: 1px solid var(--linha);
   border-radius: var(--raio);
   box-shadow: var(--sombra-1);
-  overflow: hidden;
+  overflow: visible;
 }
 .painel-topo {
   padding: 14px 16px; border-bottom: 1px solid var(--linha);
   display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
   background: rgba(255,255,255,.01);
+  position: relative;
+  z-index: 4;
+  border-radius: var(--raio) var(--raio) 0 0;
 }
 .busca {
   flex: 1; min-width: 220px; height: 36px;
@@ -382,11 +385,12 @@ table.dados td {
   vertical-align: top; color: var(--tinta-2);
   font-weight: 400;
 }
+table.dados tbody tr:nth-child(odd) td { background: var(--superficie); }
+table.dados tbody tr:nth-child(even) td { background: #161514; }
 table.dados tr:last-child td { border-bottom: 0; }
-table.dados tr:hover td { background: rgba(237,232,224,.025); }
+table.dados tbody tr:hover td { background: var(--superficie-3); }
 table.dados td.principal { color: var(--tinta); font-weight: 500; }
-table.dados tr.risco td { background: transparent; }
-table.dados tr.risco td.principal { color: var(--tinta); }
+table.dados tr.risco td { box-shadow: none; }
 
 .selo {
   display: inline-flex; align-items: center; gap: 7px;
@@ -528,6 +532,75 @@ table.dados tr.risco td.principal { color: var(--tinta); }
 .linha-admin strong { display: block; font-weight: 520; }
 .linha-admin small { color: var(--tinta-3); }
 
+.temas-barra { margin: 0 0 18px; }
+.temas-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-tema {
+  height: 32px; padding: 0 13px; border-radius: 999px;
+  border: 1px solid var(--linha); background: transparent;
+  color: var(--tinta-2); font-size: 12.5px; font-weight: 450;
+  cursor: pointer; font-family: var(--fonte);
+  transition: background var(--transicao), color var(--transicao), border-color var(--transicao);
+}
+.chip-tema:hover { background: rgba(237,232,224,.05); color: var(--tinta); border-color: var(--linha-forte); }
+.chip-tema.ativo {
+  background: rgba(237,232,224,.08);
+  border-color: var(--linha-forte);
+  color: var(--tinta);
+}
+.chip-tema.todos.ativo {
+  background: var(--marca-suave);
+  border-color: rgba(228, 0, 43, .28);
+  color: #F4D5DA;
+}
+
+.filtro-excel { position: relative; }
+.filtro-excel-btn {
+  height: 36px; border-radius: var(--raio-p); border: 1px solid var(--linha);
+  background: var(--bg); color: var(--tinta-2);
+  padding: 0 10px 0 12px; font-family: var(--fonte); font-size: 12.5px;
+  max-width: 220px; display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; white-space: nowrap;
+}
+.filtro-excel.aberto .filtro-excel-btn,
+.filtro-excel-btn:hover { border-color: var(--linha-forte); color: var(--tinta); }
+.filtro-excel-seta { font-size: 10px; color: var(--tinta-3); margin-left: auto; }
+.filtro-excel-painel {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 12;
+  min-width: 220px; max-width: 280px; max-height: 280px; overflow: auto;
+  background: var(--superficie-2); border: 1px solid var(--linha-forte);
+  border-radius: var(--raio-p); box-shadow: var(--sombra-3);
+  padding: 6px 0;
+}
+.filtro-excel-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 12px; cursor: pointer; font-size: 12.5px; color: var(--tinta-2);
+  background: transparent; border: 0; font-family: var(--fonte); text-align: left;
+}
+.filtro-excel-item:hover { background: rgba(237,232,224,.05); color: var(--tinta); }
+.filtro-excel-item.todos {
+  border-bottom: 1px solid var(--linha); font-weight: 520; color: var(--tinta);
+  margin-bottom: 4px;
+}
+.filtro-excel-vazio { padding: 10px 12px; color: var(--tinta-3); font-size: 12.5px; }
+.caixa {
+  width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;
+  border: 1px solid var(--linha-forte); background: transparent;
+  position: relative;
+}
+.caixa.marcada { background: var(--marca); border-color: var(--marca); }
+.caixa.marcada::after {
+  content: ''; position: absolute; left: 3px; top: 1px;
+  width: 5px; height: 8px;
+  border: solid #fff; border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.config-ancoras {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px;
+}
+.bloco-config { margin-bottom: 40px; }
+.bloco-config .form-grid { margin-top: 0; }
+
 .botao.ocupado { pointer-events: none; opacity: .72; }
 .botao.ocupado svg { animation: giro 0.8s linear infinite; }
 @keyframes giro { to { transform: rotate(360deg); } }
@@ -597,8 +670,8 @@ table.dados tr.risco td.principal { color: var(--tinta); }
     <main class="principal">
       <header class="topo">
         <div>
-          <div class="topo-titulo" id="topo-titulo">Visão consolidada</div>
-          <div class="topo-sub" id="topo-sub">Controles-chave e planos de ação</div>
+          <div class="topo-titulo" id="topo-titulo">OpsHub</div>
+          <div class="topo-sub" id="topo-sub">Controles-chave por departamento</div>
         </div>
         <div class="topo-direita">
           <span class="pilula" id="pilula-estado">
@@ -738,7 +811,7 @@ table.dados tr.risco td.principal { color: var(--tinta); }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.0.0' },
+        app: { nome: 'OpsHub', versao: '1.1.0' },
         usuario: { email: 'plant.manager@averydennison.com', nome: 'Plant Manager', iniciais: 'PM' },
         gatilho: gatilho,
       };
@@ -825,10 +898,23 @@ table.dados tr.risco td.principal { color: var(--tinta); }
     hub: null,
     carregando: false,
     deptAberto: null,
-    filtros: { texto: '', tema: '', divisao: '', area: '', status: '', responsavel: '' },
+    filtros: filtrosVazios(),
+    filtroAberto: null,
     ordem: { campo: 'prazo', dir: 'asc' },
-    form: {},
+    form: { tipo: '', data: {} },
   };
+
+  function filtrosVazios() {
+    return {
+      texto: '',
+      temas: [],
+      todosTemas: false,
+      divisoes: null,
+      areas: null,
+      statuses: null,
+      responsaveis: null,
+    };
+  }
 
     var ICONES = {
       menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
@@ -843,6 +929,7 @@ table.dados tr.risco td.principal { color: var(--tinta); }
     pcp: '<path d="M4 5h16v4H4zM4 11h10v8H4zM16 11h4v8h-4z"/>',
     melhoria: '<path d="M12 3v18M5 10l7-7 7 7"/>',
     geral: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+    config: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   };
 
   function svg(nome, extra) {
@@ -917,21 +1004,15 @@ table.dados tr.risco td.principal { color: var(--tinta); }
   }
 
   function iconeNav(nome) {
-    var mapa = {
-      hub: 'geral', planos: 'pcp', dept: 'producao',
-      ctrl: 'qualidade', fontes: 'logistica', mail: 'ehs',
-    };
+    var mapa = { hub: 'geral', planos: 'pcp', config: 'config' };
     return svg(mapa[nome] || 'geral');
   }
 
   function renderNav() {
     var itens = [
-      ['hub', 'Visão consolidada'],
+      ['hub', 'OpsHub'],
       ['planos', 'Planos de ação'],
-      ['dept', 'Departamentos'],
-      ['ctrl', 'Controles-chave'],
-      ['fontes', 'Fontes de importação'],
-      ['mail', 'Follow-up e gatilho'],
+      ['config', 'Configurações'],
     ];
     $('nav').innerHTML =
       '<div class="nav-titulo">Navegar</div>' +
@@ -943,12 +1024,9 @@ table.dados tr.risco td.principal { color: var(--tinta); }
 
   function titulos() {
     var mapa = {
-      hub: ['Visão consolidada', 'Controles-chave por departamento e planos de ação da empresa'],
-      planos: ['Planos de ação', 'Consolidado importado das Google Sheets de origem'],
-      dept: ['Departamentos', 'Cadastre as áreas que aparecem no hub'],
-      ctrl: ['Controles-chave', 'Links oficiais de cada departamento'],
-      fontes: ['Fontes de importação', 'Google Sheets de onde os planos de ação são lidos'],
-      mail: ['Follow-up e gatilho', 'E-mail diário após 1 dia de atraso, até reprogramarem o prazo'],
+      hub: ['OpsHub', 'Controles-chave por departamento'],
+      planos: ['Planos de ação', 'Resumo das ações e filtro por tema'],
+      config: ['Configurações', 'Departamentos, controles-chave, fontes de importação e follow-up'],
     };
     var t = mapa[Estado.vista] || mapa.hub;
     $('topo-titulo').textContent = t[0];
@@ -999,28 +1077,103 @@ table.dados tr.risco td.principal { color: var(--tinta); }
     return out;
   }
 
-  function sel(id, label, valores, atual) {
-    return '<select class="select" id="' + id + '" aria-label="' + label + '">' +
-      '<option value="">' + label + '</option>' +
-      valores.map(function (v) {
-        return '<option value="' + escapar(v) + '"' + (atual === v ? ' selected' : '') + '>' +
-          escapar(v) + '</option>';
-      }).join('') + '</select>';
+  function chaveFiltro(eixo) {
+    return { divisao: 'divisoes', area: 'areas', status: 'statuses', responsavel: 'responsaveis' }[eixo];
+  }
+
+  function passaEixoUi(selecionados, valor) {
+    if (selecionados == null) return true;
+    if (!selecionados.length) return false;
+    return selecionados.indexOf(valor) !== -1;
+  }
+
+  function temasAtivos(todosTemasUnicos) {
+    var f = Estado.filtros;
+    if (f.todosTemas) return todosTemasUnicos.slice();
+    return f.temas || [];
+  }
+
+  function todosTemasMarcados(todosTemasUnicos) {
+    var ativos = temasAtivos(todosTemasUnicos);
+    return !!todosTemasUnicos.length && ativos.length === todosTemasUnicos.length;
   }
 
   function aplicaFiltros(lista) {
     var f = Estado.filtros;
+    var temasPossiveis = unicos(lista, 'tema');
+    var temas = temasAtivos(temasPossiveis);
+    if (!temas.length) return [];
     var q = (f.texto || '').toLowerCase();
     return (lista || []).filter(function (p) {
-      if (f.tema && p.tema !== f.tema) return false;
-      if (f.divisao && p.divisao !== f.divisao) return false;
-      if (f.area && p.area !== f.area) return false;
-      if (f.status && p.status !== f.status) return false;
-      if (f.responsavel && p.responsavel !== f.responsavel) return false;
+      if (temas.indexOf(p.tema) === -1) return false;
+      if (!passaEixoUi(f.divisoes, p.divisao)) return false;
+      if (!passaEixoUi(f.areas, p.area)) return false;
+      if (!passaEixoUi(f.statuses, p.status)) return false;
+      if (!passaEixoUi(f.responsaveis, p.responsavel)) return false;
       if (!q) return true;
       return [p.tema, p.divisao, p.area, p.oque, p.como, p.responsavel, p.email, p.status, p.comentarios]
         .join(' ').toLowerCase().indexOf(q) !== -1;
     });
+  }
+
+  function eixoMarcado(selecionados, valor, total) {
+    if (selecionados == null || (total && selecionados.length === total.length)) return true;
+    return selecionados.indexOf(valor) !== -1;
+  }
+
+  function rotuloExcel(label, selecionados, valores) {
+    if (selecionados == null || !valores.length || selecionados.length === valores.length) return label;
+    if (!selecionados.length) return label + ' (nenhum)';
+    if (selecionados.length === 1) return selecionados[0];
+    return label + ' (' + selecionados.length + ')';
+  }
+
+  function painelExcel(eixo, label, valores) {
+    var chave = chaveFiltro(eixo);
+    var sel = Estado.filtros[chave];
+    var aberto = Estado.filtroAberto === eixo;
+    var todosOn = eixoMarcado(sel, null, valores) && (sel == null || sel.length === valores.length || !valores.length);
+    if (sel && sel.length === valores.length && valores.length) todosOn = true;
+    if (sel == null) todosOn = true;
+    var itens = valores.map(function (v) {
+      var on = eixoMarcado(sel, v, valores);
+      return '<button type="button" class="filtro-excel-item" data-filtro-valor="' + escapar(v) +
+        '" data-filtro-eixo="' + eixo + '">' +
+        '<span class="caixa' + (on ? ' marcada' : '') + '" aria-hidden="true"></span>' +
+        '<span>' + escapar(v) + '</span></button>';
+    }).join('');
+    return '<div class="filtro-excel' + (aberto ? ' aberto' : '') + '">' +
+      '<button type="button" class="filtro-excel-btn" data-abrir-filtro="' + eixo +
+      '" aria-expanded="' + (aberto ? 'true' : 'false') + '">' +
+      escapar(rotuloExcel(label, sel, valores)) +
+      '<span class="filtro-excel-seta">▾</span></button>' +
+      (aberto
+        ? '<div class="filtro-excel-painel" role="listbox">' +
+          '<button type="button" class="filtro-excel-item todos" data-filtro-todos="' + eixo + '">' +
+          '<span class="caixa' + (todosOn ? ' marcada' : '') + '" aria-hidden="true"></span>' +
+          '<span>Selecionar todos</span></button>' +
+          (itens || '<div class="filtro-excel-vazio">Sem valores</div>') +
+          '</div>'
+        : '') +
+      '</div>';
+  }
+
+  function chipsTema(todos) {
+    var temas = unicos(todos, 'tema');
+    var ativos = temasAtivos(temas);
+    var set = {};
+    ativos.forEach(function (t) { set[t] = 1; });
+    var todosOn = todosTemasMarcados(temas);
+    return '<div class="temas-barra">' +
+      '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">Filtrar por tema</div>' +
+      '<div class="temas-chips">' +
+      '<button type="button" class="chip-tema todos' + (todosOn ? ' ativo' : '') +
+      '" data-tema-todos="1">Todos</button>' +
+      temas.map(function (t) {
+        return '<button type="button" class="chip-tema' + (set[t] ? ' ativo' : '') +
+          '" data-tema="' + escapar(t) + '">' + escapar(t) + '</button>';
+      }).join('') +
+      '</div></div>';
   }
 
   function aplicaOrdem(lista) {
@@ -1045,21 +1198,26 @@ table.dados tr.risco td.principal { color: var(--tinta); }
 
   function tabelaPlanos() {
     var todos = Estado.hub.planos || [];
-    var filtrados = aplicaOrdem(aplicaFiltros(todos));
+    var temasPossiveis = unicos(todos, 'tema');
+    var semTema = !temasAtivos(temasPossiveis).length;
+    var filtrados = semTema ? [] : aplicaOrdem(aplicaFiltros(todos));
     var cab =
       '<div class="painel-topo">' +
       '<input class="busca" id="filtro-texto" placeholder="Buscar tema, área, o quê, responsável…" value="' +
       escapar(Estado.filtros.texto) + '">' +
-      sel('filtro-tema', 'Tema', unicos(todos, 'tema'), Estado.filtros.tema) +
-      sel('filtro-divisao', 'Divisão', unicos(todos, 'divisao'), Estado.filtros.divisao) +
-      sel('filtro-area', 'Área', unicos(todos, 'area'), Estado.filtros.area) +
-      sel('filtro-status', 'Status', unicos(todos, 'status'), Estado.filtros.status) +
-      sel('filtro-resp', 'Responsável', unicos(todos, 'responsavel'), Estado.filtros.responsavel) +
+      painelExcel('divisao', 'Divisão', unicos(todos, 'divisao')) +
+      painelExcel('area', 'Área', unicos(todos, 'area')) +
+      painelExcel('status', 'Status', unicos(todos, 'status')) +
+      painelExcel('responsavel', 'Responsável', unicos(todos, 'responsavel')) +
       '<button type="button" class="botao" id="limpar-filtros">Limpar</button>' +
       '</div>';
 
+    var vazioMsg = semTema
+      ? 'Selecione um tema ou clique em Todos'
+      : 'Nenhuma ação com esses filtros.';
+
     if (!filtrados.length) {
-      return '<div class="painel">' + cab + '<div class="vazio">Nenhuma ação com esses filtros.</div></div>';
+      return '<div class="painel">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
     }
 
     var linhas = filtrados.map(function (p) {
@@ -1142,9 +1300,14 @@ table.dados tr.risco td.principal { color: var(--tinta); }
       }).join('');
   }
 
+  function dadosForm(tipo) {
+    return Estado.form && Estado.form.tipo === tipo ? (Estado.form.data || {}) : {};
+  }
+
   function formDept() {
-    var f = Estado.form || {};
-    return '<form class="form-grid" id="form-entidade">' +
+    var f = dadosForm('dept');
+    return '<form class="form-grid" data-entidade="dept">' +
+      (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
       campo('nome', 'Nome', f.nome) +
       campo('icone', 'Ícone (producao, qualidade, manutencao, ehs, logistica, engenharia, pcp, melhoria)', f.icone) +
       campo('descricao', 'Descrição', f.descricao, { span2: true }) +
@@ -1152,12 +1315,13 @@ table.dados tr.risco td.principal { color: var(--tinta); }
       campo('ordem', 'Ordem', f.ordem || 1, { tipo: 'number' }) +
       campo('ativo', 'Ativo', f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">Salvar</button>' +
-      '<button class="botao" type="button" id="form-cancelar">Limpar</button></div></form>';
+      '<button class="botao" type="button" data-form-cancelar>Limpar</button></div></form>';
   }
 
   function formCtrl() {
-    var f = Estado.form || {};
-    return '<form class="form-grid" id="form-entidade">' +
+    var f = dadosForm('ctrl');
+    return '<form class="form-grid" data-entidade="ctrl">' +
+      (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
       campo('departamento_id', 'Departamento', f.departamento_id, { opcoes: opcoesDept(f.departamento_id) }) +
       campo('nome', 'Nome do controle', f.nome) +
       campo('url', 'Link', f.url, { span2: true }) +
@@ -1165,19 +1329,20 @@ table.dados tr.risco td.principal { color: var(--tinta); }
       campo('ordem', 'Ordem', f.ordem || 1, { tipo: 'number' }) +
       campo('ativo', 'Ativo', f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">Salvar</button>' +
-      '<button class="botao" type="button" id="form-cancelar">Limpar</button></div></form>';
+      '<button class="botao" type="button" data-form-cancelar>Limpar</button></div></form>';
   }
 
   function formFonte() {
-    var f = Estado.form || {};
-    return '<form class="form-grid" id="form-entidade">' +
+    var f = dadosForm('fonte');
+    return '<form class="form-grid" data-entidade="fonte">' +
+      (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
       campo('nome', 'Nome da fonte', f.nome) +
       campo('aba', 'Aba (opcional)', f.aba) +
       campo('referencia', 'URL ou ID da Google Sheet', f.referencia, { span2: true }) +
       campo('linha_cabecalho', 'Linha do cabeçalho', f.linha_cabecalho || 1, { tipo: 'number' }) +
       campo('ativo', 'Ativo', f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">Salvar</button>' +
-      '<button class="botao" type="button" id="form-cancelar">Limpar</button></div></form>';
+      '<button class="botao" type="button" data-form-cancelar>Limpar</button></div></form>';
   }
 
   function listaAdmin(itens, render, tipo) {
@@ -1192,14 +1357,34 @@ table.dados tr.risco td.principal { color: var(--tinta); }
   }
 
   function vistaHub() {
-    return kpisHtml(Estado.hub.kpis) + deptCards() +
-      '<div class="secao-cab"><div><div class="secao-titulo">Planos de ação consolidados</div>' +
-      '<div class="secao-apoio">Importados das planilhas de origem · filtre e ordene pelas colunas</div></div></div>' +
-      tabelaPlanos();
+    return deptCards();
   }
 
   function vistaPlanos() {
-    return kpisHtml(Estado.hub.kpis) + tabelaPlanos();
+    return kpisHtml(Estado.hub.kpis) + chipsTema(Estado.hub.planos || []) + tabelaPlanos();
+  }
+
+  function cabConfig(id, titulo, apoio) {
+    return '<section class="bloco-config" id="' + id + '">' +
+      '<div class="secao-cab"><div><div class="secao-titulo">' + titulo + '</div>' +
+      '<div class="secao-apoio">' + apoio + '</div></div></div>';
+  }
+
+  function vistaConfig() {
+    return '<div class="config-ancoras">' +
+      '<button type="button" class="botao" data-ancora="cfg-dept">Departamentos</button>' +
+      '<button type="button" class="botao" data-ancora="cfg-ctrl">Controles-chave</button>' +
+      '<button type="button" class="botao" data-ancora="cfg-fontes">Fontes de importação</button>' +
+      '<button type="button" class="botao" data-ancora="cfg-mail">Follow-up e gatilho</button>' +
+      '</div>' +
+      cabConfig('cfg-dept', 'Departamentos', 'Cadastre as áreas que aparecem no OpsHub') +
+      vistaDept() + '</section>' +
+      cabConfig('cfg-ctrl', 'Controles-chave', 'Links oficiais de cada departamento') +
+      vistaCtrl() + '</section>' +
+      cabConfig('cfg-fontes', 'Fontes de importação', 'Google Sheets de onde os planos de ação são lidos') +
+      vistaFontes() + '</section>' +
+      cabConfig('cfg-mail', 'Follow-up e gatilho', 'E-mail diário após 1 dia de atraso, até reprogramarem o prazo') +
+      vistaMail() + '</section>';
   }
 
   function vistaDept() {
@@ -1257,10 +1442,7 @@ table.dados tr.risco td.principal { color: var(--tinta); }
     var html = '';
     if (!Estado.hub) html = '<div class="esqueleto" style="height:240px"></div>';
     else if (Estado.vista === 'planos') html = vistaPlanos();
-    else if (Estado.vista === 'dept') html = vistaDept();
-    else if (Estado.vista === 'ctrl') html = vistaCtrl();
-    else if (Estado.vista === 'fontes') html = vistaFontes();
-    else if (Estado.vista === 'mail') html = vistaMail();
+    else if (Estado.vista === 'config') html = vistaConfig();
     else html = vistaHub();
     $('conteudo').innerHTML = html;
   }
@@ -1271,8 +1453,58 @@ table.dados tr.risco td.principal { color: var(--tinta); }
       if (!el.name) return;
       d[el.name] = el.value;
     });
-    if (Estado.form && Estado.form.id) d.id = Estado.form.id;
     return d;
+  }
+
+  function valoresEixo(eixo) {
+    var planos = (Estado.hub && Estado.hub.planos) || [];
+    var campo = { divisao: 'divisao', area: 'area', status: 'status', responsavel: 'responsavel' }[eixo];
+    return unicos(planos, campo);
+  }
+
+  function toggleExcelValor(eixo, valor) {
+    var chave = chaveFiltro(eixo);
+    var todos = valoresEixo(eixo);
+    var atual = Estado.filtros[chave];
+    var set;
+    if (atual == null) {
+      set = todos.filter(function (v) { return v !== valor; });
+    } else if (atual.indexOf(valor) !== -1) {
+      set = atual.filter(function (v) { return v !== valor; });
+    } else {
+      set = atual.concat([valor]);
+    }
+    Estado.filtros[chave] = set.length === todos.length ? null : set;
+  }
+
+  function toggleExcelTodos(eixo) {
+    var chave = chaveFiltro(eixo);
+    var todos = valoresEixo(eixo);
+    var atual = Estado.filtros[chave];
+    var todosOn = atual == null || (todos.length && atual.length === todos.length);
+    Estado.filtros[chave] = todosOn ? [] : null;
+  }
+
+  function toggleTema(nome) {
+    var todos = unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
+    var ativos = temasAtivos(todos);
+    var idx = ativos.indexOf(nome);
+    var proximo = idx === -1
+      ? ativos.concat([nome])
+      : ativos.filter(function (t) { return t !== nome; });
+    Estado.filtros.todosTemas = !!todos.length && proximo.length === todos.length;
+    Estado.filtros.temas = Estado.filtros.todosTemas ? todos.slice() : proximo;
+  }
+
+  function marcarTodosTemas() {
+    var todos = unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
+    if (todosTemasMarcados(todos)) {
+      Estado.filtros.todosTemas = false;
+      Estado.filtros.temas = [];
+    } else {
+      Estado.filtros.todosTemas = true;
+      Estado.filtros.temas = todos.slice();
+    }
   }
 
   function ligar() {
@@ -1280,7 +1512,53 @@ table.dados tr.risco td.principal { color: var(--tinta); }
       var nav = e.target.closest('[data-vista]');
       if (nav) {
         Estado.vista = nav.getAttribute('data-vista');
-        Estado.form = {};
+        Estado.form = { tipo: '', data: {} };
+        Estado.filtroAberto = null;
+        render();
+        return;
+      }
+      var ancora = e.target.closest('[data-ancora]');
+      if (ancora) {
+        var alvo = $(ancora.getAttribute('data-ancora'));
+        if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      var temaTodos = e.target.closest('[data-tema-todos]');
+      if (temaTodos) {
+        marcarTodosTemas();
+        render();
+        return;
+      }
+      var chipTema = e.target.closest('[data-tema]');
+      if (chipTema) {
+        toggleTema(chipTema.getAttribute('data-tema'));
+        render();
+        return;
+      }
+      var abrirFiltro = e.target.closest('[data-abrir-filtro]');
+      if (abrirFiltro) {
+        var eixoAbrir = abrirFiltro.getAttribute('data-abrir-filtro');
+        Estado.filtroAberto = Estado.filtroAberto === eixoAbrir ? null : eixoAbrir;
+        render();
+        return;
+      }
+      var filtroTodos = e.target.closest('[data-filtro-todos]');
+      if (filtroTodos) {
+        toggleExcelTodos(filtroTodos.getAttribute('data-filtro-todos'));
+        render();
+        return;
+      }
+      var filtroValor = e.target.closest('[data-filtro-valor]');
+      if (filtroValor) {
+        toggleExcelValor(
+          filtroValor.getAttribute('data-filtro-eixo'),
+          filtroValor.getAttribute('data-filtro-valor')
+        );
+        render();
+        return;
+      }
+      if (Estado.filtroAberto && !e.target.closest('.filtro-excel')) {
+        Estado.filtroAberto = null;
         render();
         return;
       }
@@ -1300,7 +1578,8 @@ table.dados tr.risco td.principal { color: var(--tinta); }
         return;
       }
       if (e.target.closest('#limpar-filtros')) {
-        Estado.filtros = { texto: '', tema: '', divisao: '', area: '', status: '', responsavel: '' };
+        Estado.filtros = filtrosVazios();
+        Estado.filtroAberto = null;
         render();
         return;
       }
@@ -1317,7 +1596,11 @@ table.dados tr.risco td.principal { color: var(--tinta); }
         else document.exitFullscreen();
         return;
       }
-      if (e.target.closest('#form-cancelar')) { Estado.form = {}; render(); return; }
+      if (e.target.closest('[data-form-cancelar]')) {
+        Estado.form = { tipo: '', data: {} };
+        render();
+        return;
+      }
       if (e.target.closest('#btn-importar')) {
         atualizarTudo();
         return;
@@ -1351,8 +1634,12 @@ table.dados tr.risco td.principal { color: var(--tinta); }
         var lista = tipo === 'dept' ? (Estado.hub.departamentosAdmin || Estado.hub.departamentos)
           : tipo === 'ctrl' ? (Estado.hub.controlesAdmin || Estado.hub.controles)
           : Estado.hub.fontes;
-        Estado.form = (lista || []).filter(function (x) { return String(x.id) === String(id); })[0] || {};
+        var item = (lista || []).filter(function (x) { return String(x.id) === String(id); })[0] || {};
+        Estado.form = { tipo: tipo, data: item };
         render();
+        var mapaCfg = { dept: 'cfg-dept', ctrl: 'cfg-ctrl', fonte: 'cfg-fontes' };
+        var sec = $(mapaCfg[tipo]);
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
       var del = e.target.closest('[data-del]');
@@ -1361,21 +1648,26 @@ table.dados tr.risco td.principal { color: var(--tinta); }
         var id2 = del.getAttribute('data-id');
         if (!confirm('Excluir este registro?')) return;
         var api = t2 === 'dept' ? 'apiExcluirDepartamento' : t2 === 'ctrl' ? 'apiExcluirControle' : 'apiExcluirFonte';
-        chamar(api, id2).then(function (hub) { Estado.hub = hub; Estado.form = {}; render(); toast('Removido.'); })
-          .catch(function (err) { toast(err.message || err, true); });
+        chamar(api, id2).then(function (hub) {
+          Estado.hub = hub;
+          Estado.form = { tipo: '', data: {} };
+          render();
+          toast('Removido.');
+        }).catch(function (err) { toast(err.message || err, true); });
       }
     });
 
     document.addEventListener('submit', function (e) {
-      var form = e.target.closest('#form-entidade');
+      var form = e.target.closest('form[data-entidade]');
       if (!form) return;
       e.preventDefault();
       var d = lerForm(form);
-      var api = Estado.vista === 'dept' ? 'apiSalvarDepartamento'
-        : Estado.vista === 'ctrl' ? 'apiSalvarControle' : 'apiSalvarFonte';
+      var tipo = form.getAttribute('data-entidade');
+      var api = tipo === 'dept' ? 'apiSalvarDepartamento'
+        : tipo === 'ctrl' ? 'apiSalvarControle' : 'apiSalvarFonte';
       if (api === 'apiSalvarFonte') ocupar(true, 'Importando planos…');
       chamar(api, d).then(function (hub) {
-        Estado.form = {};
+        Estado.form = { tipo: '', data: {} };
         aplicarHub(hub, hub.importacao);
         if (api !== 'apiSalvarFonte') toast('Salvo.');
       }).catch(function (err) {
@@ -1390,26 +1682,20 @@ table.dados tr.risco td.principal { color: var(--tinta); }
         renderTabelaSo();
       }
     });
-    document.addEventListener('change', function (e) {
-      var mapa = {
-        'filtro-tema': 'tema',
-        'filtro-divisao': 'divisao',
-        'filtro-area': 'area',
-        'filtro-status': 'status',
-        'filtro-resp': 'responsavel',
-      };
-      if (mapa[e.target.id]) {
-        Estado.filtros[mapa[e.target.id]] = e.target.value;
-        render();
-      }
-    });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') fecharDrawer();
+      if (e.key === 'Escape') {
+        if (Estado.filtroAberto) {
+          Estado.filtroAberto = null;
+          render();
+          return;
+        }
+        fecharDrawer();
+      }
     });
   }
 
   function renderTabelaSo() {
-    if (Estado.vista !== 'hub' && Estado.vista !== 'planos') return;
+    if (Estado.vista !== 'planos') return;
     render();
     var busca = $('filtro-texto');
     if (busca) {

@@ -6,9 +6,9 @@ Tema dark, sidebar no mesmo espírito do Controle Hora por Hora, com a marca Ave
 
 ## O que o painel faz
 
-- **Departamentos clicáveis** abrem uma subtela com os controles-chave da área. O nome do controle leva ao link cadastrado.
-- **Planos de ação consolidados** com cabeçalho: Tema, Divisão, Área, O quê?, Como, Responsável, E-mail, Prazo, Status, Comentários.
-- **Filtro e ordenação** em qualquer coluna, mais busca livre.
+- **Departamentos clicáveis** na aba OpsHub abrem uma subtela com os controles-chave da área. O nome do controle leva ao link cadastrado.
+- **Planos de ação** com resumo (KPIs) e filtro por tema: a tabela começa vazia até o gestor marcar um ou mais temas, ou **Todos**. Os demais eixos (divisão, área, status, responsável) são multi-seleção no estilo Excel.
+- **Configurações** reúne departamentos, controles-chave, fontes de importação e follow-up/gatilho.
 - **Follow-up por e-mail:** depois de 1 dia de atraso, um e-mail por dia para o responsável, até a data ser reprogramada na origem. Sem e-mail cadastrado, nada é enviado — a linha mostra o aviso no tooltip.
 
 ## Instalar na Google Sheet
@@ -44,7 +44,7 @@ A primeira instalação já cria departamentos típicos de planta e alguns links
 
 ## Importar planos de outras Sheets
 
-1. No painel, **Fontes de importação**, ou direto na aba `FONTES_PLANOS`.
+1. No painel, **Configurações → Fontes de importação**, ou direto na aba `FONTES_PLANOS`.
 2. Cole a **URL ou o ID** da planilha origem e, se quiser, o nome da aba.
 3. A origem precisa ter (nomes próximos valem) as colunas: Tema, Divisão, Área, O quê?, Como, Responsável, E-mail, Prazo, Status, Comentários.
 4. A conta que autorizou o OpsHub precisa ter acesso de leitura na origem.
@@ -58,7 +58,7 @@ A importação substitui só as linhas daquela fonte. O histórico de e-mails de
 - Depois, **um e-mail por dia**, até o prazo na origem ir para uma data futura (ou a ação ser concluída/cancelada).
 - Sem e-mail válido: não envia. Na tabela, o ícone amarelo explica: *Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.*
 
-Crie o gatilho pelo menu **OpsHub → Criar gatilho diário** ou pela tela Follow-up (padrão: 08h, fuso `America/Sao_Paulo`). A rotina importa as fontes e em seguida envia os e-mails.
+Crie o gatilho pelo menu **OpsHub → Criar gatilho diário** ou em **Configurações → Follow-up e gatilho** (padrão: 08h, fuso `America/Sao_Paulo`). A rotina importa as fontes e em seguida envia os e-mails.
 
 ## Preview local (sem Google)
 
