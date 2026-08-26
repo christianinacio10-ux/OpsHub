@@ -568,10 +568,12 @@ var Logica = (function () {
       marca,
       '</div></td></tr>',
       emailPessoa
-        ? ('<tr><td style="padding:0 0 16px"><div style="display:inline-block;background:#ffffff;' +
-          'border:1px solid #E8E4DF;border-radius:10px;padding:8px 14px;' +
-          'font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#1A1918">' +
-          escaparHtml(emailPessoa) + '</div></td></tr>')
+        ? ('<tr><td style="padding:0 0 16px">' +
+          '<table role="presentation" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #C9C3BB;border-radius:10px">' +
+          '<tr><td style="padding:10px 16px;font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#1A1918">' +
+          '<span style="color:#7C776F;font-size:11px;display:block;margin-bottom:3px">E-mail</span>' +
+          '<strong style="font-weight:600">' + escaparHtml(emailPessoa) + '</strong>' +
+          '</td></tr></table></td></tr>')
         : '',
       '<tr><td>',
       '<div style="background:#10141C;border:1px solid #2A3142;border-radius:16px;overflow:hidden;' +
