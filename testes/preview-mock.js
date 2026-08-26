@@ -147,6 +147,17 @@
       return hub();
     },
     apiSalvarTemasFollowUp: function (temas) {
+      if (temas && typeof temas === 'object' && typeof temas.json === 'string') {
+        temas = temas.json;
+      }
+      if (typeof temas === 'string') {
+        try { temas = temas ? JSON.parse(temas) : []; } catch (e) { temas = []; }
+      }
+      if (temas && typeof temas === 'object' && !Array.isArray(temas) && typeof temas.length === 'number') {
+        var copiada = [];
+        for (var i = 0; i < temas.length; i++) copiada.push(temas[i]);
+        temas = copiada;
+      }
       temasFollowUp = Array.isArray(temas) ? temas.slice() : [];
       return hub();
     },

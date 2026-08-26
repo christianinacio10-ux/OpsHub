@@ -45,8 +45,14 @@ assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { ultimo_emai
 assert.strictEqual(Logica.tituloNome('christian inacio'), 'Christian Inacio');
 assert.strictEqual(Logica.tituloNome('PLANT MANAGER'), 'Plant Manager');
 assert.deepStrictEqual(Logica.parseTemasFollowUp(''), []);
+assert.deepStrictEqual(Logica.parseTemasFollowUp('[]'), []);
 assert.deepStrictEqual(Logica.parseTemasFollowUp('["OEE","EHS"]'), ['OEE', 'EHS']);
 assert.deepStrictEqual(Logica.parseTemasFollowUp('OEE, EHS'), ['OEE', 'EHS']);
+assert.deepStrictEqual(Logica.parseTemasFollowUp({ json: '["OEE","EHS"]' }), ['OEE', 'EHS']);
+assert.deepStrictEqual(Logica.parseTemasFollowUp({ json: '[]' }), []);
+assert.deepStrictEqual(Logica.parseTemasFollowUp({ 0: 'OEE', 1: 'EHS', length: 2 }), ['OEE', 'EHS']);
+assert.deepStrictEqual(Logica.parseTemasFollowUp({ 0: 'OEE', 1: 'EHS' }), ['OEE', 'EHS']);
+assert.deepStrictEqual(Logica.parseTemasFollowUp('OPSHUB_TEMAS:["OEE"]'), ['OEE']);
 assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', []), true);
 assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', ['EHS']), false);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'OEE' }), hoje, ['EHS']).motivo, 'tema_desligado');
