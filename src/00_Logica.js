@@ -260,8 +260,9 @@ var Logica = (function () {
     return false;
   }
 
-  function elegivelFollowUp(acao, hoje, temasHabilitados) {
+  function elegivelFollowUp(acao, hoje, temasHabilitados, opcoes) {
     hoje = paraData(hoje) || paraData(new Date());
+    opcoes = opcoes || {};
     var email = texto(acao && acao.email).toLowerCase();
     if (!emailValido(email)) {
       return { ok: false, motivo: 'sem_email', mensagem: 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.' };
@@ -281,7 +282,7 @@ var Logica = (function () {
       return { ok: false, motivo: 'ainda_no_prazo' };
     }
     var ultimo = paraData(acao && acao.ultimo_email_em);
-    if (ultimo && mesmoDia(ultimo, hoje)) {
+    if (ultimo && mesmoDia(ultimo, hoje) && !opcoes.ignorarJaEnviadoHoje) {
       return { ok: false, motivo: 'ja_enviado_hoje' };
     }
     var diasAtraso = Math.round((hoje.getTime() - prazo.getTime()) / 86400000);

@@ -164,8 +164,29 @@ function apiAtualizar() {
   return hub;
 }
 
-function apiEnviarFollowUpsAgora() {
-  return enviarFollowUps();
+function apiPreverFollowUps() {
+  instalarSistema();
+  var hoje = hojeLocal_();
+  var temasHabilitados = Logica.parseTemasFollowUp(Cadastros.config().texto('followup_temas', ''));
+  var total = 0;
+  var temasJa = [];
+  var vistos = {};
+  Cadastros.planos().forEach(function (plano) {
+    var forcado = Logica.elegivelFollowUp(plano, hoje, temasHabilitados, { ignorarJaEnviadoHoje: true });
+    if (!forcado.ok) return;
+    total++;
+    var normal = Logica.elegivelFollowUp(plano, hoje, temasHabilitados);
+    var tema = Logica.texto(plano.tema);
+    if (!normal.ok && normal.motivo === 'ja_enviado_hoje' && tema && !vistos[tema]) {
+      vistos[tema] = 1;
+      temasJa.push(tema);
+    }
+  });
+  return { total: total, temasJaEnviadosHoje: temasJa };
+}
+
+function apiEnviarFollowUpsAgora(forcar) {
+  return enviarFollowUps({ forcar: !!forcar });
 }
 
 function apiCriarGatilho() {

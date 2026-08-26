@@ -73,6 +73,7 @@
   ];
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
   var temasFollowUp = [];
+  var followupsEnviadosHoje = {};
 
   function temasDistintos() {
     var set = {}; var out = [];
@@ -164,7 +165,34 @@
       h.importacao = { fontes: fontes.length, linhas: planos.length, avisos: [] };
       return h;
     },
-    apiEnviarFollowUpsAgora: function () { return { enviados: 1, pulados: planos.length - 1, erros: 0 }; },
+    apiEnviarFollowUpsAgora: function (forcar) {
+      var cand = planos.filter(function (p) {
+        if (p.status === 'Concluído' || p.status === 'Cancelado') return false;
+        if (!p.tem_email || p.status !== 'Atrasado') return false;
+        if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        if (!forcar && followupsEnviadosHoje[p.id]) return false;
+        return true;
+      });
+      cand.forEach(function (p) { followupsEnviadosHoje[p.id] = true; });
+      return { enviados: cand.length, pulados: planos.length - cand.length, erros: 0 };
+    },
+    apiPreverFollowUps: function () {
+      var cand = planos.filter(function (p) {
+        if (p.status === 'Concluído' || p.status === 'Cancelado') return false;
+        if (!p.tem_email || p.status !== 'Atrasado') return false;
+        if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        return true;
+      });
+      var temasJa = [];
+      var vistos = {};
+      cand.forEach(function (p) {
+        if (followupsEnviadosHoje[p.id] && p.tema && !vistos[p.tema]) {
+          vistos[p.tema] = 1;
+          temasJa.push(p.tema);
+        }
+      });
+      return { total: cand.length, temasJaEnviadosHoje: temasJa };
+    },
     apiCriarGatilho: function () {
       gatilho = { ativo: true, quantidade: 1, hora: 8 };
       return { mensagem: 'Gatilho diario criado para a rotina das 8h.', gatilho: gatilho };
@@ -192,7 +220,14 @@
         var err = this._err;
         try {
           var out = api[nome].apply(null, args);
-          var delay = (nome === 'apiAtualizar') ? 700 : 40;
+          var lentos = {
+            apiAtualizar: 700,
+            apiEnviarFollowUpsAgora: 700,
+            apiPreverFollowUps: 500,
+            apiCriarGatilho: 550,
+            apiRemoverGatilhos: 550,
+          };
+          var delay = lentos[nome] || 40;
           setTimeout(function () { ok(out); }, delay);
         } catch (e) {
           setTimeout(function () { err(e); }, 30);

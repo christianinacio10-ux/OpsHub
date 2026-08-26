@@ -314,7 +314,6 @@ body { overflow: hidden; }
 .card-dept.arrastando { opacity: .42; }
 .card-dept::before { display: none; }
 .card-dept-badge {
-  position: absolute; top: 10px; right: 10px;
   height: 20px; padding: 0 8px; border-radius: 999px;
   border: 1px solid var(--linha-forte);
   background: rgba(237,232,224,.06);
@@ -323,6 +322,26 @@ body { overflow: hidden; }
   display: inline-flex; align-items: center;
   pointer-events: none;
 }
+.card-dept-acoes {
+  position: absolute; top: 8px; right: 8px;
+  display: flex; align-items: center; gap: 6px;
+  z-index: 2;
+}
+.card-dept-config {
+  width: 28px; height: 28px; border-radius: 8px;
+  border: 1px solid var(--linha);
+  background: rgba(237,232,224,.05);
+  color: var(--tinta-2);
+  display: grid; place-items: center;
+  cursor: pointer; padding: 0;
+  font-family: var(--fonte);
+}
+.card-dept-config:hover {
+  color: var(--tinta);
+  border-color: var(--linha-forte);
+  background: rgba(237,232,224,.1);
+}
+.card-dept-config svg { width: 14px; height: 14px; }
 .card-dept-topo {
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 14px; position: relative;
@@ -332,24 +351,29 @@ body { overflow: hidden; }
   display: grid; place-items: center;
   background: color-mix(in srgb, var(--dept-cor, var(--marca)) 10%, var(--superficie-2));
   color: color-mix(in srgb, var(--dept-cor, var(--marca)) 55%, #D9D2CB);
-  margin-bottom: 0; border: 0; padding: 0; cursor: pointer;
-  font-family: var(--fonte);
+  margin-bottom: 0; border: 0; padding: 0;
+  pointer-events: none;
 }
-.card-dept-icone:hover { background: color-mix(in srgb, var(--dept-cor, var(--marca)) 18%, var(--superficie-2)); }
 .card-dept-icone svg { width: 18px; height: 18px; stroke-width: 1.6; }
-.card-dept-cor {
-  width: 22px; height: 22px; border-radius: 50%;
-  border: 1px solid var(--linha-forte);
-  background: var(--dept-cor, var(--marca));
-  padding: 0; cursor: pointer; position: relative; overflow: hidden;
-  flex-shrink: 0;
+.painel-aparencia {
+  margin-bottom: 8px;
 }
-.card-dept-cor input[type="color"] {
-  position: absolute; inset: -6px; width: 34px; height: 34px;
-  border: 0; padding: 0; cursor: pointer; opacity: 0;
+.painel-aparencia .seletor-icone {
+  position: static;
+  min-width: 0;
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+.cor-edicao {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; font-weight: 450; color: var(--tinta-3);
+}
+.cor-edicao input[type="color"] {
+  width: 42px; height: 32px; border: 0; padding: 0;
+  background: transparent; cursor: pointer;
 }
 .seletor-icone {
-  position: absolute; left: 0; top: calc(100% + 6px); z-index: 8;
   display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
   min-width: 196px;
   background: var(--superficie-2); border: 1px solid var(--linha-forte);
@@ -363,6 +387,9 @@ body { overflow: hidden; }
 }
 .seletor-icone-item:hover, .seletor-icone-item.ativo {
   background: rgba(237,232,224,.06); color: var(--tinta);
+}
+.seletor-icone-item.ativo {
+  border: 1px solid var(--linha-forte);
 }
 .seletor-icone-item svg { width: 16px; height: 16px; flex-shrink: 0; }
 .card-dept h3 { margin: 0 0 5px; font-size: 15px; font-weight: 520; letter-spacing: -.02em; }
@@ -680,6 +707,37 @@ table.dados tr.risco td { box-shadow: none; }
   border-color: rgba(228, 0, 43, .28);
   color: #F4D5DA;
 }
+.chip-follow {
+  height: 34px; padding: 0 12px 0 10px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 500;
+  cursor: pointer; font-family: var(--fonte);
+  border: 1px solid transparent;
+  transition: background var(--transicao), color var(--transicao), border-color var(--transicao), opacity var(--transicao);
+}
+.chip-follow-ponto {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.chip-follow-estado {
+  font-size: 10px; font-weight: 520; letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.chip-follow.ligado {
+  background: rgba(74, 148, 108, .22);
+  border-color: rgba(111, 207, 151, .4);
+  color: #D4F0DE;
+}
+.chip-follow.ligado .chip-follow-ponto { background: #6FCF97; }
+.chip-follow.ligado .chip-follow-estado { color: #8FDBB0; }
+.chip-follow.desligado {
+  background: rgba(237,232,224,.03);
+  border-color: var(--linha);
+  color: var(--tinta-3);
+  opacity: .78;
+}
+.chip-follow.desligado .chip-follow-ponto { background: #6A675F; }
+.chip-follow.desligado .chip-follow-estado { color: var(--tinta-3); }
+.chip-follow:hover { opacity: 1; }
 
 .filtro-excel { position: relative; }
 .filtro-excel-btn {
@@ -760,5 +818,6 @@ table.dados tr.risco td { box-shadow: none; }
   .topo { padding: 16px 18px; }
   .arvores-duplas, .arvores-triplas { grid-template-columns: 1fr; }
   .drawer, .drawer.largo, .drawer.extra-largo { width: min(920px, 96vw); max-height: 90vh; }
+  .painel-aparencia .seletor-icone { grid-template-columns: 1fr 1fr; }
 }
 </style>

@@ -6,7 +6,7 @@ Tema dark, sidebar no mesmo espírito do Controle Hora por Hora, com a marca Ave
 
 ## O que o painel faz
 
-- **Departamentos clicáveis** na aba OpsHub abrem uma subtela com os controles-chave da área. O nome do controle leva ao link cadastrado. Cada área tem a **divisão** Apparel, Smartrac ou Solutions (a coluna na planilha continua `bandeira`). O badge aparece no card; em Solutions o modal mostra três colunas (Apparel | Smartrac | Solutions). Arraste os cards para reordenar. Ícone e cor editam no próprio card; arquivos incluem, editam e excluem no modal.
+- **Departamentos clicáveis** na aba OpsHub abrem uma subtela só com os arquivos da área. A engrenagem do card abre a configuração (ícone, cor e inclusão/edição de arquivos). Cada área tem a **divisão** Apparel, Smartrac ou Solutions (a coluna na planilha continua `bandeira`). Em Solutions o modal de visualização mostra três colunas. Arraste os cards para reordenar.
 - **Planos de ação** com resumo (KPIs) e filtro por tema: a tabela começa vazia até o gestor marcar um ou mais temas, ou **Todos**. Os demais eixos (divisão, área, status, responsável) são multi-seleção no estilo Excel.
 - **Configurações** reúne departamentos, fontes de importação e follow-up/gatilho.
 - **Follow-up por e-mail:** depois de 1 dia de atraso, um e-mail por dia para o responsável, até a data ser reprogramada na origem. Em Follow-up e gatilho, chips ligam ou desligam quais temas entram no e-mail (vazio = todos). Sem e-mail cadastrado, nada é enviado — a linha mostra o aviso no tooltip.
@@ -34,7 +34,7 @@ node testes/empacotar.js
 | Aba | Uso |
 | --- | --- |
 | `DEPARTAMENTOS` | Áreas do hub (nome, ícone, cor, ordem, divisão Apparel/Smartrac/Solutions na coluna `bandeira`) |
-| `CONTROLES` | Links de cada departamento (negócio Apparel/Smartrac/Solutions e pasta opcional na árvore) |
+| `CONTROLES` | Links de cada departamento (negócio Apparel/Smartrac/Solutions e agrupamento opcional, ex.: Linha / Programa) |
 | `FONTES_PLANOS` | Google Sheets de origem dos planos |
 | `PLANOS_ACAO` | Consolidado importado (não edite na mão se vier de fonte) |
 | `_CONFIG` | Timezone, hora do gatilho, nome do remetente, temas de follow-up |
@@ -55,7 +55,8 @@ A importação substitui só as linhas daquela fonte. O histórico de e-mails de
 ## E-mail de follow-up
 
 - Primeiro disparo no **dia seguinte ao prazo** (atraso de 1 dia).
-- Depois, **um e-mail por dia**, até o prazo na origem ir para uma data futura (ou a ação ser concluída/cancelada).
+- Depois, **um e-mail por dia** no gatilho automático, até o prazo na origem ir para uma data futura (ou a ação ser concluída/cancelada).
+- **Enviar follow-ups agora** pode repetir no mesmo dia. Se já houve envio, o painel avisa e pergunta se deseja cobrar de novo aquele tema.
 - Sem e-mail válido: não envia. Na tabela, o ícone amarelo explica: *Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.*
 - Em **Configurações → Follow-up e gatilho**, os chips dos temas importados ligam ou desligam o envio. Lista vazia em `_CONFIG.followup_temas` = todos os temas.
 
