@@ -255,6 +255,20 @@ var Logica = (function () {
   }
 
   /**
+   * Exemplos so entram na primeira criacao da aba. Aba ja existente
+   * e vazia (o usuario apagou os cadastros) permanece vazia.
+   */
+  function deveAplicarSemente(abasRecemCriadas, nomeAba, quantidade) {
+    if (!nomeAba) return false;
+    var recem = abasRecemCriadas || [];
+    var criada = false;
+    for (var i = 0; i < recem.length; i++) {
+      if (recem[i] === nomeAba) { criada = true; break; }
+    }
+    return criada && !(Number(quantidade) > 0);
+  }
+
+  /**
    * google.script.run nao entrega Array de verdade (vira objeto com
    * indices, Java List, ou JSON parseado). Por isso o cliente manda
    * { json: '["Tema"]' } e daqui extraimos sempre uma lista JS.
@@ -668,6 +682,7 @@ var Logica = (function () {
     tituloStatus: tituloStatus,
     classeStatus: classeStatus,
     parseTemasFollowUp: parseTemasFollowUp,
+    deveAplicarSemente: deveAplicarSemente,
     temaFollowUpHabilitado: temaFollowUpHabilitado,
     elegivelFollowUp: elegivelFollowUp,
     linhaFonteParaPlano: linhaFonteParaPlano,
