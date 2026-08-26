@@ -4,7 +4,7 @@
  */
 var APP = {
   nome: 'OpsHub',
-  versao: '1.2.1',
+  versao: '1.3.0',
 };
 
 var ABAS = {
@@ -41,6 +41,7 @@ var CONFIG_PADRAO = [
   ['remetente_nome', 'OpsHub Avery Dennison', 'Nome que aparece no follow-up'],
   ['atraso_dias_followup', '1', 'Dias apos o prazo para o primeiro e-mail'],
   ['hora_gatilho', '08', 'Hora local do disparo diario (0-23)'],
+  ['followup_temas', '', 'Temas que recebem e-mail de follow-up (vazio = todos)'],
   ['versao_instalada', APP.versao, 'Versao aplicada na ultima instalacao'],
 ];
 
@@ -69,5 +70,7 @@ var SEMENTES = {
     ['C12', 'D-PCP', 'Plano mestre Smartrac', 'MPS da linha Smartrac', 'https://docs.google.com/spreadsheets', 2, 'SIM', 'Smartrac', 'MPS'],
     ['C10', 'D-CI', 'A3 consolidado', 'Planos de ação por tema da planta', 'https://docs.google.com/spreadsheets', 1, 'SIM', 'Apparel', 'A3'],
     ['C13', 'D-CI', 'A3 Smartrac', 'Planos de ação da operação Smartrac', 'https://docs.google.com/spreadsheets', 2, 'SIM', 'Smartrac', 'A3'],
+    ['C14', 'D-PROD', 'KPI da planta', 'Indicadores consolidados Solutions', 'https://docs.google.com/spreadsheets', 3, 'SIM', 'Solutions', 'Planta'],
+    ['C15', 'D-EHS', 'DDS da planta', 'Diálogo diário de segurança da planta', 'https://docs.google.com/spreadsheets', 3, 'SIM', '', 'Campo'],
   ],
 };

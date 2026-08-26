@@ -37,6 +37,8 @@
     { id: 'C12', departamento_id: 'D-PCP', nome: 'Plano mestre Smartrac', descricao: 'MPS da linha Smartrac', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'MPS' },
     { id: 'C10', departamento_id: 'D-CI', nome: 'A3 consolidado', descricao: 'Planos de ação por tema da planta', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'A3' },
     { id: 'C13', departamento_id: 'D-CI', nome: 'A3 Smartrac', descricao: 'Planos de ação da operação Smartrac', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'A3' },
+    { id: 'C14', departamento_id: 'D-PROD', nome: 'KPI da planta', descricao: 'Indicadores consolidados Solutions', url: 'https://docs.google.com/spreadsheets', ordem: 3, ativo: 'SIM', negocio: 'Solutions', pasta: 'Planta' },
+    { id: 'C15', departamento_id: 'D-EHS', nome: 'DDS da planta', descricao: 'Diálogo diário de segurança da planta', url: 'https://docs.google.com/spreadsheets', ordem: 3, ativo: 'SIM', negocio: '', pasta: 'Campo' },
   ];
 
   function plano(id, o) {
@@ -70,6 +72,17 @@
     { id: 'F1', nome: 'A3 Qualidade', referencia: 'https://docs.google.com/spreadsheets/d/exemplo', aba: 'Planos', linha_cabecalho: 1, ativo: true, ultima_execucao: '', ultimo_status: '', ultimo_detalhe: '' },
   ];
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
+  var temasFollowUp = [];
+
+  function temasDistintos() {
+    var set = {}; var out = [];
+    planos.forEach(function (p) {
+      if (!p.tema || set[p.tema]) return;
+      set[p.tema] = 1; out.push(p.tema);
+    });
+    out.sort(function (a, b) { return String(a).localeCompare(String(b), 'pt-BR'); });
+    return out;
+  }
 
   function hub() {
     var atrasados = planos.filter(function (p) { return p.status === 'Atrasado'; }).length;
@@ -86,6 +99,8 @@
       }),
       planos: planos,
       kpis: { total: planos.length, atrasados: atrasados, abertos: abertos, semEmail: semEmail, concluidos: concluidos },
+      temasDistintos: temasDistintos(),
+      temasFollowUp: temasFollowUp.slice(),
       fontes: fontes,
       departamentosAdmin: departamentos,
       controlesAdmin: controles,
@@ -98,8 +113,8 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.2.1' },
-        usuario: { email: 'plant.manager@averydennison.com', nome: 'Plant Manager', iniciais: 'PM' },
+        app: { nome: 'OpsHub', versao: '1.3.0' },
+        usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
     },
@@ -120,6 +135,18 @@
     },
     apiExcluirControle: function (id) {
       controles = controles.filter(function (d) { return d.id !== id; });
+      return hub();
+    },
+    apiReordenarDepartamentos: function (ids) {
+      departamentos = (ids || []).map(function (id, i) {
+        var d = departamentos.filter(function (x) { return x.id === id; })[0];
+        if (d) d.ordem = i + 1;
+        return d;
+      }).filter(Boolean);
+      return hub();
+    },
+    apiSalvarTemasFollowUp: function (temas) {
+      temasFollowUp = Array.isArray(temas) ? temas.slice() : [];
       return hub();
     },
     apiSalvarFonte: function (reg) {

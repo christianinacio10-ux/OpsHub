@@ -39,10 +39,19 @@ assert.strictEqual(Logica.elegivelFollowUp(acao, d(2026, 8, 24)).ok, false, 'no 
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { email: '' }), hoje).motivo, 'sem_email');
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { status: 'Concluído' }), hoje).ok, false);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { prazo: d(2026, 9, 1) }), hoje).motivo, 'ainda_no_prazo');
-assert.strictEqual(
-  Logica.elegivelFollowUp(Object.assign({}, acao, { ultimo_email_em: hoje }), hoje).motivo,
+assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { ultimo_email_em: hoje }), hoje).motivo,
   'ja_enviado_hoje'
 );
+assert.strictEqual(Logica.tituloNome('christian inacio'), 'Christian Inacio');
+assert.strictEqual(Logica.tituloNome('PLANT MANAGER'), 'Plant Manager');
+assert.deepStrictEqual(Logica.parseTemasFollowUp(''), []);
+assert.deepStrictEqual(Logica.parseTemasFollowUp('["OEE","EHS"]'), ['OEE', 'EHS']);
+assert.deepStrictEqual(Logica.parseTemasFollowUp('OEE, EHS'), ['OEE', 'EHS']);
+assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', []), true);
+assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', ['EHS']), false);
+assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'OEE' }), hoje, ['EHS']).motivo, 'tema_desligado');
+assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'EHS' }), hoje, ['EHS']).ok, true);
+assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'OEE' }), hoje, []).ok, true);
 
 assert.strictEqual(Logica.statusEfetivo({ status: 'Aberto', prazo: d(2026, 8, 20) }, hoje), 'Atrasado');
 assert.strictEqual(Logica.statusEfetivo({ status: 'Concluído', prazo: d(2026, 8, 20) }, hoje), 'Concluído');
@@ -103,6 +112,8 @@ assert.strictEqual(Logica.extrairIdPlanilha('https://docs.google.com/spreadsheet
 assert.strictEqual(Logica.normalizarBandeira('solutions'), 'Solutions');
 assert.strictEqual(Logica.negocioDoControle({}, 'Apparel'), 'Apparel');
 assert.strictEqual(Logica.negocioDoControle({ negocio: 'Smartrac' }, 'Solutions'), 'Smartrac');
+assert.strictEqual(Logica.negocioDoControle({}, 'Solutions'), 'Solutions');
+assert.strictEqual(Logica.negocioDoControle({ negocio: 'Solutions' }, 'Solutions'), 'Solutions');
 var arvore = Logica.montarArvore([
   { nome: 'Hora a hora', pasta: 'Linha / Hora a hora', ordem: 1 },
   { nome: 'Programa', pasta: 'Linha / Programa', ordem: 2 },
@@ -115,9 +126,12 @@ assert.strictEqual(arvore.pastas[0].pastas.length, 2);
 var split = Logica.separarPorNegocio([
   { nome: 'A', negocio: 'Apparel' },
   { nome: 'S', negocio: 'Smartrac' },
+  { nome: 'P', negocio: 'Solutions' },
+  { nome: 'X', negocio: '' },
 ], 'Solutions');
 assert.strictEqual(split.apparel.length, 1);
 assert.strictEqual(split.smartrac.length, 1);
+assert.strictEqual(split.solutions.length, 2);
 
 var mapaAcao = Logica.mapearColunas(['Tema', 'Ação corretiva', 'O quê?', 'Prazo']);
 assert.strictEqual(mapaAcao.como, 1);
