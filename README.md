@@ -6,7 +6,7 @@ Tema dark, sidebar no mesmo espírito do Controle Hora por Hora, com a marca Ave
 
 ## O que o painel faz
 
-- **Departamentos clicáveis** na aba OpsHub abrem uma subtela com os controles-chave da área. O nome do controle leva ao link cadastrado.
+- **Departamentos clicáveis** na aba OpsHub abrem uma subtela com os controles-chave da área. O nome do controle leva ao link cadastrado. Cada área pode ter a bandeira **Apparel**, **Smartrac** ou **Solutions** (as duas no escopo): o badge aparece no card e, em Solutions, o modal central mostra a árvore Apparel à esquerda e Smartrac à direita.
 - **Planos de ação** com resumo (KPIs) e filtro por tema: a tabela começa vazia até o gestor marcar um ou mais temas, ou **Todos**. Os demais eixos (divisão, área, status, responsável) são multi-seleção no estilo Excel.
 - **Configurações** reúne departamentos, controles-chave, fontes de importação e follow-up/gatilho.
 - **Follow-up por e-mail:** depois de 1 dia de atraso, um e-mail por dia para o responsável, até a data ser reprogramada na origem. Sem e-mail cadastrado, nada é enviado — a linha mostra o aviso no tooltip.
@@ -33,8 +33,8 @@ node testes/empacotar.js
 
 | Aba | Uso |
 | --- | --- |
-| `DEPARTAMENTOS` | Áreas do hub (nome, ícone, cor, ordem) |
-| `CONTROLES` | Links de cada departamento |
+| `DEPARTAMENTOS` | Áreas do hub (nome, ícone, cor, ordem, bandeira Apparel/Smartrac/Solutions) |
+| `CONTROLES` | Links de cada departamento (negócio e pasta opcional na árvore) |
 | `FONTES_PLANOS` | Google Sheets de origem dos planos |
 | `PLANOS_ACAO` | Consolidado importado (não edite na mão se vier de fonte) |
 | `_CONFIG` | Timezone, hora do gatilho, nome do remetente |

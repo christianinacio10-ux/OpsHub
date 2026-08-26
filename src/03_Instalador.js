@@ -94,7 +94,7 @@ function semearCadastros_() {
     Repo.acrescentar(ABAS.departamentos, SEMENTES.departamentos.map(function (l) {
       return {
         id: l[0], nome: l[1], descricao: l[2], icone: l[3],
-        cor: l[4], ordem: l[5], ativo: l[6],
+        cor: l[4], ordem: l[5], ativo: l[6], bandeira: l[7],
       };
     }));
   }
@@ -102,7 +102,7 @@ function semearCadastros_() {
     Repo.acrescentar(ABAS.controles, SEMENTES.controles.map(function (l) {
       return {
         id: l[0], departamento_id: l[1], nome: l[2], descricao: l[3],
-        url: l[4], ordem: l[5], ativo: l[6],
+        url: l[4], ordem: l[5], ativo: l[6], negocio: l[7], pasta: l[8],
       };
     }));
   }

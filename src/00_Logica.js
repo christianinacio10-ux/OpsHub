@@ -420,6 +420,64 @@ var Logica = (function () {
       Math.floor(Math.random() * 36).toString(36).toUpperCase();
   }
 
+  function normalizarBandeira(v) {
+    var k = slug(v);
+    if (k === 'solutions' || k === 'solution') return 'Solutions';
+    if (k === 'apparel') return 'Apparel';
+    if (k === 'smartrac') return 'Smartrac';
+    return '';
+  }
+
+  function negocioDoControle(controle, bandeiraDept) {
+    var n = normalizarBandeira(controle && controle.negocio);
+    if (n === 'Apparel' || n === 'Smartrac') return n;
+    var b = normalizarBandeira(bandeiraDept);
+    if (b === 'Apparel' || b === 'Smartrac') return b;
+    return '';
+  }
+
+  function partesPasta(pasta) {
+    return texto(pasta).split('/').map(function (p) { return p.trim(); }).filter(Boolean);
+  }
+
+  function compararControles(a, b) {
+    var oa = Number(a && a.ordem || 0);
+    var ob = Number(b && b.ordem || 0);
+    if (oa !== ob) return oa - ob;
+    return texto(a && a.nome).localeCompare(texto(b && b.nome), 'pt-BR');
+  }
+
+  function montarArvore(controles) {
+    var raiz = { nome: '', filhos: {}, arquivos: [] };
+    (controles || []).forEach(function (c) {
+      var no = raiz;
+      partesPasta(c && c.pasta).forEach(function (p) {
+        if (!no.filhos[p]) no.filhos[p] = { nome: p, filhos: {}, arquivos: [] };
+        no = no.filhos[p];
+      });
+      no.arquivos.push(c);
+    });
+    function serializar(no) {
+      var pastas = Object.keys(no.filhos).sort(function (a, b) {
+        return a.localeCompare(b, 'pt-BR');
+      }).map(function (k) { return serializar(no.filhos[k]); });
+      var arquivos = (no.arquivos || []).slice().sort(compararControles);
+      return { nome: no.nome, pastas: pastas, arquivos: arquivos };
+    }
+    return serializar(raiz);
+  }
+
+  function separarPorNegocio(controles, bandeiraDept) {
+    var apparel = [];
+    var smartrac = [];
+    (controles || []).forEach(function (c) {
+      var n = negocioDoControle(c, bandeiraDept);
+      if (n === 'Smartrac') smartrac.push(c);
+      else if (n === 'Apparel') apparel.push(c);
+    });
+    return { apparel: apparel, smartrac: smartrac };
+  }
+
   function prepararAcaoParaUi(p, hoje) {
     var prazo = paraData(p.prazo);
     var st = statusEfetivo(p, hoje);
@@ -480,6 +538,11 @@ var Logica = (function () {
     extrairIdPlanilha: extrairIdPlanilha,
     idNovo: idNovo,
     prepararAcaoParaUi: prepararAcaoParaUi,
+    normalizarBandeira: normalizarBandeira,
+    negocioDoControle: negocioDoControle,
+    partesPasta: partesPasta,
+    montarArvore: montarArvore,
+    separarPorNegocio: separarPorNegocio,
   };
 })();
 

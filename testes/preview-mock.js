@@ -13,27 +13,30 @@
   }
 
   var departamentos = [
-    { id: 'D-PROD', nome: 'Produção', descricao: 'Controles de chão de fábrica e desempenho da linha', icone: 'producao', cor: '#B42336', ordem: 1, ativo: 'SIM' },
-    { id: 'D-QUAL', nome: 'Qualidade', descricao: 'NC, auditorias e controle de processo', icone: 'qualidade', cor: '#7A8BA3', ordem: 2, ativo: 'SIM' },
-    { id: 'D-MAN', nome: 'Manutenção', descricao: 'PCM, CMMS e confiabilidade', icone: 'manutencao', cor: '#C4B5A0', ordem: 3, ativo: 'SIM' },
-    { id: 'D-EHS', nome: 'EHS', descricao: 'Segurança, meio ambiente e saúde ocupacional', icone: 'ehs', cor: '#8FA393', ordem: 4, ativo: 'SIM' },
-    { id: 'D-LOG', nome: 'Logística', descricao: 'Armazém, expedição e materiais', icone: 'logistica', cor: '#8B8499', ordem: 5, ativo: 'SIM' },
-    { id: 'D-ENG', nome: 'Engenharia', descricao: 'Processo, industrialização e projetos', icone: 'engenharia', cor: '#7E9AAB', ordem: 6, ativo: 'SIM' },
-    { id: 'D-PCP', nome: 'PCP', descricao: 'Planejamento, programação e controle da produção', icone: 'pcp', cor: '#C4A484', ordem: 7, ativo: 'SIM' },
-    { id: 'D-CI', nome: 'Melhoria Contínua', descricao: 'Kaizen, A3 e planos de ação corporativos', icone: 'melhoria', cor: '#B0899A', ordem: 8, ativo: 'SIM' },
+    { id: 'D-PROD', nome: 'Produção', descricao: 'Controles de chão de fábrica e desempenho da linha', icone: 'producao', cor: '#B42336', ordem: 1, ativo: 'SIM', bandeira: 'Solutions' },
+    { id: 'D-QUAL', nome: 'Qualidade', descricao: 'NC, auditorias e controle de processo', icone: 'qualidade', cor: '#7A8BA3', ordem: 2, ativo: 'SIM', bandeira: 'Apparel' },
+    { id: 'D-MAN', nome: 'Manutenção', descricao: 'PCM, CMMS e confiabilidade', icone: 'manutencao', cor: '#C4B5A0', ordem: 3, ativo: 'SIM', bandeira: 'Smartrac' },
+    { id: 'D-EHS', nome: 'EHS', descricao: 'Segurança, meio ambiente e saúde ocupacional', icone: 'ehs', cor: '#8FA393', ordem: 4, ativo: 'SIM', bandeira: 'Solutions' },
+    { id: 'D-LOG', nome: 'Logística', descricao: 'Armazém, expedição e materiais', icone: 'logistica', cor: '#8B8499', ordem: 5, ativo: 'SIM', bandeira: 'Apparel' },
+    { id: 'D-ENG', nome: 'Engenharia', descricao: 'Processo, industrialização e projetos', icone: 'engenharia', cor: '#7E9AAB', ordem: 6, ativo: 'SIM', bandeira: 'Smartrac' },
+    { id: 'D-PCP', nome: 'PCP', descricao: 'Planejamento, programação e controle da produção', icone: 'pcp', cor: '#C4A484', ordem: 7, ativo: 'SIM', bandeira: 'Solutions' },
+    { id: 'D-CI', nome: 'Melhoria Contínua', descricao: 'Kaizen, A3 e planos de ação corporativos', icone: 'melhoria', cor: '#B0899A', ordem: 8, ativo: 'SIM', bandeira: 'Solutions' },
   ];
 
   var controles = [
-    { id: 'C1', departamento_id: 'D-PROD', nome: 'Controle Hora por Hora', descricao: 'Painel de produção por máquina e turno', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C2', departamento_id: 'D-PROD', nome: 'Plano de produção', descricao: 'Programa congelado da semana', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM' },
-    { id: 'C3', departamento_id: 'D-QUAL', nome: 'Gestão de não conformidades', descricao: 'Registro e tratamento de NCs', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C4', departamento_id: 'D-QUAL', nome: 'Controle de processo', descricao: 'Cartas e limites de qualidade', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM' },
-    { id: 'C5', departamento_id: 'D-MAN', nome: 'CMMS / Ordens de serviço', descricao: 'Backlog e preventiva', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C6', departamento_id: 'D-EHS', nome: 'Observações de segurança', descricao: 'Desvios e near miss', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C7', departamento_id: 'D-LOG', nome: 'Inventário e FIFO', descricao: 'Posição de estoque e giro', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C8', departamento_id: 'D-ENG', nome: 'PCP de projetos', descricao: 'Pipeline de industrialização', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C9', departamento_id: 'D-PCP', nome: 'Plano mestre', descricao: 'MPS / sequência da linha', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C10', departamento_id: 'D-CI', nome: 'A3 consolidado', descricao: 'Planos de ação por tema da planta', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
+    { id: 'C1', departamento_id: 'D-PROD', nome: 'Controle Hora por Hora', descricao: 'Painel de produção por máquina e turno', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'Linha / Hora a hora' },
+    { id: 'C2', departamento_id: 'D-PROD', nome: 'Plano de produção', descricao: 'Programa congelado da semana', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'Linha / Programa' },
+    { id: 'C3', departamento_id: 'D-QUAL', nome: 'Gestão de não conformidades', descricao: 'Registro e tratamento de NCs', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'NC' },
+    { id: 'C4', departamento_id: 'D-QUAL', nome: 'Controle de processo', descricao: 'Cartas e limites de qualidade', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Apparel', pasta: 'Processo' },
+    { id: 'C5', departamento_id: 'D-MAN', nome: 'CMMS / Ordens de serviço', descricao: 'Backlog e preventiva', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Smartrac', pasta: 'PCM' },
+    { id: 'C6', departamento_id: 'D-EHS', nome: 'Observações de segurança', descricao: 'Desvios e near miss', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'Campo' },
+    { id: 'C11', departamento_id: 'D-EHS', nome: 'Inspeção Smartrac', descricao: 'Roteiro de inspeção da linha Smartrac', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'Campo' },
+    { id: 'C7', departamento_id: 'D-LOG', nome: 'Inventário e FIFO', descricao: 'Posição de estoque e giro', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: '' },
+    { id: 'C8', departamento_id: 'D-ENG', nome: 'PCP de projetos', descricao: 'Pipeline de industrialização', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Smartrac', pasta: 'Projetos' },
+    { id: 'C9', departamento_id: 'D-PCP', nome: 'Plano mestre Apparel', descricao: 'MPS da linha Apparel', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'MPS' },
+    { id: 'C12', departamento_id: 'D-PCP', nome: 'Plano mestre Smartrac', descricao: 'MPS da linha Smartrac', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'MPS' },
+    { id: 'C10', departamento_id: 'D-CI', nome: 'A3 consolidado', descricao: 'Planos de ação por tema da planta', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'A3' },
+    { id: 'C13', departamento_id: 'D-CI', nome: 'A3 Smartrac', descricao: 'Planos de ação da operação Smartrac', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'A3' },
   ];
 
   function plano(id, o) {
@@ -76,10 +79,10 @@
     return {
       hoje: ymd(hoje),
       departamentos: departamentos.map(function (d) {
-        return { id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor, ordem: d.ordem };
+        return { id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor, ordem: d.ordem, bandeira: d.bandeira };
       }),
       controles: controles.map(function (c) {
-        return { id: c.id, departamento_id: c.departamento_id, nome: c.nome, descricao: c.descricao, url: c.url, ordem: c.ordem };
+        return { id: c.id, departamento_id: c.departamento_id, nome: c.nome, descricao: c.descricao, url: c.url, ordem: c.ordem, negocio: c.negocio, pasta: c.pasta };
       }),
       planos: planos,
       kpis: { total: planos.length, atrasados: atrasados, abertos: abertos, semEmail: semEmail, concluidos: concluidos },
@@ -95,7 +98,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.1.0' },
+        app: { nome: 'OpsHub', versao: '1.2.0' },
         usuario: { email: 'plant.manager@averydennison.com', nome: 'Plant Manager', iniciais: 'PM' },
         gatilho: gatilho,
       };

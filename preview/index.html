@@ -318,6 +318,16 @@ body { overflow: hidden; }
   box-shadow: var(--sombra-1);
 }
 .card-dept::before { display: none; }
+.card-dept-badge {
+  position: absolute; top: 10px; right: 10px;
+  height: 20px; padding: 0 8px; border-radius: 999px;
+  border: 1px solid var(--linha-forte);
+  background: rgba(237,232,224,.06);
+  color: var(--tinta-2);
+  font-size: 10.5px; font-weight: 520; letter-spacing: .02em;
+  display: inline-flex; align-items: center;
+  pointer-events: none;
+}
 .card-dept-icone {
   width: 36px; height: 36px; border-radius: 10px;
   display: grid; place-items: center;
@@ -432,25 +442,31 @@ table.dados tr.risco td { box-shadow: none; }
 }
 
 .drawer-fundo {
-  position: fixed; inset: 0; background: rgba(12, 11, 10, .48);
+  position: fixed; inset: 0; background: rgba(12, 11, 10, .55);
   z-index: 20; backdrop-filter: blur(8px);
   display: none;
 }
 .drawer-fundo.aberto { display: block; }
 .drawer {
-  position: fixed; top: 0; right: 0; bottom: 0;
-  width: min(440px, 100%);
+  position: fixed; z-index: 21;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(920px, 92vw);
+  max-height: min(86vh, 840px);
   background: #171615;
-  border-left: 1px solid var(--linha);
-  z-index: 21;
+  border: 1px solid var(--linha-forte);
+  border-radius: 16px;
   display: none;
   flex-direction: column;
   box-shadow: var(--sombra-3);
+  overflow: hidden;
 }
+.drawer.largo { width: min(1100px, 94vw); }
 .drawer.aberto { display: flex; }
 .drawer-topo {
-  padding: 28px 28px 20px; display: flex; justify-content: space-between;
+  padding: 22px 24px 16px; display: flex; justify-content: space-between;
   gap: 12px; border-bottom: 1px solid var(--linha);
+  flex-shrink: 0;
 }
 .drawer-kicker {
   font-size: 11px; font-weight: 500; letter-spacing: .14em;
@@ -458,7 +474,57 @@ table.dados tr.risco td { box-shadow: none; }
 }
 .drawer-titulo { margin: 8px 0 6px; font-size: 24px; font-weight: 520; letter-spacing: -.03em; }
 .drawer-sub { margin: 0; color: var(--tinta-3); font-size: 13.5px; line-height: 1.45; }
-.drawer-corpo { padding: 12px 16px 32px; overflow: auto; }
+.drawer-corpo { padding: 16px 16px 24px; overflow: auto; min-height: 0; flex: 1 1 auto; }
+
+.arvores-duplas {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  min-height: 280px;
+}
+.arvore-col {
+  border: 1px solid var(--linha);
+  border-radius: 12px;
+  background: var(--superficie);
+  min-height: 200px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.arvore-col-titulo {
+  padding: 12px 14px; border-bottom: 1px solid var(--linha);
+  font-size: 13px; font-weight: 520; letter-spacing: -.01em;
+  flex-shrink: 0;
+}
+.arvore-col-corpo { padding: 6px 8px 14px; overflow: auto; }
+.arvore-pasta, .arvore-arquivo {
+  display: flex; align-items: flex-start; gap: 8px;
+  width: 100%; text-align: left; font-family: var(--fonte);
+  background: transparent; border: 0; color: var(--tinta-2);
+  padding: 8px 8px; border-radius: 8px; cursor: pointer;
+  text-decoration: none;
+}
+.arvore-pasta:hover, .arvore-arquivo:hover { background: rgba(237,232,224,.05); color: var(--tinta); }
+.arvore-pasta svg, .arvore-arquivo svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; opacity: .8; }
+.arvore-arquivo span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.arvore-arquivo strong { font-weight: 520; color: var(--tinta); font-size: 13.5px; }
+.arvore-arquivo em { font-style: normal; color: var(--tinta-3); font-size: 12px; }
+.arvore-filhos { padding-left: 14px; }
+
+.config-abas {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--linha);
+  padding-bottom: 0;
+}
+.config-aba {
+  height: 36px; padding: 0 14px; border: 0; background: transparent;
+  color: var(--tinta-3); font-family: var(--fonte); font-size: 13.5px;
+  font-weight: 450; cursor: pointer; border-radius: 10px 10px 0 0;
+}
+.config-aba:hover { color: var(--tinta); background: rgba(237,232,224,.04); }
+.config-aba.ativa {
+  color: var(--tinta); font-weight: 520;
+  background: rgba(237,232,224,.06);
+  box-shadow: inset 0 -2px 0 var(--marca);
+}
 
 .link-controle {
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
@@ -595,10 +661,7 @@ table.dados tr.risco td { box-shadow: none; }
   transform: rotate(45deg);
 }
 
-.config-ancoras {
-  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px;
-}
-.bloco-config { margin-bottom: 40px; }
+.bloco-config { margin-bottom: 16px; }
 .bloco-config .form-grid { margin-top: 0; }
 
 .botao.ocupado { pointer-events: none; opacity: .72; }
@@ -633,6 +696,8 @@ table.dados tr.risco td { box-shadow: none; }
   .form-grid label.span2 { grid-column: span 1; }
   .conteudo { padding: 18px; }
   .topo { padding: 16px 18px; }
+  .arvores-duplas { grid-template-columns: 1fr; }
+  .drawer { width: min(920px, 96vw); max-height: 90vh; }
 }
 </style>
 
@@ -691,7 +756,7 @@ table.dados tr.risco td { box-shadow: none; }
   </div>
 
   <div class="drawer-fundo" id="drawer-fundo" hidden></div>
-  <aside class="drawer" id="drawer" hidden>
+  <aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="drawer-titulo">
     <div class="drawer-topo">
       <div>
         <div class="drawer-kicker" id="drawer-kicker">Departamento</div>
@@ -729,27 +794,30 @@ table.dados tr.risco td { box-shadow: none; }
   }
 
   var departamentos = [
-    { id: 'D-PROD', nome: 'Produção', descricao: 'Controles de chão de fábrica e desempenho da linha', icone: 'producao', cor: '#B42336', ordem: 1, ativo: 'SIM' },
-    { id: 'D-QUAL', nome: 'Qualidade', descricao: 'NC, auditorias e controle de processo', icone: 'qualidade', cor: '#7A8BA3', ordem: 2, ativo: 'SIM' },
-    { id: 'D-MAN', nome: 'Manutenção', descricao: 'PCM, CMMS e confiabilidade', icone: 'manutencao', cor: '#C4B5A0', ordem: 3, ativo: 'SIM' },
-    { id: 'D-EHS', nome: 'EHS', descricao: 'Segurança, meio ambiente e saúde ocupacional', icone: 'ehs', cor: '#8FA393', ordem: 4, ativo: 'SIM' },
-    { id: 'D-LOG', nome: 'Logística', descricao: 'Armazém, expedição e materiais', icone: 'logistica', cor: '#8B8499', ordem: 5, ativo: 'SIM' },
-    { id: 'D-ENG', nome: 'Engenharia', descricao: 'Processo, industrialização e projetos', icone: 'engenharia', cor: '#7E9AAB', ordem: 6, ativo: 'SIM' },
-    { id: 'D-PCP', nome: 'PCP', descricao: 'Planejamento, programação e controle da produção', icone: 'pcp', cor: '#C4A484', ordem: 7, ativo: 'SIM' },
-    { id: 'D-CI', nome: 'Melhoria Contínua', descricao: 'Kaizen, A3 e planos de ação corporativos', icone: 'melhoria', cor: '#B0899A', ordem: 8, ativo: 'SIM' },
+    { id: 'D-PROD', nome: 'Produção', descricao: 'Controles de chão de fábrica e desempenho da linha', icone: 'producao', cor: '#B42336', ordem: 1, ativo: 'SIM', bandeira: 'Solutions' },
+    { id: 'D-QUAL', nome: 'Qualidade', descricao: 'NC, auditorias e controle de processo', icone: 'qualidade', cor: '#7A8BA3', ordem: 2, ativo: 'SIM', bandeira: 'Apparel' },
+    { id: 'D-MAN', nome: 'Manutenção', descricao: 'PCM, CMMS e confiabilidade', icone: 'manutencao', cor: '#C4B5A0', ordem: 3, ativo: 'SIM', bandeira: 'Smartrac' },
+    { id: 'D-EHS', nome: 'EHS', descricao: 'Segurança, meio ambiente e saúde ocupacional', icone: 'ehs', cor: '#8FA393', ordem: 4, ativo: 'SIM', bandeira: 'Solutions' },
+    { id: 'D-LOG', nome: 'Logística', descricao: 'Armazém, expedição e materiais', icone: 'logistica', cor: '#8B8499', ordem: 5, ativo: 'SIM', bandeira: 'Apparel' },
+    { id: 'D-ENG', nome: 'Engenharia', descricao: 'Processo, industrialização e projetos', icone: 'engenharia', cor: '#7E9AAB', ordem: 6, ativo: 'SIM', bandeira: 'Smartrac' },
+    { id: 'D-PCP', nome: 'PCP', descricao: 'Planejamento, programação e controle da produção', icone: 'pcp', cor: '#C4A484', ordem: 7, ativo: 'SIM', bandeira: 'Solutions' },
+    { id: 'D-CI', nome: 'Melhoria Contínua', descricao: 'Kaizen, A3 e planos de ação corporativos', icone: 'melhoria', cor: '#B0899A', ordem: 8, ativo: 'SIM', bandeira: 'Solutions' },
   ];
 
   var controles = [
-    { id: 'C1', departamento_id: 'D-PROD', nome: 'Controle Hora por Hora', descricao: 'Painel de produção por máquina e turno', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C2', departamento_id: 'D-PROD', nome: 'Plano de produção', descricao: 'Programa congelado da semana', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM' },
-    { id: 'C3', departamento_id: 'D-QUAL', nome: 'Gestão de não conformidades', descricao: 'Registro e tratamento de NCs', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C4', departamento_id: 'D-QUAL', nome: 'Controle de processo', descricao: 'Cartas e limites de qualidade', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM' },
-    { id: 'C5', departamento_id: 'D-MAN', nome: 'CMMS / Ordens de serviço', descricao: 'Backlog e preventiva', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C6', departamento_id: 'D-EHS', nome: 'Observações de segurança', descricao: 'Desvios e near miss', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C7', departamento_id: 'D-LOG', nome: 'Inventário e FIFO', descricao: 'Posição de estoque e giro', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C8', departamento_id: 'D-ENG', nome: 'PCP de projetos', descricao: 'Pipeline de industrialização', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C9', departamento_id: 'D-PCP', nome: 'Plano mestre', descricao: 'MPS / sequência da linha', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
-    { id: 'C10', departamento_id: 'D-CI', nome: 'A3 consolidado', descricao: 'Planos de ação por tema da planta', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM' },
+    { id: 'C1', departamento_id: 'D-PROD', nome: 'Controle Hora por Hora', descricao: 'Painel de produção por máquina e turno', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'Linha / Hora a hora' },
+    { id: 'C2', departamento_id: 'D-PROD', nome: 'Plano de produção', descricao: 'Programa congelado da semana', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'Linha / Programa' },
+    { id: 'C3', departamento_id: 'D-QUAL', nome: 'Gestão de não conformidades', descricao: 'Registro e tratamento de NCs', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'NC' },
+    { id: 'C4', departamento_id: 'D-QUAL', nome: 'Controle de processo', descricao: 'Cartas e limites de qualidade', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Apparel', pasta: 'Processo' },
+    { id: 'C5', departamento_id: 'D-MAN', nome: 'CMMS / Ordens de serviço', descricao: 'Backlog e preventiva', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Smartrac', pasta: 'PCM' },
+    { id: 'C6', departamento_id: 'D-EHS', nome: 'Observações de segurança', descricao: 'Desvios e near miss', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'Campo' },
+    { id: 'C11', departamento_id: 'D-EHS', nome: 'Inspeção Smartrac', descricao: 'Roteiro de inspeção da linha Smartrac', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'Campo' },
+    { id: 'C7', departamento_id: 'D-LOG', nome: 'Inventário e FIFO', descricao: 'Posição de estoque e giro', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: '' },
+    { id: 'C8', departamento_id: 'D-ENG', nome: 'PCP de projetos', descricao: 'Pipeline de industrialização', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Smartrac', pasta: 'Projetos' },
+    { id: 'C9', departamento_id: 'D-PCP', nome: 'Plano mestre Apparel', descricao: 'MPS da linha Apparel', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'MPS' },
+    { id: 'C12', departamento_id: 'D-PCP', nome: 'Plano mestre Smartrac', descricao: 'MPS da linha Smartrac', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'MPS' },
+    { id: 'C10', departamento_id: 'D-CI', nome: 'A3 consolidado', descricao: 'Planos de ação por tema da planta', url: 'https://docs.google.com/spreadsheets', ordem: 1, ativo: 'SIM', negocio: 'Apparel', pasta: 'A3' },
+    { id: 'C13', departamento_id: 'D-CI', nome: 'A3 Smartrac', descricao: 'Planos de ação da operação Smartrac', url: 'https://docs.google.com/spreadsheets', ordem: 2, ativo: 'SIM', negocio: 'Smartrac', pasta: 'A3' },
   ];
 
   function plano(id, o) {
@@ -792,10 +860,10 @@ table.dados tr.risco td { box-shadow: none; }
     return {
       hoje: ymd(hoje),
       departamentos: departamentos.map(function (d) {
-        return { id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor, ordem: d.ordem };
+        return { id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor, ordem: d.ordem, bandeira: d.bandeira };
       }),
       controles: controles.map(function (c) {
-        return { id: c.id, departamento_id: c.departamento_id, nome: c.nome, descricao: c.descricao, url: c.url, ordem: c.ordem };
+        return { id: c.id, departamento_id: c.departamento_id, nome: c.nome, descricao: c.descricao, url: c.url, ordem: c.ordem, negocio: c.negocio, pasta: c.pasta };
       }),
       planos: planos,
       kpis: { total: planos.length, atrasados: atrasados, abertos: abertos, semEmail: semEmail, concluidos: concluidos },
@@ -811,7 +879,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.1.0' },
+        app: { nome: 'OpsHub', versao: '1.2.0' },
         usuario: { email: 'plant.manager@averydennison.com', nome: 'Plant Manager', iniciais: 'PM' },
         gatilho: gatilho,
       };
@@ -898,6 +966,8 @@ table.dados tr.risco td { box-shadow: none; }
     hub: null,
     carregando: false,
     deptAberto: null,
+    pastasAbertas: {},
+    configAba: 'dept',
     filtros: filtrosVazios(),
     filtroAberto: null,
     ordem: { campo: 'prazo', dir: 'asc' },
@@ -930,6 +1000,9 @@ table.dados tr.risco td { box-shadow: none; }
     melhoria: '<path d="M12 3v18M5 10l7-7 7 7"/>',
     geral: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
     config: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    pasta: '<path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>',
+    'pasta-aberta': '<path d="M3 7h6l2 2h10v2H4l-1 8V7z"/><path d="M3 19h16l2-8H5"/>',
+    arquivo: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
   };
 
   function svg(nome, extra) {
@@ -1056,8 +1129,12 @@ table.dados tr.risco td { box-shadow: none; }
       '<div class="grade-dept">' +
       (hub.departamentos || []).map(function (d) {
         var n = controles.filter(function (c) { return c.departamento_id === d.id; }).length;
+        var badge = d.bandeira
+          ? '<span class="card-dept-badge">' + escapar(d.bandeira) + '</span>'
+          : '';
         return '<button type="button" class="card-dept" data-dept="' + escapar(d.id) +
           '" style="--dept-cor:' + escapar(d.cor) + '">' +
+          badge +
           '<div class="card-dept-icone">' + svg(d.icone) + '</div>' +
           '<h3>' + escapar(d.nome) + '</h3>' +
           '<p>' + escapar(d.descricao) + '</p>' +
@@ -1250,23 +1327,89 @@ table.dados tr.risco td { box-shadow: none; }
       '<div class="secao-apoio">' + filtrados.length + ' de ' + todos.length + ' ações</div></div></div>';
   }
 
+  function negocioEfetivo(c, dept) {
+    var n = String((c && c.negocio) || '').trim();
+    if (n === 'Apparel' || n === 'Smartrac') return n;
+    var b = String((dept && dept.bandeira) || '').trim();
+    if (b === 'Apparel' || b === 'Smartrac') return b;
+    return '';
+  }
+
+  function montarArvoreUi(controles) {
+    var raiz = { nome: '', filhos: {}, arquivos: [] };
+    (controles || []).forEach(function (c) {
+      var no = raiz;
+      String(c.pasta || '').split('/').map(function (p) { return p.trim(); }).filter(Boolean).forEach(function (p) {
+        if (!no.filhos[p]) no.filhos[p] = { nome: p, filhos: {}, arquivos: [] };
+        no = no.filhos[p];
+      });
+      no.arquivos.push(c);
+    });
+    function ser(no) {
+      return {
+        nome: no.nome,
+        pastas: Object.keys(no.filhos).sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); })
+          .map(function (k) { return ser(no.filhos[k]); }),
+        arquivos: (no.arquivos || []).slice().sort(function (a, b) {
+          var dlt = Number(a.ordem || 0) - Number(b.ordem || 0);
+          return dlt || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
+        }),
+      };
+    }
+    return ser(raiz);
+  }
+
+  function htmlArvore(no, prefixo) {
+    var html = '';
+    (no.pastas || []).forEach(function (p) {
+      var chave = prefixo ? prefixo + '/' + p.nome : p.nome;
+      var aberta = Estado.pastasAbertas[chave] !== false;
+      html += '<div class="arvore-no">' +
+        '<button type="button" class="arvore-pasta" data-pasta-toggle="' + escapar(chave) + '">' +
+        svg(aberta ? 'pasta-aberta' : 'pasta') +
+        '<span>' + escapar(p.nome) + '</span></button>' +
+        (aberta ? '<div class="arvore-filhos">' + htmlArvore(p, chave) + '</div>' : '') +
+        '</div>';
+    });
+    (no.arquivos || []).forEach(function (c) {
+      html += '<a class="arvore-arquivo" href="' + escapar(c.url || '#') + '" target="_blank" rel="noopener">' +
+        svg('arquivo') +
+        '<span><strong>' + escapar(c.nome) + '</strong>' +
+        (c.descricao ? '<em>' + escapar(c.descricao) + '</em>' : '') +
+        '</span></a>';
+    });
+    return html;
+  }
+
+  function blocoArvore(titulo, controles) {
+    var inner = htmlArvore(montarArvoreUi(controles), titulo);
+    if (!inner) inner = '<div class="vazio">Nenhum controle cadastrado neste departamento.</div>';
+    return '<div class="arvore-col">' +
+      (titulo ? '<div class="arvore-col-titulo">' + escapar(titulo) + '</div>' : '') +
+      '<div class="arvore-col-corpo">' + inner + '</div></div>';
+  }
+
   function abrirDept(id) {
     var d = (Estado.hub.departamentos || []).filter(function (x) { return x.id === id; })[0];
     if (!d) return;
+    if (!Estado.deptAberto || Estado.deptAberto.id !== id) Estado.pastasAbertas = {};
     Estado.deptAberto = d;
     var links = (Estado.hub.controles || []).filter(function (c) { return c.departamento_id === id; });
-    $('drawer-kicker').textContent = 'Controles-chave';
+    var bandeira = d.bandeira || '';
+    var solutions = bandeira === 'Solutions';
+    $('drawer-kicker').textContent = bandeira ? ('Controles-chave · ' + bandeira) : 'Controles-chave';
     $('drawer-titulo').textContent = d.nome;
-    $('drawer-sub').textContent = d.descricao || 'Clique no nome para abrir o link cadastrado.';
-    $('drawer-corpo').innerHTML = links.length
-      ? links.map(function (c) {
-          var href = c.url || '#';
-          return '<a class="link-controle" href="' + escapar(href) + '" target="_blank" rel="noopener">' +
-            '<div><strong>' + escapar(c.nome) + '</strong>' +
-            '<span>' + escapar(c.descricao || '') + '</span></div>' +
-            '<em aria-hidden="true">→</em></a>';
-        }).join('')
-      : '<div class="vazio">Nenhum controle cadastrado neste departamento.</div>';
+    $('drawer-sub').textContent = d.descricao || 'Clique no nome do arquivo para abrir o link cadastrado.';
+    if (solutions) {
+      $('drawer').classList.add('largo');
+      $('drawer-corpo').innerHTML = '<div class="arvores-duplas">' +
+        blocoArvore('Apparel', links.filter(function (c) { return negocioEfetivo(c, d) === 'Apparel'; })) +
+        blocoArvore('Smartrac', links.filter(function (c) { return negocioEfetivo(c, d) === 'Smartrac'; })) +
+        '</div>';
+    } else {
+      $('drawer').classList.remove('largo');
+      $('drawer-corpo').innerHTML = blocoArvore(bandeira || '', links);
+    }
     $('drawer').hidden = false;
     $('drawer-fundo').hidden = false;
     $('drawer').classList.add('aberto');
@@ -1278,6 +1421,7 @@ table.dados tr.risco td { box-shadow: none; }
     $('drawer-fundo').hidden = true;
     $('drawer').classList.remove('aberto');
     $('drawer-fundo').classList.remove('aberto');
+    $('drawer').classList.remove('largo');
     Estado.deptAberto = null;
   }
 
@@ -1312,6 +1456,12 @@ table.dados tr.risco td { box-shadow: none; }
       campo('icone', 'Ícone (producao, qualidade, manutencao, ehs, logistica, engenharia, pcp, melhoria)', f.icone) +
       campo('descricao', 'Descrição', f.descricao, { span2: true }) +
       campo('cor', 'Cor', f.cor || '#E4002B', { tipo: 'color' }) +
+      campo('bandeira', 'Bandeira', f.bandeira, {
+        opcoes: '<option value="">Bandeira</option>' +
+          ['Apparel', 'Smartrac', 'Solutions'].map(function (v) {
+            return '<option value="' + v + '"' + (f.bandeira === v ? ' selected' : '') + '>' + v + '</option>';
+          }).join(''),
+      }) +
       campo('ordem', 'Ordem', f.ordem || 1, { tipo: 'number' }) +
       campo('ativo', 'Ativo', f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">Salvar</button>' +
@@ -1325,6 +1475,13 @@ table.dados tr.risco td { box-shadow: none; }
       campo('departamento_id', 'Departamento', f.departamento_id, { opcoes: opcoesDept(f.departamento_id) }) +
       campo('nome', 'Nome do controle', f.nome) +
       campo('url', 'Link', f.url, { span2: true }) +
+      campo('negocio', 'Negócio (Apparel ou Smartrac)', f.negocio, {
+        opcoes: '<option value="">Herdar da área</option>' +
+          ['Apparel', 'Smartrac'].map(function (v) {
+            return '<option value="' + v + '"' + (f.negocio === v ? ' selected' : '') + '>' + v + '</option>';
+          }).join(''),
+      }) +
+      campo('pasta', 'Pasta na árvore (ex.: Linha / Programa)', f.pasta) +
       campo('descricao', 'Descrição', f.descricao, { span2: true }) +
       campo('ordem', 'Ordem', f.ordem || 1, { tipo: 'number' }) +
       campo('ativo', 'Ativo', f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
@@ -1364,34 +1521,41 @@ table.dados tr.risco td { box-shadow: none; }
     return kpisHtml(Estado.hub.kpis) + chipsTema(Estado.hub.planos || []) + tabelaPlanos();
   }
 
-  function cabConfig(id, titulo, apoio) {
-    return '<section class="bloco-config" id="' + id + '">' +
-      '<div class="secao-cab"><div><div class="secao-titulo">' + titulo + '</div>' +
-      '<div class="secao-apoio">' + apoio + '</div></div></div>';
-  }
-
   function vistaConfig() {
-    return '<div class="config-ancoras">' +
-      '<button type="button" class="botao" data-ancora="cfg-dept">Departamentos</button>' +
-      '<button type="button" class="botao" data-ancora="cfg-ctrl">Controles-chave</button>' +
-      '<button type="button" class="botao" data-ancora="cfg-fontes">Fontes de importação</button>' +
-      '<button type="button" class="botao" data-ancora="cfg-mail">Follow-up e gatilho</button>' +
-      '</div>' +
-      cabConfig('cfg-dept', 'Departamentos', 'Cadastre as áreas que aparecem no OpsHub') +
-      vistaDept() + '</section>' +
-      cabConfig('cfg-ctrl', 'Controles-chave', 'Links oficiais de cada departamento') +
-      vistaCtrl() + '</section>' +
-      cabConfig('cfg-fontes', 'Fontes de importação', 'Google Sheets de onde os planos de ação são lidos') +
-      vistaFontes() + '</section>' +
-      cabConfig('cfg-mail', 'Follow-up e gatilho', 'E-mail diário após 1 dia de atraso, até reprogramarem o prazo') +
-      vistaMail() + '</section>';
+    var aba = Estado.configAba || 'dept';
+    var itens = [
+      ['dept', 'Departamentos'],
+      ['ctrl', 'Controles-chave'],
+      ['fontes', 'Fontes de importação'],
+      ['mail', 'Follow-up e gatilho'],
+    ];
+    var tabs = '<div class="config-abas">' + itens.map(function (it) {
+      return '<button type="button" class="config-aba' + (aba === it[0] ? ' ativa' : '') +
+        '" data-config-aba="' + it[0] + '">' + it[1] + '</button>';
+    }).join('') + '</div>';
+    var titulosCfg = {
+      dept: ['Departamentos', 'Cadastre as áreas do OpsHub e a bandeira Apparel, Smartrac ou Solutions'],
+      ctrl: ['Controles-chave', 'Links oficiais. Em Solutions, indique o negócio e a pasta da árvore'],
+      fontes: ['Fontes de importação', 'Google Sheets de onde os planos de ação são lidos'],
+      mail: ['Follow-up e gatilho', 'E-mail diário após 1 dia de atraso, até reprogramarem o prazo'],
+    };
+    var t = titulosCfg[aba] || titulosCfg.dept;
+    var corpo = aba === 'ctrl' ? vistaCtrl()
+      : aba === 'fontes' ? vistaFontes()
+      : aba === 'mail' ? vistaMail()
+      : vistaDept();
+    return tabs + '<section class="bloco-config">' +
+      '<div class="secao-cab"><div><div class="secao-titulo">' + t[0] + '</div>' +
+      '<div class="secao-apoio">' + t[1] + '</div></div></div>' +
+      corpo + '</section>';
   }
 
   function vistaDept() {
     var lista = Estado.hub.departamentosAdmin || Estado.hub.departamentos || [];
     return formDept() + listaAdmin(lista, function (d) {
       return '<strong>' + escapar(d.nome) + '</strong><small>' + escapar(d.descricao) + ' · ' +
-        escapar(d.icone) + ' · ' + (LogicaSim(d.ativo) ? 'ativo' : 'inativo') + '</small>';
+        escapar(d.bandeira || 'sem bandeira') + ' · ' + escapar(d.icone) + ' · ' +
+        (LogicaSim(d.ativo) ? 'ativo' : 'inativo') + '</small>';
     }, 'dept');
   }
 
@@ -1401,7 +1565,10 @@ table.dados tr.risco td { box-shadow: none; }
     (Estado.hub.departamentos || []).forEach(function (d) { depts[d.id] = d.nome; });
     return formCtrl() + listaAdmin(lista, function (c) {
       return '<strong>' + escapar(c.nome) + '</strong><small>' +
-        escapar(depts[c.departamento_id] || c.departamento_id) + ' · ' + escapar(c.url) + '</small>';
+        escapar(depts[c.departamento_id] || c.departamento_id) +
+        (c.negocio ? ' · ' + escapar(c.negocio) : '') +
+        (c.pasta ? ' · ' + escapar(c.pasta) : '') +
+        ' · ' + escapar(c.url) + '</small>';
     }, 'ctrl');
   }
 
@@ -1517,10 +1684,11 @@ table.dados tr.risco td { box-shadow: none; }
         render();
         return;
       }
-      var ancora = e.target.closest('[data-ancora]');
+      var ancora = e.target.closest('[data-config-aba]');
       if (ancora) {
-        var alvo = $(ancora.getAttribute('data-ancora'));
-        if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        Estado.configAba = ancora.getAttribute('data-config-aba');
+        Estado.form = { tipo: '', data: {} };
+        render();
         return;
       }
       var temaTodos = e.target.closest('[data-tema-todos]');
@@ -1560,6 +1728,13 @@ table.dados tr.risco td { box-shadow: none; }
       if (Estado.filtroAberto && !e.target.closest('.filtro-excel')) {
         Estado.filtroAberto = null;
         render();
+        return;
+      }
+      var pastaBtn = e.target.closest('[data-pasta-toggle]');
+      if (pastaBtn) {
+        var chavePasta = pastaBtn.getAttribute('data-pasta-toggle');
+        Estado.pastasAbertas[chavePasta] = Estado.pastasAbertas[chavePasta] === false;
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id);
         return;
       }
       var dept = e.target.closest('[data-dept]');
@@ -1636,10 +1811,8 @@ table.dados tr.risco td { box-shadow: none; }
           : Estado.hub.fontes;
         var item = (lista || []).filter(function (x) { return String(x.id) === String(id); })[0] || {};
         Estado.form = { tipo: tipo, data: item };
+        Estado.configAba = tipo === 'ctrl' ? 'ctrl' : tipo === 'fonte' ? 'fontes' : 'dept';
         render();
-        var mapaCfg = { dept: 'cfg-dept', ctrl: 'cfg-ctrl', fonte: 'cfg-fontes' };
-        var sec = $(mapaCfg[tipo]);
-        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
       var del = e.target.closest('[data-del]');
