@@ -320,7 +320,6 @@ body { overflow: hidden; }
 .card-dept.arrastando { opacity: .42; }
 .card-dept::before { display: none; }
 .card-dept-badge {
-  position: absolute; top: 10px; right: 10px;
   height: 20px; padding: 0 8px; border-radius: 999px;
   border: 1px solid var(--linha-forte);
   background: rgba(237,232,224,.06);
@@ -329,6 +328,26 @@ body { overflow: hidden; }
   display: inline-flex; align-items: center;
   pointer-events: none;
 }
+.card-dept-acoes {
+  position: absolute; top: 8px; right: 8px;
+  display: flex; align-items: center; gap: 6px;
+  z-index: 2;
+}
+.card-dept-config {
+  width: 28px; height: 28px; border-radius: 8px;
+  border: 1px solid var(--linha);
+  background: rgba(237,232,224,.05);
+  color: var(--tinta-2);
+  display: grid; place-items: center;
+  cursor: pointer; padding: 0;
+  font-family: var(--fonte);
+}
+.card-dept-config:hover {
+  color: var(--tinta);
+  border-color: var(--linha-forte);
+  background: rgba(237,232,224,.1);
+}
+.card-dept-config svg { width: 14px; height: 14px; }
 .card-dept-topo {
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 14px; position: relative;
@@ -338,24 +357,29 @@ body { overflow: hidden; }
   display: grid; place-items: center;
   background: color-mix(in srgb, var(--dept-cor, var(--marca)) 10%, var(--superficie-2));
   color: color-mix(in srgb, var(--dept-cor, var(--marca)) 55%, #D9D2CB);
-  margin-bottom: 0; border: 0; padding: 0; cursor: pointer;
-  font-family: var(--fonte);
+  margin-bottom: 0; border: 0; padding: 0;
+  pointer-events: none;
 }
-.card-dept-icone:hover { background: color-mix(in srgb, var(--dept-cor, var(--marca)) 18%, var(--superficie-2)); }
 .card-dept-icone svg { width: 18px; height: 18px; stroke-width: 1.6; }
-.card-dept-cor {
-  width: 22px; height: 22px; border-radius: 50%;
-  border: 1px solid var(--linha-forte);
-  background: var(--dept-cor, var(--marca));
-  padding: 0; cursor: pointer; position: relative; overflow: hidden;
-  flex-shrink: 0;
+.painel-aparencia {
+  margin-bottom: 8px;
 }
-.card-dept-cor input[type="color"] {
-  position: absolute; inset: -6px; width: 34px; height: 34px;
-  border: 0; padding: 0; cursor: pointer; opacity: 0;
+.painel-aparencia .seletor-icone {
+  position: static;
+  min-width: 0;
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+.cor-edicao {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; font-weight: 450; color: var(--tinta-3);
+}
+.cor-edicao input[type="color"] {
+  width: 42px; height: 32px; border: 0; padding: 0;
+  background: transparent; cursor: pointer;
 }
 .seletor-icone {
-  position: absolute; left: 0; top: calc(100% + 6px); z-index: 8;
   display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
   min-width: 196px;
   background: var(--superficie-2); border: 1px solid var(--linha-forte);
@@ -369,6 +393,9 @@ body { overflow: hidden; }
 }
 .seletor-icone-item:hover, .seletor-icone-item.ativo {
   background: rgba(237,232,224,.06); color: var(--tinta);
+}
+.seletor-icone-item.ativo {
+  border: 1px solid var(--linha-forte);
 }
 .seletor-icone-item svg { width: 16px; height: 16px; flex-shrink: 0; }
 .card-dept h3 { margin: 0 0 5px; font-size: 15px; font-weight: 520; letter-spacing: -.02em; }
@@ -686,6 +713,37 @@ table.dados tr.risco td { box-shadow: none; }
   border-color: rgba(228, 0, 43, .28);
   color: #F4D5DA;
 }
+.chip-follow {
+  height: 34px; padding: 0 12px 0 10px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 500;
+  cursor: pointer; font-family: var(--fonte);
+  border: 1px solid transparent;
+  transition: background var(--transicao), color var(--transicao), border-color var(--transicao), opacity var(--transicao);
+}
+.chip-follow-ponto {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.chip-follow-estado {
+  font-size: 10px; font-weight: 520; letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.chip-follow.ligado {
+  background: rgba(74, 148, 108, .22);
+  border-color: rgba(111, 207, 151, .4);
+  color: #D4F0DE;
+}
+.chip-follow.ligado .chip-follow-ponto { background: #6FCF97; }
+.chip-follow.ligado .chip-follow-estado { color: #8FDBB0; }
+.chip-follow.desligado {
+  background: rgba(237,232,224,.03);
+  border-color: var(--linha);
+  color: var(--tinta-3);
+  opacity: .78;
+}
+.chip-follow.desligado .chip-follow-ponto { background: #6A675F; }
+.chip-follow.desligado .chip-follow-estado { color: var(--tinta-3); }
+.chip-follow:hover { opacity: 1; }
 
 .filtro-excel { position: relative; }
 .filtro-excel-btn {
@@ -766,6 +824,7 @@ table.dados tr.risco td { box-shadow: none; }
   .topo { padding: 16px 18px; }
   .arvores-duplas, .arvores-triplas { grid-template-columns: 1fr; }
   .drawer, .drawer.largo, .drawer.extra-largo { width: min(920px, 96vw); max-height: 90vh; }
+  .painel-aparencia .seletor-icone { grid-template-columns: 1fr 1fr; }
 }
 </style>
 
@@ -921,6 +980,7 @@ table.dados tr.risco td { box-shadow: none; }
   ];
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
   var temasFollowUp = [];
+  var followupsEnviadosHoje = {};
 
   function temasDistintos() {
     var set = {}; var out = [];
@@ -1012,7 +1072,34 @@ table.dados tr.risco td { box-shadow: none; }
       h.importacao = { fontes: fontes.length, linhas: planos.length, avisos: [] };
       return h;
     },
-    apiEnviarFollowUpsAgora: function () { return { enviados: 1, pulados: planos.length - 1, erros: 0 }; },
+    apiEnviarFollowUpsAgora: function (forcar) {
+      var cand = planos.filter(function (p) {
+        if (p.status === 'Concluído' || p.status === 'Cancelado') return false;
+        if (!p.tem_email || p.status !== 'Atrasado') return false;
+        if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        if (!forcar && followupsEnviadosHoje[p.id]) return false;
+        return true;
+      });
+      cand.forEach(function (p) { followupsEnviadosHoje[p.id] = true; });
+      return { enviados: cand.length, pulados: planos.length - cand.length, erros: 0 };
+    },
+    apiPreverFollowUps: function () {
+      var cand = planos.filter(function (p) {
+        if (p.status === 'Concluído' || p.status === 'Cancelado') return false;
+        if (!p.tem_email || p.status !== 'Atrasado') return false;
+        if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        return true;
+      });
+      var temasJa = [];
+      var vistos = {};
+      cand.forEach(function (p) {
+        if (followupsEnviadosHoje[p.id] && p.tema && !vistos[p.tema]) {
+          vistos[p.tema] = 1;
+          temasJa.push(p.tema);
+        }
+      });
+      return { total: cand.length, temasJaEnviadosHoje: temasJa };
+    },
     apiCriarGatilho: function () {
       gatilho = { ativo: true, quantidade: 1, hora: 8 };
       return { mensagem: 'Gatilho diario criado para a rotina das 8h.', gatilho: gatilho };
@@ -1040,7 +1127,14 @@ table.dados tr.risco td { box-shadow: none; }
         var err = this._err;
         try {
           var out = api[nome].apply(null, args);
-          var delay = (nome === 'apiAtualizar') ? 700 : 40;
+          var lentos = {
+            apiAtualizar: 700,
+            apiEnviarFollowUpsAgora: 700,
+            apiPreverFollowUps: 500,
+            apiCriarGatilho: 550,
+            apiRemoverGatilhos: 550,
+          };
+          var delay = lentos[nome] || 40;
           setTimeout(function () { ok(out); }, delay);
         } catch (e) {
           setTimeout(function () { err(e); }, 30);
@@ -1067,7 +1161,7 @@ table.dados tr.risco td { box-shadow: none; }
     ordem: { campo: 'prazo', dir: 'asc' },
     form: { tipo: '', data: {} },
     formDrawer: { tipo: '', data: {} },
-    seletorIcone: null,
+    deptModo: 'ver',
     arrastouDept: false,
     dragId: null,
   };
@@ -1083,7 +1177,7 @@ table.dados tr.risco td { box-shadow: none; }
     ['melhoria', 'Melhoria'],
   ];
 
-  var PASTA_AJUDA = 'Agrupa o arquivo como pasta de computador. Ex.: Linha / Programa cria Linha → Programa → arquivo. Vazio = raiz da coluna. Não é pasta do Drive.';
+  var AGRUPAMENTO_AJUDA = 'Organiza o arquivo em níveis. Ex.: Linha / Programa cria Linha → Programa → arquivo. Em branco, o arquivo fica na raiz da coluna.';
 
   function filtrosVazios() {
     return {
@@ -1244,30 +1338,22 @@ table.dados tr.risco td { box-shadow: none; }
     var hub = Estado.hub;
     var controles = hub.controles || [];
     return '<div class="secao-cab"><div><div class="secao-titulo">Controles-chave por departamento</div>' +
-      '<div class="secao-apoio">Arraste para reordenar. Clique no ícone ou na cor para editar. Clique no card para abrir os arquivos.</div></div></div>' +
+      '<div class="secao-apoio">Arraste para reordenar. A engrenagem configura o card. Clique no card para abrir os arquivos.</div></div></div>' +
       '<div class="grade-dept">' +
       (hub.departamentos || []).map(function (d) {
         var n = controles.filter(function (c) { return c.departamento_id === d.id; }).length;
         var badge = d.bandeira
           ? '<span class="card-dept-badge">' + escapar(d.bandeira) + '</span>'
           : '';
-        var picker = Estado.seletorIcone === d.id
-          ? '<div class="seletor-icone">' + ICONES_DEPT.map(function (it) {
-              return '<button type="button" class="seletor-icone-item' + (d.icone === it[0] ? ' ativo' : '') +
-                '" data-escolher-icone="' + it[0] + '" data-dept-id="' + escapar(d.id) + '" title="' + escapar(it[1]) + '">' +
-                svg(it[0]) + '<span>' + escapar(it[1]) + '</span></button>';
-            }).join('') + '</div>'
-          : '';
         return '<article class="card-dept" data-dept="' + escapar(d.id) +
           '" style="--dept-cor:' + escapar(d.cor) + '" draggable="true" tabindex="0">' +
+          '<div class="card-dept-acoes">' +
           badge +
+          '<button type="button" class="card-dept-config" data-editar-dept="' + escapar(d.id) +
+          '" title="Configurar ícone, cor e arquivos">' + svg('config') + '</button>' +
+          '</div>' +
           '<div class="card-dept-topo">' +
-          '<button type="button" class="card-dept-icone" data-icone-dept="' + escapar(d.id) +
-          '" title="Trocar ícone">' + svg(d.icone) + '</button>' +
-          '<label class="card-dept-cor" title="Cor do card">' +
-          '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
-          '</label>' +
-          picker +
+          '<div class="card-dept-icone">' + svg(d.icone) + '</div>' +
           '</div>' +
           '<h3>' + escapar(d.nome) + '</h3>' +
           '<p>' + escapar(d.descricao) + '</p>' +
@@ -1536,7 +1622,10 @@ table.dados tr.risco td { box-shadow: none; }
             return '<option value="' + v + '"' + (f.negocio === v ? ' selected' : '') + '>' + v + '</option>';
           }).join(''),
       }) +
-      campo('pasta', 'Pasta na árvore', f.pasta, { ajuda: PASTA_AJUDA }) +
+      campo('pasta', 'Agrupamento', f.pasta, {
+        ajuda: AGRUPAMENTO_AJUDA,
+        placeholder: 'ex.: Linha / Programa',
+      }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">' +
       (f.id ? 'Atualizar arquivo' : 'Incluir arquivo') + '</button>' +
       (f.id ? '<button class="botao" type="button" data-form-cancelar-drawer>Cancelar</button>' : '') +
@@ -1559,39 +1648,62 @@ table.dados tr.risco td { box-shadow: none; }
     }).join('') + '</div>';
   }
 
-  function abrirDept(id) {
+  function aparenciaDept(d) {
+    return '<div class="painel-aparencia">' +
+      '<div class="secao-titulo">Aparência</div>' +
+      '<div class="secao-apoio" style="margin-bottom:10px">Escolha o ícone e a cor deste card.</div>' +
+      '<div class="seletor-icone">' + ICONES_DEPT.map(function (it) {
+        return '<button type="button" class="seletor-icone-item' + (d.icone === it[0] ? ' ativo' : '') +
+          '" data-escolher-icone="' + it[0] + '" data-dept-id="' + escapar(d.id) + '" title="' + escapar(it[1]) + '">' +
+          svg(it[0]) + '<span>' + escapar(it[1]) + '</span></button>';
+      }).join('') + '</div>' +
+      '<label class="cor-edicao">Cor do card' +
+      '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
+      '</label></div>';
+  }
+
+  function abrirDept(id, modo) {
     var d = (Estado.hub.departamentos || []).filter(function (x) { return x.id === id; })[0];
     if (!d) return;
+    modo = modo || Estado.deptModo || 'ver';
     if (!Estado.deptAberto || Estado.deptAberto.id !== id) {
       Estado.pastasAbertas = {};
       Estado.formDrawer = { tipo: '', data: {} };
     }
     Estado.deptAberto = d;
+    Estado.deptModo = modo;
     var links = (Estado.hub.controles || []).filter(function (c) { return c.departamento_id === id; });
     var bandeira = d.bandeira || '';
     var solutions = bandeira === 'Solutions';
-    $('drawer-kicker').textContent = bandeira ? ('Controles-chave · ' + bandeira) : 'Controles-chave';
-    $('drawer-titulo').textContent = d.nome;
-    $('drawer-sub').textContent = d.descricao || 'Clique no nome do arquivo para abrir o link cadastrado.';
     $('drawer').classList.remove('largo', 'extra-largo');
-    var arvores;
-    if (solutions) {
-      $('drawer').classList.add('extra-largo');
-      arvores = '<div class="arvores-triplas">' +
-        blocoArvore('Apparel', links.filter(function (c) { return negocioEfetivo(c, d) === 'Apparel'; })) +
-        blocoArvore('Smartrac', links.filter(function (c) { return negocioEfetivo(c, d) === 'Smartrac'; })) +
-        blocoArvore('Solutions', links.filter(function (c) { return negocioEfetivo(c, d) === 'Solutions'; })) +
+    if (modo === 'editar') {
+      $('drawer-kicker').textContent = bandeira ? ('Configurar · ' + bandeira) : 'Configurar departamento';
+      $('drawer-titulo').textContent = d.nome;
+      $('drawer-sub').textContent = 'Altere ícone, cor e os arquivos deste departamento.';
+      $('drawer-corpo').innerHTML = aparenciaDept(d) +
+        '<div class="drawer-gestao">' +
+        '<div class="secao-titulo">Arquivos deste departamento</div>' +
+        '<div class="secao-apoio">Inclua, edite ou exclua os controles-chave. Quem abre o card vê só os arquivos.</div>' +
+        formDrawerCtrl(d) +
+        listaArquivosDrawer(d, links) +
         '</div>';
     } else {
-      arvores = blocoArvore(bandeira || '', links);
+      $('drawer-kicker').textContent = bandeira ? ('Controles-chave · ' + bandeira) : 'Controles-chave';
+      $('drawer-titulo').textContent = d.nome;
+      $('drawer-sub').textContent = d.descricao || 'Clique no nome do arquivo para abrir o link cadastrado.';
+      var arvores;
+      if (solutions) {
+        $('drawer').classList.add('extra-largo');
+        arvores = '<div class="arvores-triplas">' +
+          blocoArvore('Apparel', links.filter(function (c) { return negocioEfetivo(c, d) === 'Apparel'; })) +
+          blocoArvore('Smartrac', links.filter(function (c) { return negocioEfetivo(c, d) === 'Smartrac'; })) +
+          blocoArvore('Solutions', links.filter(function (c) { return negocioEfetivo(c, d) === 'Solutions'; })) +
+          '</div>';
+      } else {
+        arvores = blocoArvore(bandeira || '', links);
+      }
+      $('drawer-corpo').innerHTML = arvores;
     }
-    $('drawer-corpo').innerHTML = arvores +
-      '<div class="drawer-gestao">' +
-      '<div class="secao-titulo">Arquivos deste departamento</div>' +
-      '<div class="secao-apoio">Inclua, edite ou exclua os controles-chave aqui. O nome na árvore abre o link.</div>' +
-      formDrawerCtrl(d) +
-      listaArquivosDrawer(d, links) +
-      '</div>';
     $('drawer').hidden = false;
     $('drawer-fundo').hidden = false;
     $('drawer').classList.add('aberto');
@@ -1606,6 +1718,7 @@ table.dados tr.risco td { box-shadow: none; }
     $('drawer').classList.remove('largo');
     $('drawer').classList.remove('extra-largo');
     Estado.deptAberto = null;
+    Estado.deptModo = 'ver';
     Estado.formDrawer = { tipo: '', data: {} };
   }
 
@@ -1616,7 +1729,8 @@ table.dados tr.risco td { box-shadow: none; }
       : extra.opcoes
         ? '<select name="' + nome + '">' + extra.opcoes + '</select>'
         : '<input name="' + nome + '" value="' + escapar(valor || '') + '"' +
-          (extra.tipo ? ' type="' + extra.tipo + '"' : '') + '>';
+          (extra.tipo ? ' type="' + extra.tipo + '"' : '') +
+          (extra.placeholder ? ' placeholder="' + escapar(extra.placeholder) + '"' : '') + '>';
     var rotuloHtml = extra.ajuda
       ? ('<span class="rotulo-com-ajuda">' + rotulo +
         '<button type="button" class="ajuda-btn" data-tip="' + escapar(extra.ajuda) +
@@ -1737,8 +1851,12 @@ table.dados tr.risco td { box-shadow: none; }
       (temas.length
         ? temas.map(function (t) {
             var on = todos || habilitados.indexOf(t) !== -1;
-            return '<button type="button" class="chip-tema' + (on ? ' ativo' : '') +
-              '" data-followup-tema="' + escapar(t) + '">' + escapar(t) + '</button>';
+            return '<button type="button" class="chip-follow ' + (on ? 'ligado' : 'desligado') +
+              '" data-followup-tema="' + escapar(t) + '" aria-pressed="' + (on ? 'true' : 'false') +
+              '" title="' + (on ? 'Ligado — clique para tirar do follow-up' : 'Desligado — clique para incluir no follow-up') + '">' +
+              '<span class="chip-follow-ponto" aria-hidden="true"></span>' +
+              '<span>' + escapar(t) + '</span>' +
+              '<span class="chip-follow-estado">' + (on ? 'ligado' : 'desligado') + '</span></button>';
           }).join('')
         : '<div class="secao-apoio">Importe planos para ver os temas.</div>') +
       '</div></div>';
@@ -1837,20 +1955,18 @@ table.dados tr.risco td { box-shadow: none; }
 
   function aplicarHubMantendoDrawer(hub, imp) {
     var deptId = Estado.deptAberto && Estado.deptAberto.id;
+    var modo = Estado.deptModo || 'ver';
     var formDrawer = Estado.formDrawer;
     aplicarHub(hub, imp);
     Estado.formDrawer = formDrawer || { tipo: '', data: {} };
-    if (deptId) abrirDept(deptId);
+    Estado.deptModo = modo;
+    if (deptId) abrirDept(deptId, modo);
   }
 
   function salvarDeptCampo(id, patch) {
     var d = ((Estado.hub && Estado.hub.departamentos) || []).filter(function (x) { return x.id === id; })[0] || {};
-    var reg = { id: id };
-    Object.keys(patch).forEach(function (k) { reg[k] = patch[k]; });
-    if (d.nome && patch.nome === undefined) reg.nome = d.nome;
-    chamar('apiSalvarDepartamento', Object.assign({}, d, reg)).then(function (hub) {
-      Estado.seletorIcone = null;
-      aplicarHub(hub);
+    chamar('apiSalvarDepartamento', Object.assign({}, d, patch, { id: id })).then(function (hub) {
+      aplicarHubMantendoDrawer(hub);
     }).catch(function (err) { toast(err.message || err, true); });
   }
 
@@ -1864,8 +1980,36 @@ table.dados tr.risco td { box-shadow: none; }
     var valor = atuais.length === temas.length ? [] : atuais;
     chamar('apiSalvarTemasFollowUp', valor).then(function (hub) {
       aplicarHub(hub);
-      toast('Temas de follow-up atualizados.');
     }).catch(function (err) { toast(err.message || err, true); });
+  }
+
+  function enviarFollowUpsAgoraUi() {
+    if (Estado.carregando) return;
+    ocupar(true, 'Preparando follow-ups…');
+    chamar('apiPreverFollowUps').then(function (prev) {
+      if (!prev || !prev.total) {
+        ocupar(false);
+        toast('Nenhuma ação atrasada para enviar com os temas ligados.');
+        return null;
+      }
+      ocupar(false);
+      if (prev.temasJaEnviadosHoje && prev.temasJaEnviadosHoje.length) {
+        var ok = confirm(
+          'Já houve follow-up hoje para: ' + prev.temasJaEnviadosHoje.join(', ') +
+          '.\n\nDeseja enviar de novo a cobrança dessas ações?'
+        );
+        if (!ok) return null;
+      }
+      ocupar(true, 'Enviando follow-ups…');
+      return chamar('apiEnviarFollowUpsAgora', true);
+    }).then(function (r) {
+      if (!r) return;
+      ocupar(false);
+      toast('Follow-up: ' + r.enviados + ' enviado(s), ' + r.pulados + ' ignorado(s).');
+    }).catch(function (err) {
+      ocupar(false);
+      toast(err.message || err, true);
+    });
   }
 
   function ligar() {
@@ -1874,13 +2018,11 @@ table.dados tr.risco td { box-shadow: none; }
         e.preventDefault();
         return;
       }
-      var iconeBtn = e.target.closest('[data-icone-dept]');
-      if (iconeBtn) {
+      var gear = e.target.closest('[data-editar-dept]');
+      if (gear) {
         e.preventDefault();
         e.stopPropagation();
-        var iconeId = iconeBtn.getAttribute('data-icone-dept');
-        Estado.seletorIcone = Estado.seletorIcone === iconeId ? null : iconeId;
-        render();
+        abrirDept(gear.getAttribute('data-editar-dept'), 'editar');
         return;
       }
       var escolher = e.target.closest('[data-escolher-icone]');
@@ -1890,7 +2032,7 @@ table.dados tr.risco td { box-shadow: none; }
         salvarDeptCampo(escolher.getAttribute('data-dept-id'), { icone: escolher.getAttribute('data-escolher-icone') });
         return;
       }
-      if (e.target.closest('.card-dept-cor') || e.target.closest('[data-cor-input]')) {
+      if (e.target.closest('[data-cor-input]') || e.target.closest('.cor-edicao')) {
         e.stopPropagation();
         return;
       }
@@ -1904,7 +2046,6 @@ table.dados tr.risco td { box-shadow: none; }
         Estado.vista = nav.getAttribute('data-vista');
         Estado.form = { tipo: '', data: {} };
         Estado.filtroAberto = null;
-        Estado.seletorIcone = null;
         render();
         return;
       }
@@ -1958,7 +2099,7 @@ table.dados tr.risco td { box-shadow: none; }
       if (pastaBtn) {
         var chavePasta = pastaBtn.getAttribute('data-pasta-toggle');
         Estado.pastasAbertas[chavePasta] = Estado.pastasAbertas[chavePasta] === false;
-        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id);
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, Estado.deptModo);
         return;
       }
       var editDrawer = e.target.closest('[data-edit-ctrl-drawer]');
@@ -1968,7 +2109,7 @@ table.dados tr.risco td { box-shadow: none; }
           return String(x.id) === String(idEdit);
         })[0] || {};
         Estado.formDrawer = { tipo: 'ctrl', data: itemEdit };
-        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id);
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, 'editar');
         return;
       }
       var delDrawer = e.target.closest('[data-del-ctrl-drawer]');
@@ -1984,12 +2125,8 @@ table.dados tr.risco td { box-shadow: none; }
       }
       if (e.target.closest('[data-form-cancelar-drawer]')) {
         Estado.formDrawer = { tipo: '', data: {} };
-        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id);
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, 'editar');
         return;
-      }
-      if (Estado.seletorIcone && !e.target.closest('.seletor-icone') && !e.target.closest('[data-icone-dept]')) {
-        Estado.seletorIcone = null;
-        render();
       }
       var dept = e.target.closest('[data-dept]');
       if (dept) {
@@ -1997,7 +2134,7 @@ table.dados tr.risco td { box-shadow: none; }
           Estado.arrastouDept = false;
           return;
         }
-        abrirDept(dept.getAttribute('data-dept'));
+        abrirDept(dept.getAttribute('data-dept'), 'ver');
         return;
       }
       if (e.target.closest('#drawer-fechar') || e.target.closest('#drawer-fundo')) {
@@ -2042,25 +2179,35 @@ table.dados tr.risco td { box-shadow: none; }
         return;
       }
       if (e.target.closest('#btn-followup')) {
-        chamar('apiEnviarFollowUpsAgora').then(function (r) {
-          toast('Follow-up: ' + r.enviados + ' enviado(s), ' + r.pulados + ' ignorado(s).');
-        }).catch(function (err) { toast(err.message || err, true); });
+        enviarFollowUpsAgoraUi();
         return;
       }
       if (e.target.closest('#btn-gatilho')) {
+        if (Estado.carregando) return;
+        ocupar(true, 'Criando gatilho…');
         chamar('apiCriarGatilho').then(function (r) {
+          ocupar(false);
           toast(r.mensagem);
           if (Estado.hub) Estado.hub.gatilho = r.gatilho;
           render();
-        }).catch(function (err) { toast(err.message || err, true); });
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
         return;
       }
       if (e.target.closest('#btn-remover-gatilho')) {
+        if (Estado.carregando) return;
+        ocupar(true, 'Removendo gatilhos…');
         chamar('apiRemoverGatilhos').then(function (r) {
+          ocupar(false);
           toast(r.mensagem);
           if (Estado.hub) Estado.hub.gatilho = r.gatilho;
           render();
-        }).catch(function (err) { toast(err.message || err, true); });
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
         return;
       }
       var edit = e.target.closest('[data-edit]');
@@ -2127,11 +2274,6 @@ table.dados tr.risco td { box-shadow: none; }
     });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
-        if (Estado.seletorIcone) {
-          Estado.seletorIcone = null;
-          render();
-          return;
-        }
         if (Estado.filtroAberto) {
           Estado.filtroAberto = null;
           render();
@@ -2141,9 +2283,9 @@ table.dados tr.risco td { box-shadow: none; }
         return;
       }
       if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('card-dept')) {
-        if (e.target.closest('[data-icone-dept], .card-dept-cor, .seletor-icone')) return;
+        if (e.target.closest('[data-editar-dept], .seletor-icone, .cor-edicao')) return;
         e.preventDefault();
-        abrirDept(e.target.getAttribute('data-dept'));
+        abrirDept(e.target.getAttribute('data-dept'), 'ver');
       }
     });
 

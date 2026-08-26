@@ -15,7 +15,7 @@
     ordem: { campo: 'prazo', dir: 'asc' },
     form: { tipo: '', data: {} },
     formDrawer: { tipo: '', data: {} },
-    seletorIcone: null,
+    deptModo: 'ver',
     arrastouDept: false,
     dragId: null,
   };
@@ -31,7 +31,7 @@
     ['melhoria', 'Melhoria'],
   ];
 
-  var PASTA_AJUDA = 'Agrupa o arquivo como pasta de computador. Ex.: Linha / Programa cria Linha → Programa → arquivo. Vazio = raiz da coluna. Não é pasta do Drive.';
+  var AGRUPAMENTO_AJUDA = 'Organiza o arquivo em níveis. Ex.: Linha / Programa cria Linha → Programa → arquivo. Em branco, o arquivo fica na raiz da coluna.';
 
   function filtrosVazios() {
     return {
@@ -192,30 +192,22 @@
     var hub = Estado.hub;
     var controles = hub.controles || [];
     return '<div class="secao-cab"><div><div class="secao-titulo">Controles-chave por departamento</div>' +
-      '<div class="secao-apoio">Arraste para reordenar. Clique no ícone ou na cor para editar. Clique no card para abrir os arquivos.</div></div></div>' +
+      '<div class="secao-apoio">Arraste para reordenar. A engrenagem configura o card. Clique no card para abrir os arquivos.</div></div></div>' +
       '<div class="grade-dept">' +
       (hub.departamentos || []).map(function (d) {
         var n = controles.filter(function (c) { return c.departamento_id === d.id; }).length;
         var badge = d.bandeira
           ? '<span class="card-dept-badge">' + escapar(d.bandeira) + '</span>'
           : '';
-        var picker = Estado.seletorIcone === d.id
-          ? '<div class="seletor-icone">' + ICONES_DEPT.map(function (it) {
-              return '<button type="button" class="seletor-icone-item' + (d.icone === it[0] ? ' ativo' : '') +
-                '" data-escolher-icone="' + it[0] + '" data-dept-id="' + escapar(d.id) + '" title="' + escapar(it[1]) + '">' +
-                svg(it[0]) + '<span>' + escapar(it[1]) + '</span></button>';
-            }).join('') + '</div>'
-          : '';
         return '<article class="card-dept" data-dept="' + escapar(d.id) +
           '" style="--dept-cor:' + escapar(d.cor) + '" draggable="true" tabindex="0">' +
+          '<div class="card-dept-acoes">' +
           badge +
+          '<button type="button" class="card-dept-config" data-editar-dept="' + escapar(d.id) +
+          '" title="Configurar ícone, cor e arquivos">' + svg('config') + '</button>' +
+          '</div>' +
           '<div class="card-dept-topo">' +
-          '<button type="button" class="card-dept-icone" data-icone-dept="' + escapar(d.id) +
-          '" title="Trocar ícone">' + svg(d.icone) + '</button>' +
-          '<label class="card-dept-cor" title="Cor do card">' +
-          '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
-          '</label>' +
-          picker +
+          '<div class="card-dept-icone">' + svg(d.icone) + '</div>' +
           '</div>' +
           '<h3>' + escapar(d.nome) + '</h3>' +
           '<p>' + escapar(d.descricao) + '</p>' +
@@ -484,7 +476,10 @@
             return '<option value="' + v + '"' + (f.negocio === v ? ' selected' : '') + '>' + v + '</option>';
           }).join(''),
       }) +
-      campo('pasta', 'Pasta na árvore', f.pasta, { ajuda: PASTA_AJUDA }) +
+      campo('pasta', 'Agrupamento', f.pasta, {
+        ajuda: AGRUPAMENTO_AJUDA,
+        placeholder: 'ex.: Linha / Programa',
+      }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">' +
       (f.id ? 'Atualizar arquivo' : 'Incluir arquivo') + '</button>' +
       (f.id ? '<button class="botao" type="button" data-form-cancelar-drawer>Cancelar</button>' : '') +
@@ -507,39 +502,62 @@
     }).join('') + '</div>';
   }
 
-  function abrirDept(id) {
+  function aparenciaDept(d) {
+    return '<div class="painel-aparencia">' +
+      '<div class="secao-titulo">Aparência</div>' +
+      '<div class="secao-apoio" style="margin-bottom:10px">Escolha o ícone e a cor deste card.</div>' +
+      '<div class="seletor-icone">' + ICONES_DEPT.map(function (it) {
+        return '<button type="button" class="seletor-icone-item' + (d.icone === it[0] ? ' ativo' : '') +
+          '" data-escolher-icone="' + it[0] + '" data-dept-id="' + escapar(d.id) + '" title="' + escapar(it[1]) + '">' +
+          svg(it[0]) + '<span>' + escapar(it[1]) + '</span></button>';
+      }).join('') + '</div>' +
+      '<label class="cor-edicao">Cor do card' +
+      '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
+      '</label></div>';
+  }
+
+  function abrirDept(id, modo) {
     var d = (Estado.hub.departamentos || []).filter(function (x) { return x.id === id; })[0];
     if (!d) return;
+    modo = modo || Estado.deptModo || 'ver';
     if (!Estado.deptAberto || Estado.deptAberto.id !== id) {
       Estado.pastasAbertas = {};
       Estado.formDrawer = { tipo: '', data: {} };
     }
     Estado.deptAberto = d;
+    Estado.deptModo = modo;
     var links = (Estado.hub.controles || []).filter(function (c) { return c.departamento_id === id; });
     var bandeira = d.bandeira || '';
     var solutions = bandeira === 'Solutions';
-    $('drawer-kicker').textContent = bandeira ? ('Controles-chave · ' + bandeira) : 'Controles-chave';
-    $('drawer-titulo').textContent = d.nome;
-    $('drawer-sub').textContent = d.descricao || 'Clique no nome do arquivo para abrir o link cadastrado.';
     $('drawer').classList.remove('largo', 'extra-largo');
-    var arvores;
-    if (solutions) {
-      $('drawer').classList.add('extra-largo');
-      arvores = '<div class="arvores-triplas">' +
-        blocoArvore('Apparel', links.filter(function (c) { return negocioEfetivo(c, d) === 'Apparel'; })) +
-        blocoArvore('Smartrac', links.filter(function (c) { return negocioEfetivo(c, d) === 'Smartrac'; })) +
-        blocoArvore('Solutions', links.filter(function (c) { return negocioEfetivo(c, d) === 'Solutions'; })) +
+    if (modo === 'editar') {
+      $('drawer-kicker').textContent = bandeira ? ('Configurar · ' + bandeira) : 'Configurar departamento';
+      $('drawer-titulo').textContent = d.nome;
+      $('drawer-sub').textContent = 'Altere ícone, cor e os arquivos deste departamento.';
+      $('drawer-corpo').innerHTML = aparenciaDept(d) +
+        '<div class="drawer-gestao">' +
+        '<div class="secao-titulo">Arquivos deste departamento</div>' +
+        '<div class="secao-apoio">Inclua, edite ou exclua os controles-chave. Quem abre o card vê só os arquivos.</div>' +
+        formDrawerCtrl(d) +
+        listaArquivosDrawer(d, links) +
         '</div>';
     } else {
-      arvores = blocoArvore(bandeira || '', links);
+      $('drawer-kicker').textContent = bandeira ? ('Controles-chave · ' + bandeira) : 'Controles-chave';
+      $('drawer-titulo').textContent = d.nome;
+      $('drawer-sub').textContent = d.descricao || 'Clique no nome do arquivo para abrir o link cadastrado.';
+      var arvores;
+      if (solutions) {
+        $('drawer').classList.add('extra-largo');
+        arvores = '<div class="arvores-triplas">' +
+          blocoArvore('Apparel', links.filter(function (c) { return negocioEfetivo(c, d) === 'Apparel'; })) +
+          blocoArvore('Smartrac', links.filter(function (c) { return negocioEfetivo(c, d) === 'Smartrac'; })) +
+          blocoArvore('Solutions', links.filter(function (c) { return negocioEfetivo(c, d) === 'Solutions'; })) +
+          '</div>';
+      } else {
+        arvores = blocoArvore(bandeira || '', links);
+      }
+      $('drawer-corpo').innerHTML = arvores;
     }
-    $('drawer-corpo').innerHTML = arvores +
-      '<div class="drawer-gestao">' +
-      '<div class="secao-titulo">Arquivos deste departamento</div>' +
-      '<div class="secao-apoio">Inclua, edite ou exclua os controles-chave aqui. O nome na árvore abre o link.</div>' +
-      formDrawerCtrl(d) +
-      listaArquivosDrawer(d, links) +
-      '</div>';
     $('drawer').hidden = false;
     $('drawer-fundo').hidden = false;
     $('drawer').classList.add('aberto');
@@ -554,6 +572,7 @@
     $('drawer').classList.remove('largo');
     $('drawer').classList.remove('extra-largo');
     Estado.deptAberto = null;
+    Estado.deptModo = 'ver';
     Estado.formDrawer = { tipo: '', data: {} };
   }
 
@@ -564,7 +583,8 @@
       : extra.opcoes
         ? '<select name="' + nome + '">' + extra.opcoes + '</select>'
         : '<input name="' + nome + '" value="' + escapar(valor || '') + '"' +
-          (extra.tipo ? ' type="' + extra.tipo + '"' : '') + '>';
+          (extra.tipo ? ' type="' + extra.tipo + '"' : '') +
+          (extra.placeholder ? ' placeholder="' + escapar(extra.placeholder) + '"' : '') + '>';
     var rotuloHtml = extra.ajuda
       ? ('<span class="rotulo-com-ajuda">' + rotulo +
         '<button type="button" class="ajuda-btn" data-tip="' + escapar(extra.ajuda) +
@@ -685,8 +705,12 @@
       (temas.length
         ? temas.map(function (t) {
             var on = todos || habilitados.indexOf(t) !== -1;
-            return '<button type="button" class="chip-tema' + (on ? ' ativo' : '') +
-              '" data-followup-tema="' + escapar(t) + '">' + escapar(t) + '</button>';
+            return '<button type="button" class="chip-follow ' + (on ? 'ligado' : 'desligado') +
+              '" data-followup-tema="' + escapar(t) + '" aria-pressed="' + (on ? 'true' : 'false') +
+              '" title="' + (on ? 'Ligado — clique para tirar do follow-up' : 'Desligado — clique para incluir no follow-up') + '">' +
+              '<span class="chip-follow-ponto" aria-hidden="true"></span>' +
+              '<span>' + escapar(t) + '</span>' +
+              '<span class="chip-follow-estado">' + (on ? 'ligado' : 'desligado') + '</span></button>';
           }).join('')
         : '<div class="secao-apoio">Importe planos para ver os temas.</div>') +
       '</div></div>';
@@ -785,20 +809,18 @@
 
   function aplicarHubMantendoDrawer(hub, imp) {
     var deptId = Estado.deptAberto && Estado.deptAberto.id;
+    var modo = Estado.deptModo || 'ver';
     var formDrawer = Estado.formDrawer;
     aplicarHub(hub, imp);
     Estado.formDrawer = formDrawer || { tipo: '', data: {} };
-    if (deptId) abrirDept(deptId);
+    Estado.deptModo = modo;
+    if (deptId) abrirDept(deptId, modo);
   }
 
   function salvarDeptCampo(id, patch) {
     var d = ((Estado.hub && Estado.hub.departamentos) || []).filter(function (x) { return x.id === id; })[0] || {};
-    var reg = { id: id };
-    Object.keys(patch).forEach(function (k) { reg[k] = patch[k]; });
-    if (d.nome && patch.nome === undefined) reg.nome = d.nome;
-    chamar('apiSalvarDepartamento', Object.assign({}, d, reg)).then(function (hub) {
-      Estado.seletorIcone = null;
-      aplicarHub(hub);
+    chamar('apiSalvarDepartamento', Object.assign({}, d, patch, { id: id })).then(function (hub) {
+      aplicarHubMantendoDrawer(hub);
     }).catch(function (err) { toast(err.message || err, true); });
   }
 
@@ -812,8 +834,36 @@
     var valor = atuais.length === temas.length ? [] : atuais;
     chamar('apiSalvarTemasFollowUp', valor).then(function (hub) {
       aplicarHub(hub);
-      toast('Temas de follow-up atualizados.');
     }).catch(function (err) { toast(err.message || err, true); });
+  }
+
+  function enviarFollowUpsAgoraUi() {
+    if (Estado.carregando) return;
+    ocupar(true, 'Preparando follow-ups…');
+    chamar('apiPreverFollowUps').then(function (prev) {
+      if (!prev || !prev.total) {
+        ocupar(false);
+        toast('Nenhuma ação atrasada para enviar com os temas ligados.');
+        return null;
+      }
+      ocupar(false);
+      if (prev.temasJaEnviadosHoje && prev.temasJaEnviadosHoje.length) {
+        var ok = confirm(
+          'Já houve follow-up hoje para: ' + prev.temasJaEnviadosHoje.join(', ') +
+          '.\n\nDeseja enviar de novo a cobrança dessas ações?'
+        );
+        if (!ok) return null;
+      }
+      ocupar(true, 'Enviando follow-ups…');
+      return chamar('apiEnviarFollowUpsAgora', true);
+    }).then(function (r) {
+      if (!r) return;
+      ocupar(false);
+      toast('Follow-up: ' + r.enviados + ' enviado(s), ' + r.pulados + ' ignorado(s).');
+    }).catch(function (err) {
+      ocupar(false);
+      toast(err.message || err, true);
+    });
   }
 
   function ligar() {
@@ -822,13 +872,11 @@
         e.preventDefault();
         return;
       }
-      var iconeBtn = e.target.closest('[data-icone-dept]');
-      if (iconeBtn) {
+      var gear = e.target.closest('[data-editar-dept]');
+      if (gear) {
         e.preventDefault();
         e.stopPropagation();
-        var iconeId = iconeBtn.getAttribute('data-icone-dept');
-        Estado.seletorIcone = Estado.seletorIcone === iconeId ? null : iconeId;
-        render();
+        abrirDept(gear.getAttribute('data-editar-dept'), 'editar');
         return;
       }
       var escolher = e.target.closest('[data-escolher-icone]');
@@ -838,7 +886,7 @@
         salvarDeptCampo(escolher.getAttribute('data-dept-id'), { icone: escolher.getAttribute('data-escolher-icone') });
         return;
       }
-      if (e.target.closest('.card-dept-cor') || e.target.closest('[data-cor-input]')) {
+      if (e.target.closest('[data-cor-input]') || e.target.closest('.cor-edicao')) {
         e.stopPropagation();
         return;
       }
@@ -852,7 +900,6 @@
         Estado.vista = nav.getAttribute('data-vista');
         Estado.form = { tipo: '', data: {} };
         Estado.filtroAberto = null;
-        Estado.seletorIcone = null;
         render();
         return;
       }
@@ -906,7 +953,7 @@
       if (pastaBtn) {
         var chavePasta = pastaBtn.getAttribute('data-pasta-toggle');
         Estado.pastasAbertas[chavePasta] = Estado.pastasAbertas[chavePasta] === false;
-        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id);
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, Estado.deptModo);
         return;
       }
       var editDrawer = e.target.closest('[data-edit-ctrl-drawer]');
@@ -916,7 +963,7 @@
           return String(x.id) === String(idEdit);
         })[0] || {};
         Estado.formDrawer = { tipo: 'ctrl', data: itemEdit };
-        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id);
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, 'editar');
         return;
       }
       var delDrawer = e.target.closest('[data-del-ctrl-drawer]');
@@ -932,12 +979,8 @@
       }
       if (e.target.closest('[data-form-cancelar-drawer]')) {
         Estado.formDrawer = { tipo: '', data: {} };
-        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id);
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, 'editar');
         return;
-      }
-      if (Estado.seletorIcone && !e.target.closest('.seletor-icone') && !e.target.closest('[data-icone-dept]')) {
-        Estado.seletorIcone = null;
-        render();
       }
       var dept = e.target.closest('[data-dept]');
       if (dept) {
@@ -945,7 +988,7 @@
           Estado.arrastouDept = false;
           return;
         }
-        abrirDept(dept.getAttribute('data-dept'));
+        abrirDept(dept.getAttribute('data-dept'), 'ver');
         return;
       }
       if (e.target.closest('#drawer-fechar') || e.target.closest('#drawer-fundo')) {
@@ -990,25 +1033,35 @@
         return;
       }
       if (e.target.closest('#btn-followup')) {
-        chamar('apiEnviarFollowUpsAgora').then(function (r) {
-          toast('Follow-up: ' + r.enviados + ' enviado(s), ' + r.pulados + ' ignorado(s).');
-        }).catch(function (err) { toast(err.message || err, true); });
+        enviarFollowUpsAgoraUi();
         return;
       }
       if (e.target.closest('#btn-gatilho')) {
+        if (Estado.carregando) return;
+        ocupar(true, 'Criando gatilho…');
         chamar('apiCriarGatilho').then(function (r) {
+          ocupar(false);
           toast(r.mensagem);
           if (Estado.hub) Estado.hub.gatilho = r.gatilho;
           render();
-        }).catch(function (err) { toast(err.message || err, true); });
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
         return;
       }
       if (e.target.closest('#btn-remover-gatilho')) {
+        if (Estado.carregando) return;
+        ocupar(true, 'Removendo gatilhos…');
         chamar('apiRemoverGatilhos').then(function (r) {
+          ocupar(false);
           toast(r.mensagem);
           if (Estado.hub) Estado.hub.gatilho = r.gatilho;
           render();
-        }).catch(function (err) { toast(err.message || err, true); });
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
         return;
       }
       var edit = e.target.closest('[data-edit]');
@@ -1075,11 +1128,6 @@
     });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
-        if (Estado.seletorIcone) {
-          Estado.seletorIcone = null;
-          render();
-          return;
-        }
         if (Estado.filtroAberto) {
           Estado.filtroAberto = null;
           render();
@@ -1089,9 +1137,9 @@
         return;
       }
       if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('card-dept')) {
-        if (e.target.closest('[data-icone-dept], .card-dept-cor, .seletor-icone')) return;
+        if (e.target.closest('[data-editar-dept], .seletor-icone, .cor-edicao')) return;
         e.preventDefault();
-        abrirDept(e.target.getAttribute('data-dept'));
+        abrirDept(e.target.getAttribute('data-dept'), 'ver');
       }
     });
 

@@ -51,7 +51,11 @@ assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', []), true);
 assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', ['EHS']), false);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'OEE' }), hoje, ['EHS']).motivo, 'tema_desligado');
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'EHS' }), hoje, ['EHS']).ok, true);
-assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'OEE' }), hoje, []).ok, true);
+assert.strictEqual(
+  Logica.elegivelFollowUp(Object.assign({}, acao, { ultimo_email_em: hoje }), hoje, [], { ignorarJaEnviadoHoje: true }).ok,
+  true,
+  'envio manual pode repetir no mesmo dia'
+);
 
 assert.strictEqual(Logica.statusEfetivo({ status: 'Aberto', prazo: d(2026, 8, 20) }, hoje), 'Atrasado');
 assert.strictEqual(Logica.statusEfetivo({ status: 'Concluído', prazo: d(2026, 8, 20) }, hoje), 'Concluído');

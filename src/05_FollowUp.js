@@ -9,8 +9,10 @@ function rotinaDiaria() {
   return { importacao: resultadoImport, followup: envio };
 }
 
-function enviarFollowUps() {
+function enviarFollowUps(opcoes) {
   instalarSistema();
+  opcoes = opcoes || {};
+  var forcar = !!opcoes.forcar;
   var hoje = hojeLocal_();
   var planos = Cadastros.planos();
   var temasHabilitados = Logica.parseTemasFollowUp(Cadastros.config().texto('followup_temas', ''));
@@ -19,7 +21,7 @@ function enviarFollowUps() {
   var erros = 0;
 
   planos.forEach(function (plano) {
-    var dec = Logica.elegivelFollowUp(plano, hoje, temasHabilitados);
+    var dec = Logica.elegivelFollowUp(plano, hoje, temasHabilitados, { ignorarJaEnviadoHoje: forcar });
     if (!dec.ok) {
       pulados++;
       return;
