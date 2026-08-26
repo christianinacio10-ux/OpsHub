@@ -45,6 +45,7 @@ function apiHub() {
       icone: Logica.texto(d.icone) || 'geral',
       cor: Logica.texto(d.cor) || '#E4002B',
       ordem: Number(d.ordem || 0),
+      bandeira: Logica.normalizarBandeira(d.bandeira),
     };
   });
   var controles = Cadastros.controles().map(function (c) {
@@ -55,6 +56,8 @@ function apiHub() {
       descricao: Logica.texto(c.descricao),
       url: Logica.texto(c.url),
       ordem: Number(c.ordem || 0),
+      negocio: Logica.normalizarBandeira(c.negocio),
+      pasta: Logica.texto(c.pasta),
     };
   });
   var planos = Cadastros.planos().map(function (p) {
@@ -88,7 +91,8 @@ function apiHub() {
 }
 
 function apiSalvarDepartamento(reg) {
-  return salvarEntidade_(ABAS.departamentos, reg, ['id', 'nome', 'descricao', 'icone', 'cor', 'ordem', 'ativo'], 'D');
+  if (reg) reg.bandeira = Logica.normalizarBandeira(reg.bandeira);
+  return salvarEntidade_(ABAS.departamentos, reg, ['id', 'nome', 'descricao', 'icone', 'cor', 'ordem', 'ativo', 'bandeira'], 'D');
 }
 
 function apiExcluirDepartamento(id) {
@@ -96,7 +100,11 @@ function apiExcluirDepartamento(id) {
 }
 
 function apiSalvarControle(reg) {
-  return salvarEntidade_(ABAS.controles, reg, ['id', 'departamento_id', 'nome', 'descricao', 'url', 'ordem', 'ativo'], 'C');
+  if (reg) {
+    reg.negocio = Logica.normalizarBandeira(reg.negocio);
+    if (reg.negocio === 'Solutions') reg.negocio = '';
+  }
+  return salvarEntidade_(ABAS.controles, reg, ['id', 'departamento_id', 'nome', 'descricao', 'url', 'ordem', 'ativo', 'negocio', 'pasta'], 'C');
 }
 
 function apiExcluirControle(id) {

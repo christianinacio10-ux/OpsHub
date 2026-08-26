@@ -100,6 +100,25 @@ assert.strictEqual(Logica.fonteAtiva({ ativo: 'SIM' }), true);
 assert.strictEqual(Logica.extrairGid('https://docs.google.com/spreadsheets/d/abcDEF123_-xyzxyzxyzxyz/edit#gid=42'), 42);
 assert.strictEqual(Logica.extrairIdPlanilha('https://docs.google.com/spreadsheets/d/e/2PACX-xxx/pubhtml'), '');
 
+assert.strictEqual(Logica.normalizarBandeira('solutions'), 'Solutions');
+assert.strictEqual(Logica.negocioDoControle({}, 'Apparel'), 'Apparel');
+assert.strictEqual(Logica.negocioDoControle({ negocio: 'Smartrac' }, 'Solutions'), 'Smartrac');
+var arvore = Logica.montarArvore([
+  { nome: 'Hora a hora', pasta: 'Linha / Hora a hora', ordem: 1 },
+  { nome: 'Programa', pasta: 'Linha / Programa', ordem: 2 },
+  { nome: 'Raiz', pasta: '', ordem: 3 },
+]);
+assert.strictEqual(arvore.arquivos.length, 1);
+assert.strictEqual(arvore.pastas.length, 1);
+assert.strictEqual(arvore.pastas[0].nome, 'Linha');
+assert.strictEqual(arvore.pastas[0].pastas.length, 2);
+var split = Logica.separarPorNegocio([
+  { nome: 'A', negocio: 'Apparel' },
+  { nome: 'S', negocio: 'Smartrac' },
+], 'Solutions');
+assert.strictEqual(split.apparel.length, 1);
+assert.strictEqual(split.smartrac.length, 1);
+
 var mapaAcao = Logica.mapearColunas(['Tema', 'Ação corretiva', 'O quê?', 'Prazo']);
 assert.strictEqual(mapaAcao.como, 1);
 assert.strictEqual(mapaAcao.oque, 2);
