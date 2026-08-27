@@ -240,14 +240,20 @@ body { overflow: hidden; }
 }
 .painel-planos .painel-topo { flex-shrink: 0; }
 .painel-planos .tabela-wrap {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
-.painel-planos .tabela-rodape { flex-shrink: 0; }
+.painel-planos .tabela-rodape {
+  flex-shrink: 0;
+  border-radius: 0 0 var(--raio) var(--raio);
+}
 .painel-planos .vazio { flex: 1 1 auto; }
+.painel-planos table.dados {
+  min-width: 1180px;
+}
 .painel-planos table.dados th:first-child,
 .painel-planos table.dados td:first-child {
   position: sticky;
