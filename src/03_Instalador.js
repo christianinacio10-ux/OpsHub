@@ -91,7 +91,14 @@ function garantirConfig_() {
 
 function semearCadastros_(criadas) {
   criadas = criadas || [];
-  if (Logica.deveAplicarSemente(criadas, ABAS.departamentos, Repo.ler(ABAS.departamentos).length)) {
+  function abaNovaEVazia(nome) {
+    var nova = false;
+    for (var i = 0; i < criadas.length; i++) {
+      if (criadas[i] === nome) { nova = true; break; }
+    }
+    return nova && !Repo.ler(nome).length;
+  }
+  if (abaNovaEVazia(ABAS.departamentos)) {
     Repo.acrescentar(ABAS.departamentos, SEMENTES.departamentos.map(function (l) {
       return {
         id: l[0], nome: l[1], descricao: l[2], icone: l[3],
@@ -99,7 +106,7 @@ function semearCadastros_(criadas) {
       };
     }));
   }
-  if (Logica.deveAplicarSemente(criadas, ABAS.controles, Repo.ler(ABAS.controles).length)) {
+  if (abaNovaEVazia(ABAS.controles)) {
     Repo.acrescentar(ABAS.controles, SEMENTES.controles.map(function (l) {
       return {
         id: l[0], departamento_id: l[1], nome: l[2], descricao: l[3],
@@ -107,7 +114,7 @@ function semearCadastros_(criadas) {
       };
     }));
   }
-  if (Logica.deveAplicarSemente(criadas, ABAS.planos, Repo.ler(ABAS.planos).length)) {
+  if (abaNovaEVazia(ABAS.planos)) {
     Repo.acrescentar(ABAS.planos, sementesPlanosDemo_());
   }
 }
