@@ -215,6 +215,58 @@ body { overflow: hidden; }
   overscroll-behavior: contain;
 }
 .conteudo { padding: 28px 32px 64px; max-width: 1360px; }
+.area-conteudo.vista-planos {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.area-conteudo.vista-planos .conteudo {
+  flex: 1 1 0;
+  min-height: 0;
+  max-width: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 20px;
+}
+.planos-cab { flex-shrink: 0; }
+.painel-planos {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+.painel-planos .painel-topo { flex-shrink: 0; }
+.painel-planos .tabela-wrap {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.painel-planos .tabela-rodape {
+  flex-shrink: 0;
+  border-radius: 0 0 var(--raio) var(--raio);
+}
+.painel-planos .vazio { flex: 1 1 auto; }
+.painel-planos table.dados {
+  min-width: 1180px;
+}
+.painel-planos table.dados th:first-child,
+.painel-planos table.dados td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+.painel-planos table.dados th:first-child {
+  z-index: 3;
+  top: 0;
+}
+.painel-planos table.dados tbody tr:nth-child(odd) td:first-child { background: var(--superficie); }
+.painel-planos table.dados tbody tr:nth-child(even) td:first-child { background: #161514; }
+.painel-planos table.dados tbody tr:hover td:first-child { background: var(--superficie-3); }
 
 .botao {
   display: inline-flex; align-items: center; gap: 7px;
@@ -452,7 +504,7 @@ table.dados {
   width: 100%; border-collapse: collapse; font-size: 13px;
 }
 table.dados th {
-  position: sticky; top: 0; z-index: 1;
+  position: sticky; top: 0; z-index: 3;
   background: #1A1918; color: var(--tinta-3);
   font-size: 11.5px; letter-spacing: .02em; text-transform: none;
   font-weight: 500;
@@ -905,7 +957,7 @@ table.dados tr.risco td { box-shadow: none; }
           <button class="botao" id="botao-atualizar">Atualizar</button>
         </div>
       </header>
-      <div class="area-conteudo">
+      <div class="area-conteudo" id="area-conteudo">
         <div class="conteudo" id="conteudo">
           <div class="esqueleto" style="height:110px;margin-bottom:16px"></div>
           <div class="esqueleto" style="height:280px"></div>
@@ -1012,6 +1064,12 @@ table.dados tr.risco td { box-shadow: none; }
     plano('4', { tema: 'Entrega', divisao: 'Supply Chain', area: 'Logística', oque: 'Estabilizar FIFO do armazém de acabados', como: 'Sinalizar endereços e auditar 2x por semana', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(12), status: 'Aberto', comentarios: '' }),
     plano('5', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Zerar backlog de preventiva atrasada > 7 dias', como: 'Janela semanal congelada na sexta para PCM', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(-10), status: 'Concluído', comentarios: 'Backlog zerado na semana 32' }),
     plano('6', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Fechar CAPA de auditoria de cliente', como: 'Atualizar procedimento e treinar operadores', responsavel: 'Bruno Lima', email: '', prazo: add(-1), status: 'Aberto', comentarios: '' }),
+    plano('7', { tema: 'Segurança', divisao: 'Operations', area: 'EHS', oque: 'Substituir guarda de máquina da DDA3', como: 'Comprar kit e instalar no shutdown de setembro', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(20), status: 'Cancelado', comentarios: 'Escopo absorvido pelo A3 de segurança' }),
+    plano('8', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Padronizar troca de turno com handover de 10 min', como: 'Quadro visual + checklist de passagem de turno na DDA1 e DDA2', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: 'Piloto na DDA1' }),
+    plano('9', { tema: 'Entrega', divisao: 'Supply Chain', area: 'Logística', oque: 'Reduzir lead time de expedição de acabados', como: 'Pré-separar pedidos do dia seguinte no turno 3', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(4), status: 'Aberto', comentarios: 'Falta confirmar capacidade do armazém' }),
+    plano('10', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Implantar RCM na linha Smartrac', como: 'Mapear falhas críticas e definir preventiva por modo de falha', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(18), status: 'Aberto', comentarios: '' }),
+    plano('11', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Eliminar retrabalho de etiqueta ilegível', como: 'Trocar ribbon e calibrar cabeça de impressão semanalmente', responsavel: 'Bruno Lima', email: '', prazo: add(6), status: 'Em andamento', comentarios: 'Peças em trânsito' }),
+    plano('12', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Reduzir microparadas da DDA2 no setup', como: 'SMED com cronoanálise e kit pré-montado ao lado da máquina', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Aguardando foto do estado atual' }),
   ];
 
   var fontes = [
@@ -1060,7 +1118,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.3.0' },
+        app: { nome: 'OpsHub', versao: '1.3.1' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -1259,6 +1317,7 @@ table.dados tr.risco td { box-shadow: none; }
       areas: null,
       statuses: null,
       responsaveis: null,
+      omitirEncerradas: true,
     };
   }
 
@@ -1469,6 +1528,29 @@ table.dados tr.risco td { box-shadow: none; }
     return selecionados.indexOf(valor) !== -1;
   }
 
+  function statusEncerradoUi(status) {
+    var s = String(status || '');
+    return s === 'Concluído' || s === 'Concluido' || s === 'Cancelado';
+  }
+
+  function statusMarcado(valor) {
+    var f = Estado.filtros;
+    if (f.statuses != null) return f.statuses.indexOf(valor) !== -1;
+    if (f.omitirEncerradas) return !statusEncerradoUi(valor);
+    return true;
+  }
+
+  function rotuloFiltroStatus(valores) {
+    var f = Estado.filtros;
+    var marcados = (valores || []).filter(statusMarcado);
+    if (!valores.length) return 'Status';
+    if (f.statuses == null && f.omitirEncerradas) return 'Status (ativas)';
+    if (marcados.length === valores.length) return 'Status';
+    if (!marcados.length) return 'Status (nenhum)';
+    if (marcados.length === 1) return marcados[0];
+    return 'Status (' + marcados.length + ')';
+  }
+
   function temasAtivos(todosTemasUnicos) {
     var f = Estado.filtros;
     if (f.todosTemas) return todosTemasUnicos.slice();
@@ -1490,7 +1572,11 @@ table.dados tr.risco td { box-shadow: none; }
       if (temas.indexOf(p.tema) === -1) return false;
       if (!passaEixoUi(f.divisoes, p.divisao)) return false;
       if (!passaEixoUi(f.areas, p.area)) return false;
-      if (!passaEixoUi(f.statuses, p.status)) return false;
+      if (f.statuses != null) {
+        if (!passaEixoUi(f.statuses, p.status)) return false;
+      } else if (f.omitirEncerradas && statusEncerradoUi(p.status)) {
+        return false;
+      }
       if (!passaEixoUi(f.responsaveis, p.responsavel)) return false;
       if (!q) return true;
       return [p.tema, p.divisao, p.area, p.oque, p.como, p.responsavel, p.email, p.status, p.comentarios]
@@ -1514,11 +1600,17 @@ table.dados tr.risco td { box-shadow: none; }
     var chave = chaveFiltro(eixo);
     var sel = Estado.filtros[chave];
     var aberto = Estado.filtroAberto === eixo;
-    var todosOn = eixoMarcado(sel, null, valores) && (sel == null || sel.length === valores.length || !valores.length);
-    if (sel && sel.length === valores.length && valores.length) todosOn = true;
-    if (sel == null) todosOn = true;
+    var todosOn;
+    var rotulo;
+    if (eixo === 'status') {
+      todosOn = !valores.length || valores.every(statusMarcado);
+      rotulo = rotuloFiltroStatus(valores);
+    } else {
+      todosOn = sel == null || (sel && sel.length === valores.length && valores.length);
+      rotulo = rotuloExcel(label, sel, valores);
+    }
     var itens = valores.map(function (v) {
-      var on = eixoMarcado(sel, v, valores);
+      var on = eixo === 'status' ? statusMarcado(v) : eixoMarcado(sel, v, valores);
       return '<button type="button" class="filtro-excel-item" data-filtro-valor="' + escapar(v) +
         '" data-filtro-eixo="' + eixo + '">' +
         '<span class="caixa' + (on ? ' marcada' : '') + '" aria-hidden="true"></span>' +
@@ -1527,7 +1619,7 @@ table.dados tr.risco td { box-shadow: none; }
     return '<div class="filtro-excel' + (aberto ? ' aberto' : '') + '">' +
       '<button type="button" class="filtro-excel-btn" data-abrir-filtro="' + eixo +
       '" aria-expanded="' + (aberto ? 'true' : 'false') + '">' +
-      escapar(rotuloExcel(label, sel, valores)) +
+      escapar(rotulo) +
       '<span class="filtro-excel-seta">▾</span></button>' +
       (aberto
         ? '<div class="filtro-excel-painel" role="listbox">' +
@@ -1599,7 +1691,7 @@ table.dados tr.risco td { box-shadow: none; }
       : 'Nenhuma ação com esses filtros.';
 
     if (!filtrados.length) {
-      return '<div class="painel">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
+      return '<div class="painel painel-planos">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
     }
 
     var linhas = filtrados.map(function (p) {
@@ -1621,14 +1713,14 @@ table.dados tr.risco td { box-shadow: none; }
         '</tr>';
     }).join('');
 
-    return '<div class="painel">' + cab +
+    return '<div class="painel painel-planos">' + cab +
       '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
       th('tema', 'Tema') + th('divisao', 'Divisão') + th('area', 'Área') +
       th('oque', 'O quê?') + th('como', 'Como') + th('responsavel', 'Responsável') +
       th('email', 'E-mail') + th('prazo', 'Prazo') + th('status', 'Status') +
       th('comentarios', 'Comentários') +
       '</tr></thead><tbody>' + linhas + '</tbody></table></div>' +
-      '<div class="painel-topo" style="border-top:1px solid var(--linha);border-bottom:0">' +
+      '<div class="painel-topo tabela-rodape" style="border-top:1px solid var(--linha);border-bottom:0">' +
       '<div class="secao-apoio">' + filtrados.length + ' de ' + todos.length + ' ações</div></div></div>';
   }
 
@@ -1876,7 +1968,11 @@ table.dados tr.risco td { box-shadow: none; }
   }
 
   function vistaPlanos() {
-    return kpisHtml(Estado.hub.kpis) + chipsTema(Estado.hub.planos || []) + tabelaPlanos();
+    return '<div class="planos-cab">' +
+      kpisHtml(Estado.hub.kpis) +
+      chipsTema(Estado.hub.planos || []) +
+      '</div>' +
+      tabelaPlanos();
   }
 
   function vistaConfig() {
@@ -1981,6 +2077,11 @@ table.dados tr.risco td { box-shadow: none; }
     else if (Estado.vista === 'config') html = vistaConfig();
     else html = vistaHub();
     $('conteudo').innerHTML = html;
+    var area = $('area-conteudo');
+    if (area) {
+      if (Estado.vista === 'planos') area.classList.add('vista-planos');
+      else area.classList.remove('vista-planos');
+    }
   }
 
   function lerForm(form) {
@@ -2002,6 +2103,9 @@ table.dados tr.risco td { box-shadow: none; }
     var chave = chaveFiltro(eixo);
     var todos = valoresEixo(eixo);
     var atual = Estado.filtros[chave];
+    if (eixo === 'status' && atual == null && Estado.filtros.omitirEncerradas) {
+      atual = todos.filter(function (v) { return !statusEncerradoUi(v); });
+    }
     var set;
     if (atual == null) {
       set = todos.filter(function (v) { return v !== valor; });
@@ -2010,12 +2114,19 @@ table.dados tr.risco td { box-shadow: none; }
     } else {
       set = atual.concat([valor]);
     }
+    if (eixo === 'status') Estado.filtros.omitirEncerradas = false;
     Estado.filtros[chave] = set.length === todos.length ? null : set;
   }
 
   function toggleExcelTodos(eixo) {
     var chave = chaveFiltro(eixo);
     var todos = valoresEixo(eixo);
+    if (eixo === 'status') {
+      var todosOn = !todos.length || todos.every(statusMarcado);
+      Estado.filtros.statuses = null;
+      Estado.filtros.omitirEncerradas = !!todosOn;
+      return;
+    }
     var atual = Estado.filtros[chave];
     var todosOn = atual == null || (todos.length && atual.length === todos.length);
     Estado.filtros[chave] = todosOn ? [] : null;

@@ -117,6 +117,27 @@ assert.strictEqual(
   0,
   'eixo Excel sem nenhum valor marcado esconde as linhas'
 );
+var planosComEncerradas = planos.concat([
+  { tema: 'OEE', area: 'Produção', oque: 'Fechar', status: 'Concluído', prazo: d(2026, 8, 1), email: 'a@x.com', responsavel: 'A' },
+  { tema: 'EHS', area: 'EHS', oque: 'Cancelar', status: 'Cancelado', prazo: d(2026, 8, 1), email: 'a@x.com', responsavel: 'B' },
+]);
+assert.strictEqual(
+  Logica.filtrarPlanos(planosComEncerradas, { todosTemas: true, omitirEncerradas: true, hoje: hoje }).length,
+  2,
+  'filtro padrao esconde concluido e cancelado'
+);
+assert.strictEqual(
+  Logica.filtrarPlanos(planosComEncerradas, { todosTemas: true, omitirEncerradas: false, hoje: hoje }).length,
+  4,
+  'sem omitir encerradas mostra todas'
+);
+assert.strictEqual(
+  Logica.filtrarPlanos(planosComEncerradas, {
+    todosTemas: true, omitirEncerradas: true, statuses: ['Concluído'], hoje: hoje,
+  }).length,
+  1,
+  'lista explicita de status prevalece sobre o padrao'
+);
 assert.strictEqual(Logica.passaEixo(null, 'x'), true);
 assert.strictEqual(Logica.passaEixo([], 'x'), false);
 assert.strictEqual(Logica.passaEixo(['OEE'], 'OEE'), true);

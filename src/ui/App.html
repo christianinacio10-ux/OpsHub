@@ -42,6 +42,7 @@
       areas: null,
       statuses: null,
       responsaveis: null,
+      omitirEncerradas: true,
     };
   }
 
@@ -252,6 +253,29 @@
     return selecionados.indexOf(valor) !== -1;
   }
 
+  function statusEncerradoUi(status) {
+    var s = String(status || '');
+    return s === 'Concluído' || s === 'Concluido' || s === 'Cancelado';
+  }
+
+  function statusMarcado(valor) {
+    var f = Estado.filtros;
+    if (f.statuses != null) return f.statuses.indexOf(valor) !== -1;
+    if (f.omitirEncerradas) return !statusEncerradoUi(valor);
+    return true;
+  }
+
+  function rotuloFiltroStatus(valores) {
+    var f = Estado.filtros;
+    var marcados = (valores || []).filter(statusMarcado);
+    if (!valores.length) return 'Status';
+    if (f.statuses == null && f.omitirEncerradas) return 'Status (ativas)';
+    if (marcados.length === valores.length) return 'Status';
+    if (!marcados.length) return 'Status (nenhum)';
+    if (marcados.length === 1) return marcados[0];
+    return 'Status (' + marcados.length + ')';
+  }
+
   function temasAtivos(todosTemasUnicos) {
     var f = Estado.filtros;
     if (f.todosTemas) return todosTemasUnicos.slice();
@@ -273,7 +297,11 @@
       if (temas.indexOf(p.tema) === -1) return false;
       if (!passaEixoUi(f.divisoes, p.divisao)) return false;
       if (!passaEixoUi(f.areas, p.area)) return false;
-      if (!passaEixoUi(f.statuses, p.status)) return false;
+      if (f.statuses != null) {
+        if (!passaEixoUi(f.statuses, p.status)) return false;
+      } else if (f.omitirEncerradas && statusEncerradoUi(p.status)) {
+        return false;
+      }
       if (!passaEixoUi(f.responsaveis, p.responsavel)) return false;
       if (!q) return true;
       return [p.tema, p.divisao, p.area, p.oque, p.como, p.responsavel, p.email, p.status, p.comentarios]
@@ -297,11 +325,17 @@
     var chave = chaveFiltro(eixo);
     var sel = Estado.filtros[chave];
     var aberto = Estado.filtroAberto === eixo;
-    var todosOn = eixoMarcado(sel, null, valores) && (sel == null || sel.length === valores.length || !valores.length);
-    if (sel && sel.length === valores.length && valores.length) todosOn = true;
-    if (sel == null) todosOn = true;
+    var todosOn;
+    var rotulo;
+    if (eixo === 'status') {
+      todosOn = !valores.length || valores.every(statusMarcado);
+      rotulo = rotuloFiltroStatus(valores);
+    } else {
+      todosOn = sel == null || (sel && sel.length === valores.length && valores.length);
+      rotulo = rotuloExcel(label, sel, valores);
+    }
     var itens = valores.map(function (v) {
-      var on = eixoMarcado(sel, v, valores);
+      var on = eixo === 'status' ? statusMarcado(v) : eixoMarcado(sel, v, valores);
       return '<button type="button" class="filtro-excel-item" data-filtro-valor="' + escapar(v) +
         '" data-filtro-eixo="' + eixo + '">' +
         '<span class="caixa' + (on ? ' marcada' : '') + '" aria-hidden="true"></span>' +
@@ -310,7 +344,7 @@
     return '<div class="filtro-excel' + (aberto ? ' aberto' : '') + '">' +
       '<button type="button" class="filtro-excel-btn" data-abrir-filtro="' + eixo +
       '" aria-expanded="' + (aberto ? 'true' : 'false') + '">' +
-      escapar(rotuloExcel(label, sel, valores)) +
+      escapar(rotulo) +
       '<span class="filtro-excel-seta">▾</span></button>' +
       (aberto
         ? '<div class="filtro-excel-painel" role="listbox">' +
@@ -382,7 +416,7 @@
       : 'Nenhuma ação com esses filtros.';
 
     if (!filtrados.length) {
-      return '<div class="painel">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
+      return '<div class="painel painel-planos">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
     }
 
     var linhas = filtrados.map(function (p) {
@@ -404,14 +438,14 @@
         '</tr>';
     }).join('');
 
-    return '<div class="painel">' + cab +
+    return '<div class="painel painel-planos">' + cab +
       '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
       th('tema', 'Tema') + th('divisao', 'Divisão') + th('area', 'Área') +
       th('oque', 'O quê?') + th('como', 'Como') + th('responsavel', 'Responsável') +
       th('email', 'E-mail') + th('prazo', 'Prazo') + th('status', 'Status') +
       th('comentarios', 'Comentários') +
       '</tr></thead><tbody>' + linhas + '</tbody></table></div>' +
-      '<div class="painel-topo" style="border-top:1px solid var(--linha);border-bottom:0">' +
+      '<div class="painel-topo tabela-rodape" style="border-top:1px solid var(--linha);border-bottom:0">' +
       '<div class="secao-apoio">' + filtrados.length + ' de ' + todos.length + ' ações</div></div></div>';
   }
 
@@ -659,7 +693,11 @@
   }
 
   function vistaPlanos() {
-    return kpisHtml(Estado.hub.kpis) + chipsTema(Estado.hub.planos || []) + tabelaPlanos();
+    return '<div class="planos-cab">' +
+      kpisHtml(Estado.hub.kpis) +
+      chipsTema(Estado.hub.planos || []) +
+      '</div>' +
+      tabelaPlanos();
   }
 
   function vistaConfig() {
@@ -764,6 +802,11 @@
     else if (Estado.vista === 'config') html = vistaConfig();
     else html = vistaHub();
     $('conteudo').innerHTML = html;
+    var area = $('area-conteudo');
+    if (area) {
+      if (Estado.vista === 'planos') area.classList.add('vista-planos');
+      else area.classList.remove('vista-planos');
+    }
   }
 
   function lerForm(form) {
@@ -785,6 +828,9 @@
     var chave = chaveFiltro(eixo);
     var todos = valoresEixo(eixo);
     var atual = Estado.filtros[chave];
+    if (eixo === 'status' && atual == null && Estado.filtros.omitirEncerradas) {
+      atual = todos.filter(function (v) { return !statusEncerradoUi(v); });
+    }
     var set;
     if (atual == null) {
       set = todos.filter(function (v) { return v !== valor; });
@@ -793,12 +839,19 @@
     } else {
       set = atual.concat([valor]);
     }
+    if (eixo === 'status') Estado.filtros.omitirEncerradas = false;
     Estado.filtros[chave] = set.length === todos.length ? null : set;
   }
 
   function toggleExcelTodos(eixo) {
     var chave = chaveFiltro(eixo);
     var todos = valoresEixo(eixo);
+    if (eixo === 'status') {
+      var todosOn = !todos.length || todos.every(statusMarcado);
+      Estado.filtros.statuses = null;
+      Estado.filtros.omitirEncerradas = !!todosOn;
+      return;
+    }
     var atual = Estado.filtros[chave];
     var todosOn = atual == null || (todos.length && atual.length === todos.length);
     Estado.filtros[chave] = todosOn ? [] : null;
