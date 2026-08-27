@@ -383,7 +383,8 @@
       '<button type="button" class="chip-tema todos' + (todosOn ? ' ativo' : '') +
       '" data-tema-todos="1">Todos</button>' +
       temas.map(function (t) {
-        return '<button type="button" class="chip-tema' + (set[t] ? ' ativo' : '') +
+        var on = !todosOn && !!set[t];
+        return '<button type="button" class="chip-tema' + (on ? ' ativo' : '') +
           '" data-tema="' + escapar(t) + '">' + escapar(t) + '</button>';
       }).join('') +
       '</div></div>';
