@@ -255,6 +255,20 @@ var Logica = (function () {
   }
 
   /**
+   * Exemplos so entram na primeira criacao da aba. Aba ja existente
+   * e vazia (o usuario apagou os cadastros) permanece vazia.
+   */
+  function deveAplicarSemente(abasRecemCriadas, nomeAba, quantidade) {
+    if (!nomeAba) return false;
+    var recem = abasRecemCriadas || [];
+    var criada = false;
+    for (var i = 0; i < recem.length; i++) {
+      if (recem[i] === nomeAba) { criada = true; break; }
+    }
+    return criada && !(Number(quantidade) > 0);
+  }
+
+  /**
    * google.script.run nao entrega Array de verdade e ainda parseia
    * string que parece JSON. O cliente manda "TEMAS\\nNome1\\nNome2",
    * um texto que o GAS nao transforma sozinho.
@@ -733,10 +747,10 @@ var Logica = (function () {
     classeStatus: classeStatus,
     parseTemasFollowUp: parseTemasFollowUp,
     serializarTemasFollowUp: serializarTemasFollowUp,
+    deveAplicarSemente: deveAplicarSemente,
     temaFollowUpHabilitado: temaFollowUpHabilitado,
     alternarTemaFollowUp: alternarTemaFollowUp,
     persistirTemasFollowUp: persistirTemasFollowUp,
-    temaFollowUpHabilitado: temaFollowUpHabilitado,
     elegivelFollowUp: elegivelFollowUp,
     linhaFonteParaPlano: linhaFonteParaPlano,
     mesclarImportacao: mesclarImportacao,

@@ -67,6 +67,9 @@ assert.strictEqual(Logica.persistirTemasFollowUp(['__NONE__'], ['OEE']), 'NONE')
 assert.strictEqual(Logica.persistirTemasFollowUp(['OEE', 'EHS'], ['OEE', 'EHS']), '');
 assert.strictEqual(Logica.persistirTemasFollowUp(['OEE'], ['OEE', 'EHS']), '["OEE"]');
 assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', ['__NONE__']), false);
+assert.strictEqual(Logica.deveAplicarSemente(['DEPARTAMENTOS'], 'DEPARTAMENTOS', 0), true);
+assert.strictEqual(Logica.deveAplicarSemente([], 'DEPARTAMENTOS', 0), false);
+assert.strictEqual(Logica.deveAplicarSemente(['DEPARTAMENTOS'], 'DEPARTAMENTOS', 1), false);
 assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', []), true);
 assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', ['EHS']), false);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'OEE' }), hoje, ['EHS']).motivo, 'tema_desligado');

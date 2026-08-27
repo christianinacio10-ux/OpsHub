@@ -271,6 +271,20 @@ var Logica = (function () {
   }
 
   /**
+   * Exemplos so entram na primeira criacao da aba. Aba ja existente
+   * e vazia (o usuario apagou os cadastros) permanece vazia.
+   */
+  function deveAplicarSemente(abasRecemCriadas, nomeAba, quantidade) {
+    if (!nomeAba) return false;
+    var recem = abasRecemCriadas || [];
+    var criada = false;
+    for (var i = 0; i < recem.length; i++) {
+      if (recem[i] === nomeAba) { criada = true; break; }
+    }
+    return criada && !(Number(quantidade) > 0);
+  }
+
+  /**
    * google.script.run nao entrega Array de verdade e ainda parseia
    * string que parece JSON. O cliente manda "TEMAS\\nNome1\\nNome2",
    * um texto que o GAS nao transforma sozinho.
@@ -749,10 +763,10 @@ var Logica = (function () {
     classeStatus: classeStatus,
     parseTemasFollowUp: parseTemasFollowUp,
     serializarTemasFollowUp: serializarTemasFollowUp,
+    deveAplicarSemente: deveAplicarSemente,
     temaFollowUpHabilitado: temaFollowUpHabilitado,
     alternarTemaFollowUp: alternarTemaFollowUp,
     persistirTemasFollowUp: persistirTemasFollowUp,
-    temaFollowUpHabilitado: temaFollowUpHabilitado,
     elegivelFollowUp: elegivelFollowUp,
     linhaFonteParaPlano: linhaFonteParaPlano,
     mesclarImportacao: mesclarImportacao,
@@ -1121,7 +1135,14 @@ function garantirConfig_() {
 
 function semearCadastros_(criadas) {
   criadas = criadas || [];
-  if (Logica.deveAplicarSemente(criadas, ABAS.departamentos, Repo.ler(ABAS.departamentos).length)) {
+  function abaNovaEVazia(nome) {
+    var nova = false;
+    for (var i = 0; i < criadas.length; i++) {
+      if (criadas[i] === nome) { nova = true; break; }
+    }
+    return nova && !Repo.ler(nome).length;
+  }
+  if (abaNovaEVazia(ABAS.departamentos)) {
     Repo.acrescentar(ABAS.departamentos, SEMENTES.departamentos.map(function (l) {
       return {
         id: l[0], nome: l[1], descricao: l[2], icone: l[3],
@@ -1129,7 +1150,7 @@ function semearCadastros_(criadas) {
       };
     }));
   }
-  if (Logica.deveAplicarSemente(criadas, ABAS.controles, Repo.ler(ABAS.controles).length)) {
+  if (abaNovaEVazia(ABAS.controles)) {
     Repo.acrescentar(ABAS.controles, SEMENTES.controles.map(function (l) {
       return {
         id: l[0], departamento_id: l[1], nome: l[2], descricao: l[3],
@@ -1137,7 +1158,7 @@ function semearCadastros_(criadas) {
       };
     }));
   }
-  if (Logica.deveAplicarSemente(criadas, ABAS.planos, Repo.ler(ABAS.planos).length)) {
+  if (abaNovaEVazia(ABAS.planos)) {
     Repo.acrescentar(ABAS.planos, sementesPlanosDemo_());
   }
 }
