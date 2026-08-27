@@ -60,7 +60,7 @@ A importação substitui só as linhas daquela fonte. O histórico de e-mails de
 - Sem e-mail válido: não envia. Na tabela, o ícone amarelo explica: *Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.*
 - Em **Configurações → Follow-up e gatilho**, os chips dos temas importados ligam ou desligam o envio. Lista vazia em `_CONFIG.followup_temas` = todos os temas.
 
-Crie o gatilho pelo menu **OpsHub → Criar gatilho diário** ou em **Configurações → Follow-up e gatilho** (padrão: 08h, fuso `America/Sao_Paulo`). A rotina importa as fontes e em seguida envia os e-mails.
+Crie o gatilho pelo menu **OpsHub → Ativar gatilho** ou em **Configurações → Follow-up e gatilho** (padrão: 08h, fuso `America/Sao_Paulo`). A rotina importa as fontes e em seguida envia os e-mails.
 
 ## Preview local (sem Google)
 

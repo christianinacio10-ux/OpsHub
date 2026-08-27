@@ -119,9 +119,7 @@ function apiReordenarDepartamentos(ids) {
   return apiHub();
 }
 
-function apiSalvarTemasFollowUp(temas) {
-  var lista = Logica.parseTemasFollowUp(temas);
-  var valor = lista.length ? JSON.stringify(lista) : '';
+function gravarTemasFollowUp_(valor) {
   var linhas = Repo.ler(ABAS.config);
   var atual = linhas.filter(function (l) { return String(l.chave) === 'followup_temas'; })[0];
   if (atual) {
@@ -130,10 +128,27 @@ function apiSalvarTemasFollowUp(temas) {
     Repo.acrescentar(ABAS.config, [{
       chave: 'followup_temas',
       valor: valor,
-      descricao: 'Temas que recebem e-mail de follow-up (vazio = todos)',
+      descricao: 'Temas que recebem e-mail de follow-up (vazio = todos, NONE = nenhum)',
     }]);
   }
   Repo.limparMemoria();
+}
+
+function apiSalvarTemasFollowUp(temas) {
+  var lista = Logica.parseTemasFollowUp(temas);
+  var valor = lista.length ? JSON.stringify(lista) : '';
+  if (lista.length === 1 && Logica.texto(lista[0]) === '__NONE__') valor = 'NONE';
+  gravarTemasFollowUp_(valor);
+  return apiHub();
+}
+
+function apiAlternarTemaFollowUp(nome) {
+  nome = Logica.texto(nome);
+  if (!nome) throw new Error('Tema vazio.');
+  var todos = Logica.unicos(Cadastros.planos(), 'tema');
+  var atuais = Logica.parseTemasFollowUp(Cadastros.config().texto('followup_temas', ''));
+  var proximo = Logica.alternarTemaFollowUp(nome, atuais, todos);
+  gravarTemasFollowUp_(Logica.persistirTemasFollowUp(proximo, todos));
   return apiHub();
 }
 

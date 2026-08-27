@@ -92,14 +92,14 @@
       var r = google.script.run
         .withSuccessHandler(resolve)
         .withFailureHandler(reject);
-      if (typeof r[nome] !== 'function') {
-        reject(new Error('API indisponível: ' + nome));
-        return;
+      try {
+        if (a.length === 0) r[nome]();
+        else if (a.length === 1) r[nome](a[0]);
+        else if (a.length === 2) r[nome](a[0], a[1]);
+        else r[nome](a[0], a[1], a[2]);
+      } catch (err) {
+        reject(err);
       }
-      if (a.length === 0) r[nome]();
-      else if (a.length === 1) r[nome](a[0]);
-      else if (a.length === 2) r[nome](a[0], a[1]);
-      else r[nome](a[0], a[1], a[2]);
     });
   }
 
@@ -112,12 +112,16 @@
     toast._t = setTimeout(function () { el.hidden = true; }, 4200);
   }
 
-  function ocupar(ligado, texto) {
+  function ocupar(ligado, texto, sub) {
     Estado.carregando = !!ligado;
     var overlay = $('overlay-carga');
     var botao = $('botao-atualizar');
     if (overlay) overlay.hidden = !ligado;
     if ($('overlay-texto') && texto) $('overlay-texto').textContent = texto;
+    if ($('overlay-sub')) {
+      $('overlay-sub').textContent = ligado ? (sub || 'Aguarde um instante') : '';
+      $('overlay-sub').hidden = !ligado;
+    }
     if (botao) {
       botao.disabled = !!ligado;
       if (ligado) botao.classList.add('ocupado');
@@ -226,11 +230,14 @@
 
   function unicos(lista, campo) {
     var set = {}; var out = [];
-    (lista || []).forEach(function (p) {
-      var v = p[campo];
-      if (!v || set[v]) return;
+    var n = lista && lista.length;
+    if (typeof n !== 'number') return out;
+    for (var i = 0; i < n; i++) {
+      var p = lista[i];
+      var v = p && p[campo];
+      if (!v || set[v]) continue;
       set[v] = 1; out.push(v);
-    });
+    }
     out.sort(function (a, b) { return String(a).localeCompare(String(b), 'pt-BR'); });
     return out;
   }
@@ -706,15 +713,17 @@
   function chipsFollowUp() {
     var temas = listaTemas(Estado.hub && Estado.hub.temasDistintos);
     if (!temas.length) temas = unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
+    temas = temas.filter(function (t) { return t && t !== '__NONE__'; });
     var habilitados = listaTemas(Estado.hub && Estado.hub.temasFollowUp);
-    var todos = !habilitados.length;
+    var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
+    var todos = !habilitados.length && !nenhum;
     return '<div class="temas-barra" style="margin-top:8px">' +
       '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">Temas que recebem e-mail</div>' +
       '<div class="secao-apoio" style="margin-bottom:10px">Ligue ou desligue quais temas entram no follow-up. Com todos ligados, o comportamento é o de sempre: qualquer tema atrasado dispara.</div>' +
       '<div class="temas-chips">' +
       (temas.length
         ? temas.map(function (t) {
-            var on = todos || habilitados.indexOf(t) !== -1;
+            var on = !nenhum && (todos || habilitados.indexOf(t) !== -1);
             return '<button type="button" class="chip-follow ' + (on ? 'ligado' : 'desligado') +
               '" data-followup-tema="' + escapar(t) + '" aria-pressed="' + (on ? 'true' : 'false') +
               '" title="' + (on ? 'Ligado — clique para tirar do follow-up' : 'Desligado — clique para incluir no follow-up') + '">' +
@@ -735,8 +744,8 @@
       '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">Gatilho ' + (g.ativo ? 'ativo' : 'inativo') +
       ' · disparo às ' + g.hora + 'h</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-      '<button class="botao primario" id="btn-gatilho">Criar gatilho diário</button>' +
-      '<button class="botao" id="btn-remover-gatilho">Remover gatilhos</button>' +
+      '<button class="botao primario" id="btn-gatilho">Ativar gatilho</button>' +
+      '<button class="botao" id="btn-remover-gatilho">Inativar gatilhos</button>' +
       '<button class="botao" id="btn-followup">Enviar follow-ups agora</button>' +
       '</div></div></div>';
   }
@@ -867,38 +876,15 @@
   }
 
   function toggleFollowUpTema(nome) {
-    if (!nome || !Estado.hub) return;
-    nome = String(nome).trim();
-    var temas = listaTemas(Estado.hub.temasDistintos);
-    if (!temas.length) temas = unicos(Estado.hub.planos || [], 'tema');
-    var habilitados = listaTemas(Estado.hub.temasFollowUp);
-    var atuais = !habilitados.length ? temas.slice() : habilitados.slice();
-    var ligado = false;
-    var proximo = [];
-    for (var i = 0; i < atuais.length; i++) {
-      if (atuais[i] === nome) ligado = true;
-      else proximo.push(atuais[i]);
-    }
-    if (!ligado) proximo.push(nome);
-    var valor = proximo.slice();
-    var anterior = listaTemas(Estado.hub.temasFollowUp);
-    Estado.hub.temasFollowUp = valor.slice();
+    if (!nome || !Estado.hub || Estado.carregando) return;
     Estado.configAba = 'mail';
-    render();
-    chamar('apiSalvarTemasFollowUp', 'TEMAS\n' + valor.join('\n')).then(function (hub) {
+    ocupar(true, 'Atualizando follow-up…', 'Gravando o tema na planilha');
+    chamar('apiAlternarTemaFollowUp', String(nome).trim()).then(function (hub) {
       Estado.configAba = 'mail';
-      if (!hub) return;
-      var voltou = listaTemas(hub.temasFollowUp);
-      if (valor.length && !voltou.length) {
-        Estado.hub.temasFollowUp = valor.slice();
-        render();
-        toast('Não foi possível gravar os temas de follow-up.', true);
-        return;
-      }
-      Estado.hub.temasFollowUp = voltou;
-      render();
+      aplicarHub(hub);
+      toast('Temas de follow-up atualizados.');
     }).catch(function (err) {
-      Estado.hub.temasFollowUp = anterior;
+      ocupar(false);
       Estado.configAba = 'mail';
       render();
       toast(err.message || err, true);
@@ -1108,7 +1094,7 @@
       }
       if (e.target.closest('#btn-gatilho')) {
         if (Estado.carregando) return;
-        ocupar(true, 'Criando gatilho…');
+        ocupar(true, 'Ativando gatilho…', 'Criando o disparo diário automático');
         chamar('apiCriarGatilho').then(function (r) {
           ocupar(false);
           toast(r.mensagem);
@@ -1122,7 +1108,7 @@
       }
       if (e.target.closest('#btn-remover-gatilho')) {
         if (Estado.carregando) return;
-        ocupar(true, 'Removendo gatilhos…');
+        ocupar(true, 'Inativando gatilhos…', 'Removendo o disparo automático');
         chamar('apiRemoverGatilhos').then(function (r) {
           ocupar(false);
           toast(r.mensagem);

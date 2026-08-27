@@ -209,6 +209,21 @@
       });
       return { total: cand.length, temasJaEnviadosHoje: temasJa };
     },
+    apiAlternarTemaFollowUp: function (nome) {
+      nome = String(nome || '').trim();
+      var todos = temasDistintos();
+      var atuais = temasFollowUp.slice();
+      var nenhum = atuais.length === 1 && atuais[0] === '__NONE__';
+      if (!atuais.length) atuais = todos.slice();
+      if (nenhum) atuais = [];
+      var idx = atuais.indexOf(nome);
+      if (idx === -1) atuais.push(nome);
+      else atuais = atuais.filter(function (t) { return t !== nome; });
+      if (!atuais.length) temasFollowUp = ['__NONE__'];
+      else if (atuais.length === todos.length) temasFollowUp = [];
+      else temasFollowUp = atuais;
+      return hub();
+    },
     apiCriarGatilho: function () {
       gatilho = { ativo: true, quantidade: 1, hora: 8 };
       return { mensagem: 'Gatilho diario criado para a rotina das 8h.', gatilho: gatilho };
@@ -242,6 +257,7 @@
             apiPreverFollowUps: 500,
             apiCriarGatilho: 550,
             apiRemoverGatilhos: 550,
+            apiAlternarTemaFollowUp: 500,
           };
           var delay = lentos[nome] || 40;
           setTimeout(function () { ok(out); }, delay);

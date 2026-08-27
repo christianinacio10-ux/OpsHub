@@ -58,6 +58,15 @@ assert.deepStrictEqual(Logica.parseTemasFollowUp('TEMAS\nOEE\nEHS'), ['OEE', 'EH
 assert.deepStrictEqual(Logica.parseTemasFollowUp('TEMAS\n'), []);
 assert.deepStrictEqual(Logica.parseTemasFollowUp(Logica.serializarTemasFollowUp(['OEE', ' Qualidade '])), ['OEE', 'Qualidade']);
 assert.deepStrictEqual(Logica.parseTemasFollowUp(Logica.serializarTemasFollowUp([])), []);
+assert.deepStrictEqual(Logica.parseTemasFollowUp('NONE'), ['__NONE__']);
+assert.deepStrictEqual(Logica.alternarTemaFollowUp('OEE', [], ['OEE', 'EHS']), ['EHS']);
+assert.deepStrictEqual(Logica.alternarTemaFollowUp('OEE', ['EHS'], ['OEE', 'EHS']), ['EHS', 'OEE']);
+assert.deepStrictEqual(Logica.alternarTemaFollowUp('OEE', ['OEE'], ['OEE']), ['__NONE__']);
+assert.deepStrictEqual(Logica.alternarTemaFollowUp('OEE', ['__NONE__'], ['OEE', 'EHS']), ['OEE']);
+assert.strictEqual(Logica.persistirTemasFollowUp(['__NONE__'], ['OEE']), 'NONE');
+assert.strictEqual(Logica.persistirTemasFollowUp(['OEE', 'EHS'], ['OEE', 'EHS']), '');
+assert.strictEqual(Logica.persistirTemasFollowUp(['OEE'], ['OEE', 'EHS']), '["OEE"]');
+assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', ['__NONE__']), false);
 assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', []), true);
 assert.strictEqual(Logica.temaFollowUpHabilitado('OEE', ['EHS']), false);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'OEE' }), hoje, ['EHS']).motivo, 'tema_desligado');

@@ -283,6 +283,7 @@ var Logica = (function () {
     }
     s = texto(s);
     if (s.indexOf('OPSHUB_TEMAS:') === 0) s = s.slice(13);
+    if (s === 'NONE' || s === '__NONE__') return ['__NONE__'];
     if (!s || s === '[]') return [];
     if (s.charAt(0) === '[') {
       try {
@@ -295,11 +296,59 @@ var Logica = (function () {
 
   function temaFollowUpHabilitado(tema, habilitados) {
     if (!habilitados || !habilitados.length) return true;
+    if (habilitados.length === 1 && texto(habilitados[0]) === '__NONE__') return false;
     var t = texto(tema);
     for (var i = 0; i < habilitados.length; i++) {
       if (texto(habilitados[i]) === t) return true;
     }
     return false;
+  }
+
+  function nomesTemas_(lista) {
+    var out = [];
+    (lista || []).forEach(function (t) {
+      var s = texto(t);
+      if (s && s !== '__NONE__') out.push(s);
+    });
+    return out;
+  }
+
+  /**
+   * O cliente so envia o nome do tema. A lista ligada mora na planilha.
+   * google.script.run perde Array/JSON; um unico texto chega intacto.
+   */
+  function alternarTemaFollowUp(nome, habilitados, todosTemas) {
+    nome = texto(nome);
+    var todos = nomesTemas_(todosTemas);
+    var raw = (habilitados || []).map(texto).filter(Boolean);
+    var nenhum = raw.length === 1 && raw[0] === '__NONE__';
+    var atuais = nenhum ? [] : (raw.length ? nomesTemas_(raw) : todos.slice());
+    var estava = false;
+    var proximo = [];
+    for (var i = 0; i < atuais.length; i++) {
+      if (atuais[i] === nome) estava = true;
+      else proximo.push(atuais[i]);
+    }
+    if (!estava && nome) proximo.push(nome);
+    if (!proximo.length) return ['__NONE__'];
+    return proximo;
+  }
+
+  function persistirTemasFollowUp(lista, todosTemas) {
+    if (lista && lista.length === 1 && texto(lista[0]) === '__NONE__') return 'NONE';
+    var nomes = nomesTemas_(lista);
+    if (!nomes.length) return 'NONE';
+    var todos = nomesTemas_(todosTemas);
+    if (todos.length && nomes.length === todos.length) {
+      var set = {};
+      nomes.forEach(function (n) { set[n] = 1; });
+      var cobre = true;
+      for (var i = 0; i < todos.length; i++) {
+        if (!set[todos[i]]) { cobre = false; break; }
+      }
+      if (cobre) return '';
+    }
+    return JSON.stringify(nomes);
   }
 
   function elegivelFollowUp(acao, hoje, temasHabilitados, opcoes) {
@@ -684,6 +733,9 @@ var Logica = (function () {
     classeStatus: classeStatus,
     parseTemasFollowUp: parseTemasFollowUp,
     serializarTemasFollowUp: serializarTemasFollowUp,
+    temaFollowUpHabilitado: temaFollowUpHabilitado,
+    alternarTemaFollowUp: alternarTemaFollowUp,
+    persistirTemasFollowUp: persistirTemasFollowUp,
     temaFollowUpHabilitado: temaFollowUpHabilitado,
     elegivelFollowUp: elegivelFollowUp,
     linhaFonteParaPlano: linhaFonteParaPlano,
