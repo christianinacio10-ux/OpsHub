@@ -252,13 +252,25 @@ body { overflow: hidden; }
 }
 .painel-planos .vazio { flex: 1 1 auto; }
 .painel-planos table.dados {
-  min-width: 1180px;
+  min-width: 1320px;
+  border-collapse: separate;
+  border-spacing: 0;
 }
+.painel-planos table.dados td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.painel-planos table.dados td.principal { max-width: 260px; }
+.painel-planos table.dados td.como { max-width: 280px; }
+.painel-planos table.dados td.comentarios { max-width: 240px; }
 .painel-planos table.dados th:first-child,
 .painel-planos table.dados td:first-child {
   position: sticky;
   left: 0;
   z-index: 2;
+  box-shadow: 6px 0 8px -6px rgba(0,0,0,.55);
 }
 .painel-planos table.dados th:first-child {
   z-index: 3;
@@ -414,14 +426,28 @@ body { overflow: hidden; }
 }
 .card-dept-icone svg { width: 18px; height: 18px; stroke-width: 1.6; }
 .painel-aparencia {
-  margin-bottom: 8px;
+  margin: 18px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--linha);
 }
+.aparencia-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; height: 36px; padding: 0 2px;
+  border: 0; background: transparent;
+  color: var(--tinta-2); font-family: var(--fonte);
+  font-size: 13.5px; font-weight: 520; cursor: pointer;
+  letter-spacing: -.01em;
+}
+.aparencia-toggle:hover { color: var(--tinta); }
+.aparencia-seta { color: var(--tinta-3); font-size: 12px; }
+.aparencia-corpo { padding-top: 8px; }
 .painel-aparencia .seletor-icone {
   position: static;
   min-width: 0;
   width: 100%;
   grid-template-columns: repeat(8, minmax(40px, 1fr));
   margin-bottom: 12px;
+  box-shadow: none;
 }
 .seletor-icone {
   display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
@@ -609,7 +635,7 @@ table.dados tr.risco td { box-shadow: none; }
   min-height: 280px;
 }
 .drawer-gestao {
-  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--linha);
+  margin-top: 0; padding-top: 0; border-top: 0;
 }
 .drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
 .rotulo-com-ajuda {
@@ -1042,15 +1068,22 @@ table.dados tr.risco td { box-shadow: none; }
   function plano(id, o) {
     var prazo = o.prazo;
     var st = o.status;
-    if (st !== 'Concluído' && st !== 'Cancelado' && prazo < hoje) st = 'Atrasado';
+    var s = String(st || '').toLowerCase();
+    var encerrada = s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0;
+    if (!encerrada && prazo < hoje) st = 'Atrasado';
     var tem = !!(o.email && o.email.indexOf('@') > 0);
+    var classe = st === 'Atrasado' ? 'risco'
+      : s.indexOf('conclu') === 0 ? 'ok'
+      : st === 'Em andamento' ? 'info'
+      : s.indexOf('cancel') === 0 ? 'neutro'
+      : 'aberto';
     return {
       id: id, fonte_id: 'SEED', fonte_nome: 'Demonstração',
       tema: o.tema, divisao: o.divisao, area: o.area, oque: o.oque, como: o.como,
       responsavel: o.responsavel, email: o.email || '',
       prazo: ymd(prazo), prazo_br: br(prazo),
       status: st, status_origem: o.status,
-      status_classe: st === 'Atrasado' ? 'risco' : st === 'Concluído' ? 'ok' : st === 'Em andamento' ? 'info' : 'aberto',
+      status_classe: classe,
       comentarios: o.comentarios || '',
       tem_email: tem,
       tooltip_email: tem ? o.email : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.',
@@ -1062,9 +1095,9 @@ table.dados tr.risco td { box-shadow: none; }
     plano('2', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Reduzir NC de epóxi irregular', como: 'Ajustar janela de viscosidade e inspeção visual a cada 2h', responsavel: 'Bruno Lima', email: '', prazo: add(-3), status: 'Aberto', comentarios: 'Aguardando e-mail do responsável' }),
     plano('3', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Recuperar uptime da DDA1 abaixo da meta', como: 'A3 de paradas não justificadas + padrão de apontamento', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: '' }),
     plano('4', { tema: 'Entrega', divisao: 'Supply Chain', area: 'Logística', oque: 'Estabilizar FIFO do armazém de acabados', como: 'Sinalizar endereços e auditar 2x por semana', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(12), status: 'Aberto', comentarios: '' }),
-    plano('5', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Zerar backlog de preventiva atrasada > 7 dias', como: 'Janela semanal congelada na sexta para PCM', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(-10), status: 'Concluído', comentarios: 'Backlog zerado na semana 32' }),
+    plano('5', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Zerar backlog de preventiva atrasada > 7 dias', como: 'Janela semanal congelada na sexta para PCM', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(-10), status: 'Concluída', comentarios: 'Backlog zerado na semana 32' }),
     plano('6', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Fechar CAPA de auditoria de cliente', como: 'Atualizar procedimento e treinar operadores', responsavel: 'Bruno Lima', email: '', prazo: add(-1), status: 'Aberto', comentarios: '' }),
-    plano('7', { tema: 'Segurança', divisao: 'Operations', area: 'EHS', oque: 'Substituir guarda de máquina da DDA3', como: 'Comprar kit e instalar no shutdown de setembro', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(20), status: 'Cancelado', comentarios: 'Escopo absorvido pelo A3 de segurança' }),
+    plano('7', { tema: 'Segurança', divisao: 'Operations', area: 'EHS', oque: 'Substituir guarda de máquina da DDA3', como: 'Comprar kit e instalar no shutdown de setembro', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(20), status: 'Cancelada', comentarios: 'Escopo absorvido pelo A3 de segurança' }),
     plano('8', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Padronizar troca de turno com handover de 10 min', como: 'Quadro visual + checklist de passagem de turno na DDA1 e DDA2', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: 'Piloto na DDA1' }),
     plano('9', { tema: 'Entrega', divisao: 'Supply Chain', area: 'Logística', oque: 'Reduzir lead time de expedição de acabados', como: 'Pré-separar pedidos do dia seguinte no turno 3', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(4), status: 'Aberto', comentarios: 'Falta confirmar capacidade do armazém' }),
     plano('10', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Implantar RCM na linha Smartrac', como: 'Mapear falhas críticas e definir preventiva por modo de falha', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(18), status: 'Aberto', comentarios: '' }),
@@ -1091,9 +1124,17 @@ table.dados tr.risco td { box-shadow: none; }
 
   function hub() {
     var atrasados = planos.filter(function (p) { return p.status === 'Atrasado'; }).length;
-    var concluidos = planos.filter(function (p) { return p.status === 'Concluído'; }).length;
-    var abertos = planos.filter(function (p) { return p.status !== 'Concluído' && p.status !== 'Cancelado'; }).length;
-    var semEmail = planos.filter(function (p) { return !p.tem_email && p.status !== 'Concluído'; }).length;
+    var concluidos = planos.filter(function (p) {
+      return String(p.status || '').toLowerCase().indexOf('conclu') === 0;
+    }).length;
+    var abertos = planos.filter(function (p) {
+      var s = String(p.status || '').toLowerCase();
+      return s.indexOf('conclu') !== 0 && s.indexOf('cancel') !== 0;
+    }).length;
+    var semEmail = planos.filter(function (p) {
+      var s = String(p.status || '').toLowerCase();
+      return !p.tem_email && s.indexOf('conclu') !== 0 && s.indexOf('cancel') !== 0;
+    }).length;
     return {
       hoje: ymd(hoje),
       departamentos: departamentos.map(function (d) {
@@ -1118,7 +1159,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.3.1' },
+        app: { nome: 'OpsHub', versao: '1.3.2' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -1291,6 +1332,7 @@ table.dados tr.risco td { box-shadow: none; }
     form: { tipo: '', data: {} },
     formDrawer: { tipo: '', data: {} },
     deptModo: 'ver',
+    aparenciaAberta: false,
     arrastouDept: false,
     dragId: null,
   };
@@ -1529,8 +1571,21 @@ table.dados tr.risco td { box-shadow: none; }
   }
 
   function statusEncerradoUi(status) {
-    var s = String(status || '');
-    return s === 'Concluído' || s === 'Concluido' || s === 'Cancelado';
+    if (typeof Logica !== 'undefined' && Logica.encerrada) return Logica.encerrada(status);
+    var s = String(status == null ? '' : status)
+      .toLowerCase()
+      .replace(/\u00a0/g, ' ');
+    try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (err) {}
+    s = s.replace(/[^a-z0-9]+/g, ' ').trim();
+    var partes = s.split(' ');
+    var i, w;
+    for (i = 0; i < partes.length; i++) {
+      w = partes[i];
+      if (!w) continue;
+      if (w.indexOf('cancelad') === 0 || w === 'cancelled' || w === 'canceled' || w === 'cancel') return true;
+      if (w.indexOf('concluid') === 0 || w === 'done' || w === 'closed' || w === 'complete') return true;
+    }
+    return false;
   }
 
   function statusMarcado(valor) {
@@ -1663,6 +1718,11 @@ table.dados tr.risco td { box-shadow: none; }
     });
   }
 
+  function td(valor, cls) {
+    var t = valor == null ? '' : String(valor);
+    return '<td' + (cls ? ' class="' + cls + '"' : '') + ' title="' + escapar(t) + '">' + escapar(t) + '</td>';
+  }
+
   function th(campo, rotulo) {
     var ativo = Estado.ordem.campo === campo;
     return '<th data-ord="' + campo + '">' + rotulo +
@@ -1700,16 +1760,16 @@ table.dados tr.risco td { box-shadow: none; }
         : '<span class="aviso-email" tabindex="0" data-tip="' + escapar(p.tooltip_email) +
           '" title="' + escapar(p.tooltip_email) + '">' + svg('ehs') + '</span>';
       return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
-        '<td>' + escapar(p.tema) + '</td>' +
-        '<td>' + escapar(p.divisao) + '</td>' +
-        '<td>' + escapar(p.area) + '</td>' +
-        '<td class="principal">' + escapar(p.oque) + '</td>' +
-        '<td>' + escapar(p.como) + '</td>' +
-        '<td>' + escapar(p.responsavel) + '</td>' +
-        '<td>' + emailCel + '</td>' +
-        '<td>' + escapar(p.prazo_br) + '</td>' +
-        '<td><span class="selo ' + p.status_classe + '">' + escapar(p.status) + '</span></td>' +
-        '<td>' + escapar(p.comentarios) + '</td>' +
+        td(p.tema) +
+        td(p.divisao) +
+        td(p.area) +
+        td(p.oque, 'principal') +
+        td(p.como, 'como') +
+        td(p.responsavel) +
+        '<td title="' + escapar(p.tem_email ? p.email : p.tooltip_email) + '">' + emailCel + '</td>' +
+        td(p.prazo_br) +
+        '<td title="' + escapar(p.status) + '"><span class="selo ' + p.status_classe + '">' + escapar(p.status) + '</span></td>' +
+        td(p.comentarios, 'comentarios') +
         '</tr>';
     }).join('');
 
@@ -1827,18 +1887,26 @@ table.dados tr.risco td { box-shadow: none; }
   }
 
   function aparenciaDept(d) {
-    return '<div class="painel-aparencia">' +
-      '<div class="secao-titulo">Aparência</div>' +
-      '<div class="secao-apoio" style="margin-bottom:10px">Escolha o ícone e a cor deste card.</div>' +
-      '<div class="seletor-icone">' + ICONES_DEPT.map(function (it) {
-        return '<button type="button" class="seletor-icone-item' + (d.icone === it[0] ? ' ativo' : '') +
-          '" data-escolher-icone="' + it[0] + '" data-dept-id="' + escapar(d.id) +
-          '" title="' + escapar(it[1]) + '" aria-label="' + escapar(it[1]) + '">' +
-          svg(it[0]) + '</button>';
-      }).join('') + '</div>' +
-      '<label class="cor-edicao">Cor do card' +
-      '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
-      '</label></div>';
+    var aberto = !!Estado.aparenciaAberta;
+    return '<div class="painel-aparencia' + (aberto ? ' aberto' : '') + '">' +
+      '<button type="button" class="aparencia-toggle" data-toggle-aparencia="1" aria-expanded="' +
+      (aberto ? 'true' : 'false') + '">' +
+      '<span>Aparência do card</span>' +
+      '<span class="aparencia-seta" aria-hidden="true">' + (aberto ? '▴' : '▾') + '</span></button>' +
+      (aberto
+        ? '<div class="aparencia-corpo">' +
+          '<div class="secao-apoio" style="margin-bottom:10px">Ícone e cor deste card.</div>' +
+          '<div class="seletor-icone">' + ICONES_DEPT.map(function (it) {
+            return '<button type="button" class="seletor-icone-item' + (d.icone === it[0] ? ' ativo' : '') +
+              '" data-escolher-icone="' + it[0] + '" data-dept-id="' + escapar(d.id) +
+              '" title="' + escapar(it[1]) + '" aria-label="' + escapar(it[1]) + '">' +
+              svg(it[0]) + '</button>';
+          }).join('') + '</div>' +
+          '<label class="cor-edicao">Cor do card' +
+          '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
+          '</label></div>'
+        : '') +
+      '</div>';
   }
 
   function abrirDept(id, modo) {
@@ -1848,6 +1916,7 @@ table.dados tr.risco td { box-shadow: none; }
     if (!Estado.deptAberto || Estado.deptAberto.id !== id) {
       Estado.pastasAbertas = {};
       Estado.formDrawer = { tipo: '', data: {} };
+      Estado.aparenciaAberta = false;
     }
     Estado.deptAberto = d;
     Estado.deptModo = modo;
@@ -1858,14 +1927,15 @@ table.dados tr.risco td { box-shadow: none; }
     if (modo === 'editar') {
       $('drawer-kicker').textContent = bandeira ? ('Configurar · ' + bandeira) : 'Configurar departamento';
       $('drawer-titulo').textContent = d.nome;
-      $('drawer-sub').textContent = 'Altere ícone, cor e os arquivos deste departamento.';
-      $('drawer-corpo').innerHTML = aparenciaDept(d) +
+      $('drawer-sub').textContent = 'Inclua, edite ou exclua os arquivos deste departamento.';
+      $('drawer-corpo').innerHTML =
         '<div class="drawer-gestao">' +
         '<div class="secao-titulo">Arquivos deste departamento</div>' +
         '<div class="secao-apoio">Inclua, edite ou exclua os controles-chave. Quem abre o card vê só os arquivos.</div>' +
         formDrawerCtrl(d) +
         listaArquivosDrawer(d, links) +
-        '</div>';
+        '</div>' +
+        aparenciaDept(d);
     } else {
       $('drawer-kicker').textContent = bandeira ? ('Controles-chave · ' + bandeira) : 'Controles-chave';
       $('drawer-titulo').textContent = d.nome;
@@ -1898,6 +1968,7 @@ table.dados tr.risco td { box-shadow: none; }
     $('drawer').classList.remove('extra-largo');
     Estado.deptAberto = null;
     Estado.deptModo = 'ver';
+    Estado.aparenciaAberta = false;
     Estado.formDrawer = { tipo: '', data: {} };
   }
 
@@ -2158,9 +2229,11 @@ table.dados tr.risco td { box-shadow: none; }
     var deptId = Estado.deptAberto && Estado.deptAberto.id;
     var modo = Estado.deptModo || 'ver';
     var formDrawer = Estado.formDrawer;
+    var aparencia = Estado.aparenciaAberta;
     aplicarHub(hub, imp);
     Estado.formDrawer = formDrawer || { tipo: '', data: {} };
     Estado.deptModo = modo;
+    Estado.aparenciaAberta = !!aparencia;
     if (deptId) abrirDept(deptId, modo);
   }
 
@@ -2259,6 +2332,13 @@ table.dados tr.risco td { box-shadow: none; }
         e.preventDefault();
         e.stopPropagation();
         abrirDept(gear.getAttribute('data-editar-dept'), 'editar');
+        return;
+      }
+      if (e.target.closest('[data-toggle-aparencia]')) {
+        e.preventDefault();
+        e.stopPropagation();
+        Estado.aparenciaAberta = !Estado.aparenciaAberta;
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, 'editar');
         return;
       }
       var escolher = e.target.closest('[data-escolher-icone]');

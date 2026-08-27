@@ -16,6 +16,7 @@
     form: { tipo: '', data: {} },
     formDrawer: { tipo: '', data: {} },
     deptModo: 'ver',
+    aparenciaAberta: false,
     arrastouDept: false,
     dragId: null,
   };
@@ -254,8 +255,21 @@
   }
 
   function statusEncerradoUi(status) {
-    var s = String(status || '');
-    return s === 'Concluído' || s === 'Concluido' || s === 'Cancelado';
+    if (typeof Logica !== 'undefined' && Logica.encerrada) return Logica.encerrada(status);
+    var s = String(status == null ? '' : status)
+      .toLowerCase()
+      .replace(/\u00a0/g, ' ');
+    try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (err) {}
+    s = s.replace(/[^a-z0-9]+/g, ' ').trim();
+    var partes = s.split(' ');
+    var i, w;
+    for (i = 0; i < partes.length; i++) {
+      w = partes[i];
+      if (!w) continue;
+      if (w.indexOf('cancelad') === 0 || w === 'cancelled' || w === 'canceled' || w === 'cancel') return true;
+      if (w.indexOf('concluid') === 0 || w === 'done' || w === 'closed' || w === 'complete') return true;
+    }
+    return false;
   }
 
   function statusMarcado(valor) {
@@ -388,6 +402,11 @@
     });
   }
 
+  function td(valor, cls) {
+    var t = valor == null ? '' : String(valor);
+    return '<td' + (cls ? ' class="' + cls + '"' : '') + ' title="' + escapar(t) + '">' + escapar(t) + '</td>';
+  }
+
   function th(campo, rotulo) {
     var ativo = Estado.ordem.campo === campo;
     return '<th data-ord="' + campo + '">' + rotulo +
@@ -425,16 +444,16 @@
         : '<span class="aviso-email" tabindex="0" data-tip="' + escapar(p.tooltip_email) +
           '" title="' + escapar(p.tooltip_email) + '">' + svg('ehs') + '</span>';
       return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
-        '<td>' + escapar(p.tema) + '</td>' +
-        '<td>' + escapar(p.divisao) + '</td>' +
-        '<td>' + escapar(p.area) + '</td>' +
-        '<td class="principal">' + escapar(p.oque) + '</td>' +
-        '<td>' + escapar(p.como) + '</td>' +
-        '<td>' + escapar(p.responsavel) + '</td>' +
-        '<td>' + emailCel + '</td>' +
-        '<td>' + escapar(p.prazo_br) + '</td>' +
-        '<td><span class="selo ' + p.status_classe + '">' + escapar(p.status) + '</span></td>' +
-        '<td>' + escapar(p.comentarios) + '</td>' +
+        td(p.tema) +
+        td(p.divisao) +
+        td(p.area) +
+        td(p.oque, 'principal') +
+        td(p.como, 'como') +
+        td(p.responsavel) +
+        '<td title="' + escapar(p.tem_email ? p.email : p.tooltip_email) + '">' + emailCel + '</td>' +
+        td(p.prazo_br) +
+        '<td title="' + escapar(p.status) + '"><span class="selo ' + p.status_classe + '">' + escapar(p.status) + '</span></td>' +
+        td(p.comentarios, 'comentarios') +
         '</tr>';
     }).join('');
 
@@ -552,18 +571,26 @@
   }
 
   function aparenciaDept(d) {
-    return '<div class="painel-aparencia">' +
-      '<div class="secao-titulo">Aparência</div>' +
-      '<div class="secao-apoio" style="margin-bottom:10px">Escolha o ícone e a cor deste card.</div>' +
-      '<div class="seletor-icone">' + ICONES_DEPT.map(function (it) {
-        return '<button type="button" class="seletor-icone-item' + (d.icone === it[0] ? ' ativo' : '') +
-          '" data-escolher-icone="' + it[0] + '" data-dept-id="' + escapar(d.id) +
-          '" title="' + escapar(it[1]) + '" aria-label="' + escapar(it[1]) + '">' +
-          svg(it[0]) + '</button>';
-      }).join('') + '</div>' +
-      '<label class="cor-edicao">Cor do card' +
-      '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
-      '</label></div>';
+    var aberto = !!Estado.aparenciaAberta;
+    return '<div class="painel-aparencia' + (aberto ? ' aberto' : '') + '">' +
+      '<button type="button" class="aparencia-toggle" data-toggle-aparencia="1" aria-expanded="' +
+      (aberto ? 'true' : 'false') + '">' +
+      '<span>Aparência do card</span>' +
+      '<span class="aparencia-seta" aria-hidden="true">' + (aberto ? '▴' : '▾') + '</span></button>' +
+      (aberto
+        ? '<div class="aparencia-corpo">' +
+          '<div class="secao-apoio" style="margin-bottom:10px">Ícone e cor deste card.</div>' +
+          '<div class="seletor-icone">' + ICONES_DEPT.map(function (it) {
+            return '<button type="button" class="seletor-icone-item' + (d.icone === it[0] ? ' ativo' : '') +
+              '" data-escolher-icone="' + it[0] + '" data-dept-id="' + escapar(d.id) +
+              '" title="' + escapar(it[1]) + '" aria-label="' + escapar(it[1]) + '">' +
+              svg(it[0]) + '</button>';
+          }).join('') + '</div>' +
+          '<label class="cor-edicao">Cor do card' +
+          '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
+          '</label></div>'
+        : '') +
+      '</div>';
   }
 
   function abrirDept(id, modo) {
@@ -573,6 +600,7 @@
     if (!Estado.deptAberto || Estado.deptAberto.id !== id) {
       Estado.pastasAbertas = {};
       Estado.formDrawer = { tipo: '', data: {} };
+      Estado.aparenciaAberta = false;
     }
     Estado.deptAberto = d;
     Estado.deptModo = modo;
@@ -583,14 +611,15 @@
     if (modo === 'editar') {
       $('drawer-kicker').textContent = bandeira ? ('Configurar · ' + bandeira) : 'Configurar departamento';
       $('drawer-titulo').textContent = d.nome;
-      $('drawer-sub').textContent = 'Altere ícone, cor e os arquivos deste departamento.';
-      $('drawer-corpo').innerHTML = aparenciaDept(d) +
+      $('drawer-sub').textContent = 'Inclua, edite ou exclua os arquivos deste departamento.';
+      $('drawer-corpo').innerHTML =
         '<div class="drawer-gestao">' +
         '<div class="secao-titulo">Arquivos deste departamento</div>' +
         '<div class="secao-apoio">Inclua, edite ou exclua os controles-chave. Quem abre o card vê só os arquivos.</div>' +
         formDrawerCtrl(d) +
         listaArquivosDrawer(d, links) +
-        '</div>';
+        '</div>' +
+        aparenciaDept(d);
     } else {
       $('drawer-kicker').textContent = bandeira ? ('Controles-chave · ' + bandeira) : 'Controles-chave';
       $('drawer-titulo').textContent = d.nome;
@@ -623,6 +652,7 @@
     $('drawer').classList.remove('extra-largo');
     Estado.deptAberto = null;
     Estado.deptModo = 'ver';
+    Estado.aparenciaAberta = false;
     Estado.formDrawer = { tipo: '', data: {} };
   }
 
@@ -883,9 +913,11 @@
     var deptId = Estado.deptAberto && Estado.deptAberto.id;
     var modo = Estado.deptModo || 'ver';
     var formDrawer = Estado.formDrawer;
+    var aparencia = Estado.aparenciaAberta;
     aplicarHub(hub, imp);
     Estado.formDrawer = formDrawer || { tipo: '', data: {} };
     Estado.deptModo = modo;
+    Estado.aparenciaAberta = !!aparencia;
     if (deptId) abrirDept(deptId, modo);
   }
 
@@ -984,6 +1016,13 @@
         e.preventDefault();
         e.stopPropagation();
         abrirDept(gear.getAttribute('data-editar-dept'), 'editar');
+        return;
+      }
+      if (e.target.closest('[data-toggle-aparencia]')) {
+        e.preventDefault();
+        e.stopPropagation();
+        Estado.aparenciaAberta = !Estado.aparenciaAberta;
+        if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, 'editar');
         return;
       }
       var escolher = e.target.closest('[data-escolher-icone]');
