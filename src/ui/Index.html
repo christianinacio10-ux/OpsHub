@@ -74,8 +74,14 @@
   <div class="toast" id="toast" hidden></div>
   <div class="overlay-carga" id="overlay-carga" hidden>
     <div class="overlay-carga-caixa" role="status" aria-live="polite">
-      <span class="overlay-carga-giro" aria-hidden="true"></span>
-      <span id="overlay-texto">Atualizando…</span>
+      <div class="overlay-carga-ilustra" aria-hidden="true">
+        <span class="overlay-carga-giro"></span>
+        <span class="overlay-carga-dots"><i></i><i></i><i></i></span>
+      </div>
+      <div class="overlay-carga-textos">
+        <span id="overlay-texto">Atualizando…</span>
+        <span class="overlay-carga-sub" id="overlay-sub">Aguarde um instante</span>
+      </div>
     </div>
   </div>
 

@@ -7,8 +7,8 @@ function onOpen() {
     .addItem('Importar planos de ação agora', 'importarTodasAsFontes')
     .addItem('Enviar follow-ups agora', 'enviarFollowUps')
     .addSeparator()
-    .addItem('Criar gatilho diário', 'criarGatilhoDiario')
-    .addItem('Remover gatilhos', 'removerGatilhos')
+    .addItem('Ativar gatilho', 'criarGatilhoDiario')
+    .addItem('Inativar gatilhos', 'removerGatilhos')
     .addToUi();
 }
 

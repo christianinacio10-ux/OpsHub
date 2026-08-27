@@ -812,16 +812,39 @@ table.dados tr.risco td { box-shadow: none; }
 }
 .overlay-carga[hidden] { display: none !important; }
 .overlay-carga-caixa {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; gap: 16px;
   background: var(--superficie); border: 1px solid var(--linha-forte);
-  color: var(--tinta); padding: 14px 18px; border-radius: 14px;
-  box-shadow: var(--sombra-3); font-size: 13.5px;
+  color: var(--tinta); padding: 18px 22px; border-radius: 16px;
+  box-shadow: var(--sombra-3); font-size: 14px; min-width: 240px;
+}
+.overlay-carga-ilustra {
+  width: 48px; height: 48px; position: relative; flex-shrink: 0;
 }
 .overlay-carga-giro {
-  width: 16px; height: 16px; border-radius: 50%;
-  border: 2px solid var(--linha-forte);
+  position: absolute; inset: 0;
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 3px solid var(--linha-forte);
   border-top-color: var(--marca);
   animation: giro 0.7s linear infinite;
+}
+.overlay-carga-dots {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.overlay-carga-dots i {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--marca); display: block;
+  animation: overlay-pulso 0.9s ease-in-out infinite;
+}
+.overlay-carga-dots i:nth-child(2) { animation-delay: .15s; }
+.overlay-carga-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes overlay-pulso {
+  0%, 80%, 100% { opacity: .25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+.overlay-carga-textos { display: flex; flex-direction: column; gap: 2px; }
+.overlay-carga-sub {
+  font-size: 12px; color: var(--tinta-3); font-weight: 450;
 }
 
 @media (max-width: 980px) {
@@ -907,8 +930,14 @@ table.dados tr.risco td { box-shadow: none; }
   <div class="toast" id="toast" hidden></div>
   <div class="overlay-carga" id="overlay-carga" hidden>
     <div class="overlay-carga-caixa" role="status" aria-live="polite">
-      <span class="overlay-carga-giro" aria-hidden="true"></span>
-      <span id="overlay-texto">Atualizando…</span>
+      <div class="overlay-carga-ilustra" aria-hidden="true">
+        <span class="overlay-carga-giro"></span>
+        <span class="overlay-carga-dots"><i></i><i></i><i></i></span>
+      </div>
+      <div class="overlay-carga-textos">
+        <span id="overlay-texto">Atualizando…</span>
+        <span class="overlay-carga-sub" id="overlay-sub">Aguarde um instante</span>
+      </div>
     </div>
   </div>
 
@@ -1126,6 +1155,21 @@ table.dados tr.risco td { box-shadow: none; }
       });
       return { total: cand.length, temasJaEnviadosHoje: temasJa };
     },
+    apiAlternarTemaFollowUp: function (nome) {
+      nome = String(nome || '').trim();
+      var todos = temasDistintos();
+      var atuais = temasFollowUp.slice();
+      var nenhum = atuais.length === 1 && atuais[0] === '__NONE__';
+      if (!atuais.length) atuais = todos.slice();
+      if (nenhum) atuais = [];
+      var idx = atuais.indexOf(nome);
+      if (idx === -1) atuais.push(nome);
+      else atuais = atuais.filter(function (t) { return t !== nome; });
+      if (!atuais.length) temasFollowUp = ['__NONE__'];
+      else if (atuais.length === todos.length) temasFollowUp = [];
+      else temasFollowUp = atuais;
+      return hub();
+    },
     apiCriarGatilho: function () {
       gatilho = { ativo: true, quantidade: 1, hora: 8 };
       return { mensagem: 'Gatilho diario criado para a rotina das 8h.', gatilho: gatilho };
@@ -1159,6 +1203,7 @@ table.dados tr.risco td { box-shadow: none; }
             apiPreverFollowUps: 500,
             apiCriarGatilho: 550,
             apiRemoverGatilhos: 550,
+            apiAlternarTemaFollowUp: 500,
           };
           var delay = lentos[nome] || 40;
           setTimeout(function () { ok(out); }, delay);
@@ -1264,14 +1309,14 @@ table.dados tr.risco td { box-shadow: none; }
       var r = google.script.run
         .withSuccessHandler(resolve)
         .withFailureHandler(reject);
-      if (typeof r[nome] !== 'function') {
-        reject(new Error('API indisponível: ' + nome));
-        return;
+      try {
+        if (a.length === 0) r[nome]();
+        else if (a.length === 1) r[nome](a[0]);
+        else if (a.length === 2) r[nome](a[0], a[1]);
+        else r[nome](a[0], a[1], a[2]);
+      } catch (err) {
+        reject(err);
       }
-      if (a.length === 0) r[nome]();
-      else if (a.length === 1) r[nome](a[0]);
-      else if (a.length === 2) r[nome](a[0], a[1]);
-      else r[nome](a[0], a[1], a[2]);
     });
   }
 
@@ -1284,12 +1329,16 @@ table.dados tr.risco td { box-shadow: none; }
     toast._t = setTimeout(function () { el.hidden = true; }, 4200);
   }
 
-  function ocupar(ligado, texto) {
+  function ocupar(ligado, texto, sub) {
     Estado.carregando = !!ligado;
     var overlay = $('overlay-carga');
     var botao = $('botao-atualizar');
     if (overlay) overlay.hidden = !ligado;
     if ($('overlay-texto') && texto) $('overlay-texto').textContent = texto;
+    if ($('overlay-sub')) {
+      $('overlay-sub').textContent = ligado ? (sub || 'Aguarde um instante') : '';
+      $('overlay-sub').hidden = !ligado;
+    }
     if (botao) {
       botao.disabled = !!ligado;
       if (ligado) botao.classList.add('ocupado');
@@ -1398,11 +1447,14 @@ table.dados tr.risco td { box-shadow: none; }
 
   function unicos(lista, campo) {
     var set = {}; var out = [];
-    (lista || []).forEach(function (p) {
-      var v = p[campo];
-      if (!v || set[v]) return;
+    var n = lista && lista.length;
+    if (typeof n !== 'number') return out;
+    for (var i = 0; i < n; i++) {
+      var p = lista[i];
+      var v = p && p[campo];
+      if (!v || set[v]) continue;
       set[v] = 1; out.push(v);
-    });
+    }
     out.sort(function (a, b) { return String(a).localeCompare(String(b), 'pt-BR'); });
     return out;
   }
@@ -1878,15 +1930,17 @@ table.dados tr.risco td { box-shadow: none; }
   function chipsFollowUp() {
     var temas = listaTemas(Estado.hub && Estado.hub.temasDistintos);
     if (!temas.length) temas = unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
+    temas = temas.filter(function (t) { return t && t !== '__NONE__'; });
     var habilitados = listaTemas(Estado.hub && Estado.hub.temasFollowUp);
-    var todos = !habilitados.length;
+    var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
+    var todos = !habilitados.length && !nenhum;
     return '<div class="temas-barra" style="margin-top:8px">' +
       '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">Temas que recebem e-mail</div>' +
       '<div class="secao-apoio" style="margin-bottom:10px">Ligue ou desligue quais temas entram no follow-up. Com todos ligados, o comportamento é o de sempre: qualquer tema atrasado dispara.</div>' +
       '<div class="temas-chips">' +
       (temas.length
         ? temas.map(function (t) {
-            var on = todos || habilitados.indexOf(t) !== -1;
+            var on = !nenhum && (todos || habilitados.indexOf(t) !== -1);
             return '<button type="button" class="chip-follow ' + (on ? 'ligado' : 'desligado') +
               '" data-followup-tema="' + escapar(t) + '" aria-pressed="' + (on ? 'true' : 'false') +
               '" title="' + (on ? 'Ligado — clique para tirar do follow-up' : 'Desligado — clique para incluir no follow-up') + '">' +
@@ -1907,8 +1961,8 @@ table.dados tr.risco td { box-shadow: none; }
       '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">Gatilho ' + (g.ativo ? 'ativo' : 'inativo') +
       ' · disparo às ' + g.hora + 'h</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-      '<button class="botao primario" id="btn-gatilho">Criar gatilho diário</button>' +
-      '<button class="botao" id="btn-remover-gatilho">Remover gatilhos</button>' +
+      '<button class="botao primario" id="btn-gatilho">Ativar gatilho</button>' +
+      '<button class="botao" id="btn-remover-gatilho">Inativar gatilhos</button>' +
       '<button class="botao" id="btn-followup">Enviar follow-ups agora</button>' +
       '</div></div></div>';
   }
@@ -2039,38 +2093,15 @@ table.dados tr.risco td { box-shadow: none; }
   }
 
   function toggleFollowUpTema(nome) {
-    if (!nome || !Estado.hub) return;
-    nome = String(nome).trim();
-    var temas = listaTemas(Estado.hub.temasDistintos);
-    if (!temas.length) temas = unicos(Estado.hub.planos || [], 'tema');
-    var habilitados = listaTemas(Estado.hub.temasFollowUp);
-    var atuais = !habilitados.length ? temas.slice() : habilitados.slice();
-    var ligado = false;
-    var proximo = [];
-    for (var i = 0; i < atuais.length; i++) {
-      if (atuais[i] === nome) ligado = true;
-      else proximo.push(atuais[i]);
-    }
-    if (!ligado) proximo.push(nome);
-    var valor = proximo.slice();
-    var anterior = listaTemas(Estado.hub.temasFollowUp);
-    Estado.hub.temasFollowUp = valor.slice();
+    if (!nome || !Estado.hub || Estado.carregando) return;
     Estado.configAba = 'mail';
-    render();
-    chamar('apiSalvarTemasFollowUp', 'TEMAS\n' + valor.join('\n')).then(function (hub) {
+    ocupar(true, 'Atualizando follow-up…', 'Gravando o tema na planilha');
+    chamar('apiAlternarTemaFollowUp', String(nome).trim()).then(function (hub) {
       Estado.configAba = 'mail';
-      if (!hub) return;
-      var voltou = listaTemas(hub.temasFollowUp);
-      if (valor.length && !voltou.length) {
-        Estado.hub.temasFollowUp = valor.slice();
-        render();
-        toast('Não foi possível gravar os temas de follow-up.', true);
-        return;
-      }
-      Estado.hub.temasFollowUp = voltou;
-      render();
+      aplicarHub(hub);
+      toast('Temas de follow-up atualizados.');
     }).catch(function (err) {
-      Estado.hub.temasFollowUp = anterior;
+      ocupar(false);
       Estado.configAba = 'mail';
       render();
       toast(err.message || err, true);
@@ -2280,7 +2311,7 @@ table.dados tr.risco td { box-shadow: none; }
       }
       if (e.target.closest('#btn-gatilho')) {
         if (Estado.carregando) return;
-        ocupar(true, 'Criando gatilho…');
+        ocupar(true, 'Ativando gatilho…', 'Criando o disparo diário automático');
         chamar('apiCriarGatilho').then(function (r) {
           ocupar(false);
           toast(r.mensagem);
@@ -2294,7 +2325,7 @@ table.dados tr.risco td { box-shadow: none; }
       }
       if (e.target.closest('#btn-remover-gatilho')) {
         if (Estado.carregando) return;
-        ocupar(true, 'Removendo gatilhos…');
+        ocupar(true, 'Inativando gatilhos…', 'Removendo o disparo automático');
         chamar('apiRemoverGatilhos').then(function (r) {
           ocupar(false);
           toast(r.mensagem);
