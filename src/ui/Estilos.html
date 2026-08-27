@@ -209,6 +209,58 @@ body { overflow: hidden; }
   overscroll-behavior: contain;
 }
 .conteudo { padding: 28px 32px 64px; max-width: 1360px; }
+.area-conteudo.vista-planos {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.area-conteudo.vista-planos .conteudo {
+  flex: 1 1 0;
+  min-height: 0;
+  max-width: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 20px;
+}
+.planos-cab { flex-shrink: 0; }
+.painel-planos {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+.painel-planos .painel-topo { flex-shrink: 0; }
+.painel-planos .tabela-wrap {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.painel-planos .tabela-rodape {
+  flex-shrink: 0;
+  border-radius: 0 0 var(--raio) var(--raio);
+}
+.painel-planos .vazio { flex: 1 1 auto; }
+.painel-planos table.dados {
+  min-width: 1180px;
+}
+.painel-planos table.dados th:first-child,
+.painel-planos table.dados td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+.painel-planos table.dados th:first-child {
+  z-index: 3;
+  top: 0;
+}
+.painel-planos table.dados tbody tr:nth-child(odd) td:first-child { background: var(--superficie); }
+.painel-planos table.dados tbody tr:nth-child(even) td:first-child { background: #161514; }
+.painel-planos table.dados tbody tr:hover td:first-child { background: var(--superficie-3); }
 
 .botao {
   display: inline-flex; align-items: center; gap: 7px;
@@ -446,7 +498,7 @@ table.dados {
   width: 100%; border-collapse: collapse; font-size: 13px;
 }
 table.dados th {
-  position: sticky; top: 0; z-index: 1;
+  position: sticky; top: 0; z-index: 3;
   background: #1A1918; color: var(--tinta-3);
   font-size: 11.5px; letter-spacing: .02em; text-transform: none;
   font-weight: 500;

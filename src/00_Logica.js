@@ -481,6 +481,7 @@ var Logica = (function () {
       if (!passaEixo(divisoes, p.divisao)) return false;
       if (!passaEixo(areas, p.area)) return false;
       if (!passaEixo(statuses, statusEfetivo(p, filtros.hoje))) return false;
+      if (statuses == null && filtros.omitirEncerradas && encerrada(statusEfetivo(p, filtros.hoje))) return false;
       if (!passaEixo(responsaveis, p.responsavel)) return false;
       if (filtros.semEmail && emailValido(p.email)) return false;
       if (!q) return true;
