@@ -82,6 +82,16 @@ assert.strictEqual(
 
 assert.strictEqual(Logica.statusEfetivo({ status: 'Aberto', prazo: d(2026, 8, 20) }, hoje), 'Atrasado');
 assert.strictEqual(Logica.statusEfetivo({ status: 'Concluído', prazo: d(2026, 8, 20) }, hoje), 'Concluído');
+assert.strictEqual(Logica.encerrada('Cancelada'), true);
+assert.strictEqual(Logica.encerrada('Canceladas'), true);
+assert.strictEqual(Logica.encerrada('cancelado'), true);
+assert.strictEqual(Logica.encerrada('Concluída'), true);
+assert.strictEqual(Logica.encerrada('Concluídas'), true);
+assert.strictEqual(Logica.encerrada('cancelled'), true);
+assert.strictEqual(Logica.encerrada('Em andamento'), false);
+assert.strictEqual(Logica.tituloStatus('Cancelada'), 'Cancelado');
+assert.strictEqual(Logica.tituloStatus('Concluídas'), 'Concluído');
+assert.strictEqual(Logica.classeStatus('Canceladas'), 'neutro');
 
 var linha = Logica.linhaFonteParaPlano(
   ['Segurança', 'Ops', 'EHS', 'LOTO', 'Treinar', 'Ana', 'ana@x.com', '20/08/2026', 'Aberto', 'ok'],
@@ -137,6 +147,16 @@ assert.strictEqual(
   }).length,
   1,
   'lista explicita de status prevalece sobre o padrao'
+);
+var planosGrafias = planos.concat([
+  { tema: 'OEE', area: 'Produção', oque: 'Fechar', status: 'Concluída', prazo: d(2026, 8, 1), email: 'a@x.com', responsavel: 'A' },
+  { tema: 'EHS', area: 'EHS', oque: 'Cancelar', status: 'Cancelada', prazo: d(2026, 8, 1), email: 'a@x.com', responsavel: 'B' },
+  { tema: 'OEE', area: 'Produção', oque: 'Várias', status: 'Canceladas', prazo: d(2026, 8, 1), email: 'a@x.com', responsavel: 'A' },
+]);
+assert.strictEqual(
+  Logica.filtrarPlanos(planosGrafias, { todosTemas: true, omitirEncerradas: true, hoje: hoje }).length,
+  2,
+  'grafias femininas/plurais de cancelada e concluida tambem saem do padrao'
 );
 assert.strictEqual(Logica.passaEixo(null, 'x'), true);
 assert.strictEqual(Logica.passaEixo([], 'x'), false);

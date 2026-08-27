@@ -4,7 +4,7 @@
  */
 var APP = {
   nome: 'OpsHub',
-  versao: '1.3.1',
+  versao: '1.3.2',
 };
 
 var ABAS = {

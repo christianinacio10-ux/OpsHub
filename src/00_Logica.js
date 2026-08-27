@@ -24,7 +24,21 @@ var Logica = (function () {
     id: ['id', 'codigo', 'código', 'chave'],
   };
 
-  var STATUS_ENCERRADO = { concluido: 1, concluído: 1, cancelado: 1, done: 1, closed: 1, complete: 1 };
+  function familiaEncerrada(status) {
+    var partes = statusChave(status).split(' ');
+    var i, w;
+    for (i = 0; i < partes.length; i++) {
+      w = partes[i];
+      if (!w) continue;
+      if (w.indexOf('cancelad') === 0 || w === 'cancelled' || w === 'canceled' || w === 'cancel') {
+        return 'cancelado';
+      }
+      if (w.indexOf('concluid') === 0 || w === 'done' || w === 'closed' || w === 'complete') {
+        return 'concluido';
+      }
+    }
+    return '';
+  }
 
   function texto(v) {
     if (v === null || v === undefined) return '';
@@ -193,7 +207,7 @@ var Logica = (function () {
   }
 
   function encerrada(status) {
-    return !!STATUS_ENCERRADO[statusChave(status)];
+    return !!familiaEncerrada(status);
   }
 
   /**
@@ -209,9 +223,10 @@ var Logica = (function () {
   }
 
   function tituloStatus(v) {
+    var enc = familiaEncerrada(v);
+    if (enc === 'concluido') return 'Concluído';
+    if (enc === 'cancelado') return 'Cancelado';
     var k = statusChave(v);
-    if (k === 'concluido' || k === 'done' || k === 'complete' || k === 'closed') return 'Concluído';
-    if (k === 'cancelado') return 'Cancelado';
     if (k === 'atrasado' || k === 'overdue' || k === 'late') return 'Atrasado';
     if (k === 'em andamento' || k === 'andamento' || k === 'in progress') return 'Em andamento';
     if (k === 'aberto' || k === 'open' || k === 'pending' || !k) return 'Aberto';
@@ -219,9 +234,10 @@ var Logica = (function () {
   }
 
   function classeStatus(status) {
+    var enc = familiaEncerrada(status);
+    if (enc === 'concluido') return 'ok';
+    if (enc === 'cancelado') return 'neutro';
     var k = statusChave(status);
-    if (k === 'concluido') return 'ok';
-    if (k === 'cancelado') return 'neutro';
     if (k === 'atrasado') return 'risco';
     if (k === 'em andamento') return 'info';
     return 'aberto';

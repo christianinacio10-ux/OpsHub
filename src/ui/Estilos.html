@@ -246,13 +246,25 @@ body { overflow: hidden; }
 }
 .painel-planos .vazio { flex: 1 1 auto; }
 .painel-planos table.dados {
-  min-width: 1180px;
+  min-width: 1320px;
+  border-collapse: separate;
+  border-spacing: 0;
 }
+.painel-planos table.dados td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.painel-planos table.dados td.principal { max-width: 260px; }
+.painel-planos table.dados td.como { max-width: 280px; }
+.painel-planos table.dados td.comentarios { max-width: 240px; }
 .painel-planos table.dados th:first-child,
 .painel-planos table.dados td:first-child {
   position: sticky;
   left: 0;
   z-index: 2;
+  box-shadow: 6px 0 8px -6px rgba(0,0,0,.55);
 }
 .painel-planos table.dados th:first-child {
   z-index: 3;
@@ -408,14 +420,28 @@ body { overflow: hidden; }
 }
 .card-dept-icone svg { width: 18px; height: 18px; stroke-width: 1.6; }
 .painel-aparencia {
-  margin-bottom: 8px;
+  margin: 18px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--linha);
 }
+.aparencia-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; height: 36px; padding: 0 2px;
+  border: 0; background: transparent;
+  color: var(--tinta-2); font-family: var(--fonte);
+  font-size: 13.5px; font-weight: 520; cursor: pointer;
+  letter-spacing: -.01em;
+}
+.aparencia-toggle:hover { color: var(--tinta); }
+.aparencia-seta { color: var(--tinta-3); font-size: 12px; }
+.aparencia-corpo { padding-top: 8px; }
 .painel-aparencia .seletor-icone {
   position: static;
   min-width: 0;
   width: 100%;
   grid-template-columns: repeat(8, minmax(40px, 1fr));
   margin-bottom: 12px;
+  box-shadow: none;
 }
 .seletor-icone {
   display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
@@ -603,7 +629,7 @@ table.dados tr.risco td { box-shadow: none; }
   min-height: 280px;
 }
 .drawer-gestao {
-  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--linha);
+  margin-top: 0; padding-top: 0; border-top: 0;
 }
 .drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
 .rotulo-com-ajuda {

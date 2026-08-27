@@ -44,15 +44,22 @@
   function plano(id, o) {
     var prazo = o.prazo;
     var st = o.status;
-    if (st !== 'Concluído' && st !== 'Cancelado' && prazo < hoje) st = 'Atrasado';
+    var s = String(st || '').toLowerCase();
+    var encerrada = s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0;
+    if (!encerrada && prazo < hoje) st = 'Atrasado';
     var tem = !!(o.email && o.email.indexOf('@') > 0);
+    var classe = st === 'Atrasado' ? 'risco'
+      : s.indexOf('conclu') === 0 ? 'ok'
+      : st === 'Em andamento' ? 'info'
+      : s.indexOf('cancel') === 0 ? 'neutro'
+      : 'aberto';
     return {
       id: id, fonte_id: 'SEED', fonte_nome: 'Demonstração',
       tema: o.tema, divisao: o.divisao, area: o.area, oque: o.oque, como: o.como,
       responsavel: o.responsavel, email: o.email || '',
       prazo: ymd(prazo), prazo_br: br(prazo),
       status: st, status_origem: o.status,
-      status_classe: st === 'Atrasado' ? 'risco' : st === 'Concluído' ? 'ok' : st === 'Em andamento' ? 'info' : 'aberto',
+      status_classe: classe,
       comentarios: o.comentarios || '',
       tem_email: tem,
       tooltip_email: tem ? o.email : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.',
@@ -64,9 +71,9 @@
     plano('2', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Reduzir NC de epóxi irregular', como: 'Ajustar janela de viscosidade e inspeção visual a cada 2h', responsavel: 'Bruno Lima', email: '', prazo: add(-3), status: 'Aberto', comentarios: 'Aguardando e-mail do responsável' }),
     plano('3', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Recuperar uptime da DDA1 abaixo da meta', como: 'A3 de paradas não justificadas + padrão de apontamento', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: '' }),
     plano('4', { tema: 'Entrega', divisao: 'Supply Chain', area: 'Logística', oque: 'Estabilizar FIFO do armazém de acabados', como: 'Sinalizar endereços e auditar 2x por semana', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(12), status: 'Aberto', comentarios: '' }),
-    plano('5', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Zerar backlog de preventiva atrasada > 7 dias', como: 'Janela semanal congelada na sexta para PCM', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(-10), status: 'Concluído', comentarios: 'Backlog zerado na semana 32' }),
+    plano('5', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Zerar backlog de preventiva atrasada > 7 dias', como: 'Janela semanal congelada na sexta para PCM', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(-10), status: 'Concluída', comentarios: 'Backlog zerado na semana 32' }),
     plano('6', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Fechar CAPA de auditoria de cliente', como: 'Atualizar procedimento e treinar operadores', responsavel: 'Bruno Lima', email: '', prazo: add(-1), status: 'Aberto', comentarios: '' }),
-    plano('7', { tema: 'Segurança', divisao: 'Operations', area: 'EHS', oque: 'Substituir guarda de máquina da DDA3', como: 'Comprar kit e instalar no shutdown de setembro', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(20), status: 'Cancelado', comentarios: 'Escopo absorvido pelo A3 de segurança' }),
+    plano('7', { tema: 'Segurança', divisao: 'Operations', area: 'EHS', oque: 'Substituir guarda de máquina da DDA3', como: 'Comprar kit e instalar no shutdown de setembro', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(20), status: 'Cancelada', comentarios: 'Escopo absorvido pelo A3 de segurança' }),
     plano('8', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Padronizar troca de turno com handover de 10 min', como: 'Quadro visual + checklist de passagem de turno na DDA1 e DDA2', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: 'Piloto na DDA1' }),
     plano('9', { tema: 'Entrega', divisao: 'Supply Chain', area: 'Logística', oque: 'Reduzir lead time de expedição de acabados', como: 'Pré-separar pedidos do dia seguinte no turno 3', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(4), status: 'Aberto', comentarios: 'Falta confirmar capacidade do armazém' }),
     plano('10', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Implantar RCM na linha Smartrac', como: 'Mapear falhas críticas e definir preventiva por modo de falha', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(18), status: 'Aberto', comentarios: '' }),
@@ -93,9 +100,17 @@
 
   function hub() {
     var atrasados = planos.filter(function (p) { return p.status === 'Atrasado'; }).length;
-    var concluidos = planos.filter(function (p) { return p.status === 'Concluído'; }).length;
-    var abertos = planos.filter(function (p) { return p.status !== 'Concluído' && p.status !== 'Cancelado'; }).length;
-    var semEmail = planos.filter(function (p) { return !p.tem_email && p.status !== 'Concluído'; }).length;
+    var concluidos = planos.filter(function (p) {
+      return String(p.status || '').toLowerCase().indexOf('conclu') === 0;
+    }).length;
+    var abertos = planos.filter(function (p) {
+      var s = String(p.status || '').toLowerCase();
+      return s.indexOf('conclu') !== 0 && s.indexOf('cancel') !== 0;
+    }).length;
+    var semEmail = planos.filter(function (p) {
+      var s = String(p.status || '').toLowerCase();
+      return !p.tem_email && s.indexOf('conclu') !== 0 && s.indexOf('cancel') !== 0;
+    }).length;
     return {
       hoje: ymd(hoje),
       departamentos: departamentos.map(function (d) {
@@ -120,7 +135,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.3.1' },
+        app: { nome: 'OpsHub', versao: '1.3.2' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
