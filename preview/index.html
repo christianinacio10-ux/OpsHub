@@ -2140,6 +2140,15 @@ if (typeof module !== 'undefined' && module.exports) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-idioma]'), function (b) {
       b.classList.toggle('ativo', b.getAttribute('data-idioma') === Estado.idioma);
     });
+    var pilula = $('pilula-texto');
+    if (pilula && typeof I18n !== 'undefined' && !Estado.carregando) {
+      var atualPilula = pilula.textContent;
+      ['atualizado', 'sincronizando', 'erro', 'atualizando'].forEach(function (chave) {
+        I18n.IDIOMAS.forEach(function (lang) {
+          if (atualPilula === I18n.t(lang, chave)) pilula.textContent = t(chave);
+        });
+      });
+    }
   }
 
   function definirIdioma(codigo) {
