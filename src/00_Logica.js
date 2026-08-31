@@ -688,8 +688,26 @@ var Logica = (function () {
     var prazo = opts.prazo || formatarDataBr(paraData(plano.prazo));
     var emailPessoa = texto(opts.email || dec.email || plano.email);
     var logoSrc = texto(opts.logoSrc);
-    var atraso = dec.diasAtraso != null ? dec.diasAtraso + ' dia(s)' : '';
-    if (atraso && hoje) atraso += ' em ' + formatarDataBr(paraData(hoje));
+    var idioma = (typeof I18n !== 'undefined' && I18n.normalizar)
+      ? I18n.normalizar(opts.idioma || (I18n.atual && I18n.atual()) || 'pt')
+      : 'pt';
+    function tm(chave, padrao, vars) {
+      if (typeof I18n !== 'undefined' && I18n.t) return I18n.t(idioma, chave, vars);
+      var out = padrao;
+      if (vars) {
+        Object.keys(vars).forEach(function (k) {
+          out = String(out).split('{' + k + '}').join(String(vars[k]));
+        });
+      }
+      return out;
+    }
+    var atraso = '';
+    if (dec.diasAtraso != null) {
+      atraso = tm('mail_atraso', '{n} dia(s) em {data}', {
+        n: dec.diasAtraso,
+        data: hoje ? formatarDataBr(paraData(hoje)) : '',
+      });
+    }
 
     var marca = logoSrc
       ? ('<img src="' + escaparHtml(logoSrc) + '" alt="Avery Dennison" width="120" height="28" ' +
@@ -711,7 +729,8 @@ var Logica = (function () {
         ? ('<tr><td style="padding:0 0 16px">' +
           '<table role="presentation" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #C9C3BB;border-radius:10px">' +
           '<tr><td style="padding:10px 16px;font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#1A1918">' +
-          '<span style="color:#7C776F;font-size:11px;display:block;margin-bottom:3px">E-mail</span>' +
+          '<span style="color:#7C776F;font-size:11px;display:block;margin-bottom:3px">' +
+          escaparHtml(tm('mail_rotulo_email', 'E-mail')) + '</span>' +
           '<strong style="font-weight:600">' + escaparHtml(emailPessoa) + '</strong>' +
           '</td></tr></table></td></tr>')
         : '',
@@ -720,21 +739,24 @@ var Logica = (function () {
         'font-family:Segoe UI,Arial,sans-serif;color:#F4F6FA">',
       '<div style="background:#E4002B;height:6px;line-height:6px;font-size:0">&nbsp;</div>',
       '<div style="padding:28px">',
-      '<h1 style="font-size:22px;margin:0 0 8px;font-weight:600;letter-spacing:-0.03em;color:#F4F6FA">Ação com prazo vencido</h1>',
-      '<p style="color:#A8B2C5;margin:0 0 20px;font-size:14px;line-height:1.5">Este follow-up é enviado a partir de 1 dia de atraso, uma vez por dia, até o prazo ser reprogramado.</p>',
+      '<h1 style="font-size:22px;margin:0 0 8px;font-weight:600;letter-spacing:-0.03em;color:#F4F6FA">' +
+        escaparHtml(tm('mail_titulo', 'Ação com prazo vencido')) + '</h1>',
+      '<p style="color:#A8B2C5;margin:0 0 20px;font-size:14px;line-height:1.5">' +
+        escaparHtml(tm('mail_intro', 'Este follow-up é enviado a partir de 1 dia de atraso, uma vez por dia, até o prazo ser reprogramado.')) + '</p>',
       '<table style="width:100%;border-collapse:collapse">',
-      linhaHtmlFollowUp_('Tema', plano.tema),
-      linhaHtmlFollowUp_('Divisão', plano.divisao),
-      linhaHtmlFollowUp_('Área', plano.area),
-      linhaHtmlFollowUp_('O quê?', plano.oque),
-      linhaHtmlFollowUp_('Como', plano.como),
-      linhaHtmlFollowUp_('Responsável', plano.responsavel),
-      linhaHtmlFollowUp_('Prazo', prazo),
-      linhaHtmlFollowUp_('Atraso', atraso),
-      linhaHtmlFollowUp_('Status', plano.status),
-      linhaHtmlFollowUp_('Comentários', plano.comentarios),
+      linhaHtmlFollowUp_(tm('th_tema', 'Tema'), plano.tema),
+      linhaHtmlFollowUp_(tm('th_divisao', 'Divisão'), plano.divisao),
+      linhaHtmlFollowUp_(tm('th_area', 'Área'), plano.area),
+      linhaHtmlFollowUp_(tm('th_oque', 'O quê?'), plano.oque),
+      linhaHtmlFollowUp_(tm('th_como', 'Como'), plano.como),
+      linhaHtmlFollowUp_(tm('th_responsavel', 'Responsável'), plano.responsavel),
+      linhaHtmlFollowUp_(tm('th_prazo', 'Prazo'), prazo),
+      linhaHtmlFollowUp_(tm('mail_rotulo_atraso', 'Atraso'), atraso),
+      linhaHtmlFollowUp_(tm('th_status', 'Status'), plano.status),
+      linhaHtmlFollowUp_(tm('th_comentarios', 'Comentários'), plano.comentarios),
       '</table>',
-      '<p style="color:#6E7890;font-size:12px;margin:24px 0 0">Reprograme a data na planilha de origem para interromper estes e-mails.</p>',
+      '<p style="color:#6E7890;font-size:12px;margin:24px 0 0">' +
+        escaparHtml(tm('mail_rodape', 'Reprograme a data na planilha de origem para interromper estes e-mails.')) + '</p>',
       '</div></div>',
       '</td></tr></table>',
       '</td></tr></table>',

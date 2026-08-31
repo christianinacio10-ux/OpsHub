@@ -135,12 +135,15 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.3.3' },
+        app: { nome: 'OpsHub', versao: '1.4.0' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
     },
     apiHub: function () { return hub(); },
+    apiSalvarIdioma: function (codigo) {
+      return { idioma: typeof I18n !== 'undefined' ? I18n.normalizar(codigo) : codigo };
+    },
     apiSalvarDepartamento: function (reg) {
       if (!reg.id) { reg.id = nid('D'); departamentos.push(reg); }
       else departamentos = departamentos.map(function (d) { return d.id === reg.id ? Object.assign({}, d, reg) : d; });

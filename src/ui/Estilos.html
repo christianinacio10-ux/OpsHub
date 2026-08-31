@@ -199,6 +199,26 @@ body { overflow: hidden; }
 }
 .topo-sub { color: var(--tinta-3); font-size: 13.5px; margin-top: 3px; font-weight: 400; }
 .topo-direita { display: flex; align-items: center; gap: 8px; }
+.idioma-switch {
+  display: inline-flex;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  overflow: hidden;
+  background: var(--superficie);
+  flex-shrink: 0;
+}
+.idioma-btn {
+  height: 34px; padding: 0 11px;
+  border: 0; background: transparent;
+  color: var(--tinta-3); font-weight: 700; font-size: 11px;
+  letter-spacing: .45px; cursor: pointer; font-family: var(--fonte);
+  transition: background var(--transicao), color var(--transicao);
+}
+.idioma-btn + .idioma-btn { border-left: 1px solid var(--linha); }
+.idioma-btn:hover { color: var(--tinta); background: var(--superficie-3); }
+.idioma-btn.ativo {
+  background: var(--marca-suave); color: #FFD0D8;
+}
 
 .area-conteudo {
   flex: 1 1 0;

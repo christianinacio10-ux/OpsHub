@@ -25,7 +25,8 @@ var logoUri = 'data:image/png;base64,' + logoB64;
 
 var index = ler('src/ui/Index.html');
 var estilos = ler('src/ui/Estilos.html').replace('{{LOGO_AVERY}}', logoUri);
-var app = ler('src/ui/App.html');
+var i18n = ler('src/00_I18n.js');
+var app = '<script>\n' + i18n + '\n</script>\n' + ler('src/ui/App.html');
 
 var pacote =
   'const PACOTE_HTML = {\n' +
@@ -35,6 +36,7 @@ var pacote =
   '};\n';
 
 var jsFiles = [
+  '00_I18n.js',
   '00_Logica.js',
   '01_Config.js',
   '02_Repo.js',

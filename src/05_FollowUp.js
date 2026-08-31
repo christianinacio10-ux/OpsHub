@@ -62,12 +62,16 @@ function enviarFollowUps(opcoes) {
 
 function assuntoFollowUp_(plano) {
   var prazo = Logica.formatarDataBr(Logica.paraData(plano.prazo));
-  var oque = Logica.texto(plano.oque) || 'Ação sem título';
-  return '[OpsHub] Ação atrasada — ' + oque.slice(0, 80) + (prazo ? ' (prazo ' + prazo + ')' : '');
+  var idioma = I18n.atual();
+  var oque = Logica.texto(plano.oque) || I18n.t(idioma, 'mail_oque_vazio');
+  var curto = oque.slice(0, 80);
+  if (prazo) return I18n.t(idioma, 'mail_assunto_prazo', { oque: curto, prazo: prazo });
+  return I18n.t(idioma, 'mail_assunto', { oque: curto });
 }
 
 function enviarEmailAcao_(plano, dec, hoje) {
   var prazo = Logica.formatarDataBr(Logica.paraData(plano.prazo));
+  var idioma = I18n.atual();
   var blobLogo = blobLogoAvery_();
   var html = Logica.htmlFollowUp({
     plano: plano,
@@ -76,13 +80,14 @@ function enviarEmailAcao_(plano, dec, hoje) {
     prazo: prazo,
     email: dec.email,
     logoSrc: blobLogo ? 'cid:logoAvery' : '',
+    idioma: idioma,
   });
 
   var nome = Cadastros.config().texto('remetente_nome', APP.nome);
   var opcoes = { htmlBody: html, name: nome };
   if (blobLogo) opcoes.inlineImages = { logoAvery: blobLogo };
   GmailApp.sendEmail(dec.email, assuntoFollowUp_(plano),
-    'Ação atrasada: ' + Logica.texto(plano.oque) + '. Prazo: ' + prazo + '.',
+    I18n.t(idioma, 'mail_texto', { oque: Logica.texto(plano.oque), prazo: prazo }),
     opcoes);
 }
 
@@ -104,7 +109,7 @@ function criarGatilhoDiario() {
     .everyDays(1)
     .create();
   Repo.registrarLog('gatilho', 'OK', 'rotinaDiaria diaria as ' + hora + 'h');
-  return 'Gatilho diario criado para a rotina das ' + hora + 'h (importa planos e envia follow-ups).';
+  return I18n.t(I18n.atual(), 'toast_gatilho', { hora: hora });
 }
 
 function removerGatilhos() {
