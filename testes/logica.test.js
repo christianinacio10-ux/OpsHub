@@ -230,4 +230,38 @@ assert.ok(htmlMail.indexOf('ana@avery.com') !== -1);
 assert.ok(htmlMail.indexOf('cid:logoAvery') !== -1);
 assert.ok(htmlMail.indexOf('border:1px solid #C9C3BB') !== -1);
 
+var I18n = require('../src/00_I18n.js');
+global.I18n = I18n;
+assert.strictEqual(I18n.normalizar('EN-US'), 'en');
+assert.strictEqual(I18n.normalizar('es-MX'), 'es');
+assert.strictEqual(I18n.t('en', 'nav_planos'), 'Action plans');
+assert.strictEqual(I18n.t('es', 'nav_planos'), 'Planes de acción');
+assert.strictEqual(I18n.t('pt', 'nav_planos'), 'Planos de ação');
+assert.strictEqual(I18n.t('en', 'chave_inexistente_xyz'), 'chave_inexistente_xyz');
+assert.strictEqual(I18n.t('en', 'n_acoes', { n: 3, total: 10 }), '3 of 10 actions');
+assert.strictEqual(I18n.rotuloStatus('en', 'Aberto'), 'Open');
+assert.strictEqual(I18n.rotuloStatus('es', 'Atrasado'), 'Retrasado');
+assert.strictEqual(I18n.rotuloStatus('en', 'Concluída'), 'Done');
+assert.strictEqual(I18n.rotuloStatus('pt', 'Cancelada'), 'Cancelado');
+assert.strictEqual(I18n.rotuloStatus('en', 'Waiting on parts'), 'Waiting on parts');
+
+var htmlEn = Logica.htmlFollowUp({
+  idioma: 'en',
+  plano: {
+    tema: 'EHS', divisao: 'Operations', area: 'EHS', oque: 'LOTO',
+    como: 'Treinar', responsavel: 'Ana', status: 'Atrasado', comentarios: '',
+  },
+  dec: { email: 'ana@avery.com', diasAtraso: 2 },
+  hoje: hoje,
+  prazo: '24/08/2026',
+  logoSrc: 'cid:logoAvery',
+});
+assert.ok(htmlEn.indexOf('Action past due') !== -1);
+assert.ok(htmlEn.indexOf('What?') !== -1);
+
+Object.keys(I18n.TEXTOS.pt).forEach(function (k) {
+  assert.ok(I18n.TEXTOS.en[k], 'en missing ' + k);
+  assert.ok(I18n.TEXTOS.es[k], 'es missing ' + k);
+});
+
 console.log('ok — ' + module.filename);

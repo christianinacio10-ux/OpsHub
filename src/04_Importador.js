@@ -3,7 +3,7 @@ function importarTodasAsFontes() {
   var fontes = Cadastros.fontes().filter(function (f) { return Logica.fonteAtiva(f); });
   if (!fontes.length) {
     Repo.registrarLog('importar', 'OK', 'Nenhuma fonte ativa.');
-    return { fontes: 0, linhas: 0, avisos: ['Nenhuma fonte ativa em Fontes de importação. Cadastre a URL da Google Sheet lá.'] };
+    return { fontes: 0, linhas: 0, avisos: [I18n.t(I18n.atual(), 'aviso_sem_fonte_ativa')] };
   }
 
   var avisos = [];
@@ -21,7 +21,7 @@ function importarTodasAsFontes() {
         ultimo_detalhe: novos.length + ' linhas',
       });
       if (!novos.length) {
-        avisos.push((fonte.nome || fonte.id) + ': a planilha abriu, mas nenhuma linha de ação foi lida. Confira o cabeçalho (Tema, O quê?, …).');
+        avisos.push(I18n.t(I18n.atual(), 'aviso_fonte_vazia', { nome: fonte.nome || fonte.id }));
       }
     } catch (e) {
       var msg = e && e.message ? e.message : String(e);
@@ -60,9 +60,9 @@ function importarTodasAsFontes() {
 
 function abrirPlanilhaOrigem_(ref) {
   var s = Logica.texto(ref);
-  if (!s) throw new Error('Cole a URL ou o ID da Google Sheet na fonte.');
+  if (!s) throw new Error(I18n.t(I18n.atual(), 'erro_url_fonte'));
   if (/\/spreadsheets\/d\/e\//.test(s)) {
-    throw new Error('Esse link é o de publicação (/d/e/…), não o da planilha. Abra o arquivo em docs.google.com/spreadsheets/d/ID/edit e copie essa URL.');
+    throw new Error(I18n.t(I18n.atual(), 'erro_link_publicacao'));
   }
   if (/^https?:\/\//i.test(s)) {
     try { return SpreadsheetApp.openByUrl(s); } catch (e1) {
@@ -70,15 +70,15 @@ function abrirPlanilhaOrigem_(ref) {
       if (idUrl) {
         try { return SpreadsheetApp.openById(idUrl); } catch (e2) {}
       }
-      throw new Error('Sem acesso à planilha. Compartilhe com a conta que autorizou o OpsHub (pelo menos leitura).');
+      throw new Error(I18n.t(I18n.atual(), 'erro_sem_acesso'));
     }
   }
   var id = Logica.extrairIdPlanilha(s);
-  if (!id) throw new Error('Referência inválida. Cole a URL completa da Google Sheet.');
+  if (!id) throw new Error(I18n.t(I18n.atual(), 'erro_ref_invalida'));
   try {
     return SpreadsheetApp.openById(id);
   } catch (e) {
-    throw new Error('Sem acesso à planilha. Compartilhe com a conta que autorizou o OpsHub.');
+    throw new Error(I18n.t(I18n.atual(), 'erro_sem_acesso_curto'));
   }
 }
 
@@ -87,7 +87,7 @@ function abaOrigem_(ss, fonte) {
   if (nomeAba) {
     var porNome = ss.getSheetByName(nomeAba);
     if (porNome) return porNome;
-    throw new Error('Aba "' + nomeAba + '" não encontrada em ' + ss.getName() + '.');
+    throw new Error(I18n.t(I18n.atual(), 'erro_aba', { nome: nomeAba, planilha: ss.getName() }));
   }
   var gid = Logica.extrairGid(fonte.referencia);
   if (gid !== null && !isNaN(gid)) {
@@ -111,7 +111,7 @@ function lerFonte_(fonte) {
   var topo = aba.getRange(1, 1, scan, ultimaCol).getValues();
   var escolhido = Logica.escolherLinhaCabecalho(topo, cabLinhaPref);
   if (escolhido.score < 2 && escolhido.mapa.oque === undefined && escolhido.mapa.tema === undefined) {
-    throw new Error('Não achei as colunas Tema / O quê? na aba "' + aba.getName() + '". Confira o cabeçalho.');
+    throw new Error(I18n.t(I18n.atual(), 'erro_colunas', { nome: aba.getName() }));
   }
 
   var cabLinha = escolhido.linha;

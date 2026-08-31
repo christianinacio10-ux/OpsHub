@@ -25,6 +25,10 @@ function identificarUsuario_() {
   return { email: email, nome: nome, iniciais: iniciais };
 }
 
+function apiSalvarIdioma(codigo) {
+  return { idioma: I18n.salvar(codigo) };
+}
+
 function apiContexto() {
   instalarSistema();
   var u = identificarUsuario_();
@@ -144,7 +148,7 @@ function apiSalvarTemasFollowUp(temas) {
 
 function apiAlternarTemaFollowUp(nome) {
   nome = Logica.texto(nome);
-  if (!nome) throw new Error('Tema vazio.');
+  if (!nome) throw new Error(I18n.t(I18n.atual(), 'erro_tema_vazio'));
   var todos = Logica.unicos(Cadastros.planos(), 'tema');
   var atuais = Logica.parseTemasFollowUp(Cadastros.config().texto('followup_temas', ''));
   var proximo = Logica.alternarTemaFollowUp(nome, atuais, todos);
@@ -158,7 +162,7 @@ function apiExcluirControle(id) {
 
 function apiSalvarFonte(reg) {
   if (reg && reg.referencia && !Logica.extrairIdPlanilha(reg.referencia) && !/^https?:\/\//i.test(String(reg.referencia || ''))) {
-    throw new Error('Cole a URL completa ou o ID da Google Sheet.');
+    throw new Error(I18n.t(I18n.atual(), 'erro_url'));
   }
   salvarEntidade_(ABAS.fontes, reg, ['id', 'nome', 'referencia', 'aba', 'linha_cabecalho', 'ativo'], 'F');
   return apiAtualizar();
@@ -210,11 +214,11 @@ function apiCriarGatilho() {
 
 function apiRemoverGatilhos() {
   removerGatilhos();
-  return { mensagem: 'Gatilhos removidos.', gatilho: estadoGatilho_() };
+  return { mensagem: I18n.t(I18n.atual(), 'toast_gatilhos_removidos'), gatilho: estadoGatilho_() };
 }
 
 function salvarEntidade_(abaNome, reg, campos, prefixo) {
-  if (!reg) throw new Error('Registro vazio.');
+  if (!reg) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
   var id = Logica.texto(reg.id) || Logica.idNovo(prefixo);
   var registro = {};
   campos.forEach(function (c) {
