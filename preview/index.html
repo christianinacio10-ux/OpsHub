@@ -699,7 +699,18 @@ table.dados tr.risco td { box-shadow: none; }
 }
 .lista-emails-follow .opaco { opacity: .45; }
 .follow-area { overflow: visible; }
-.drawer-gestao .painel-planos { margin-top: 4px; }
+.drawer-gestao .painel-planos {
+  margin-top: 4px;
+  flex: none;
+  min-height: 0;
+  overflow: visible;
+}
+.drawer-gestao .painel-planos .tabela-wrap {
+  flex: none;
+  min-height: 180px;
+  max-height: 420px;
+  overflow: auto;
+}
 .drawer-gestao .temas-barra { margin-top: 4px; }
 .senha-area-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
 .drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
