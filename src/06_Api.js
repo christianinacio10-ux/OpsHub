@@ -525,3 +525,22 @@ function apiAlternarEmailFollowUpArea(deptId, email) {
   Repo.limparMemoria();
   return payloadPlanosArea_(deptPorId_(dept.id));
 }
+
+function apiAlternarFollowUpAcaoArea(deptId, acaoId) {
+  var gate = exigirAreaAberta_(deptId);
+  if (gate.bloqueado) return gate.bloqueado;
+  var id = Logica.texto(acaoId);
+  if (!id) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
+  var plano = Repo.ler(ABAS.planosArea).filter(function (p) {
+    return Logica.texto(p.id) === id || Logica.texto(p.chave_origem) === id;
+  })[0];
+  if (!plano || Logica.texto(plano.departamento_id) !== Logica.texto(gate.dept.id)) {
+    throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
+  }
+  var ligado = !Logica.followUpAcaoLigada(plano);
+  Repo.atualizarRegistro(ABAS.planosArea, plano._linha, {
+    followup: ligado ? 'SIM' : 'NAO',
+  });
+  Repo.limparMemoria();
+  return payloadPlanosArea_(deptPorId_(gate.dept.id));
+}

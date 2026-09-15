@@ -62,6 +62,7 @@
       status_classe: classe,
       comentarios: o.comentarios || '',
       tem_email: tem,
+      followup: o.followup !== false,
       tooltip_email: tem ? o.email : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.',
     };
   }
@@ -282,6 +283,7 @@
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
         if (!p.tem_email || p.status !== 'Atrasado') return false;
+        if (p.followup === false) return false;
         if (!area) {
           if (temasFollowUp.length === 1 && temasFollowUp[0] === '__NONE__') return false;
           if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
@@ -319,6 +321,7 @@
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
         if (!p.tem_email || p.status !== 'Atrasado') return false;
+        if (p.followup === false) return false;
         if (!area) {
           if (temasFollowUp.length === 1 && temasFollowUp[0] === '__NONE__') return false;
           if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
@@ -473,6 +476,14 @@
       var idx = fu.emailsOff.indexOf(email);
       if (idx === -1) fu.emailsOff.push(email);
       else fu.emailsOff.splice(idx, 1);
+      return payloadArea(deptId, areaTrancada(deptId));
+    },
+    apiAlternarFollowUpAcaoArea: function (deptId, acaoId) {
+      var id = String(acaoId || '');
+      planosArea = planosArea.map(function (p) {
+        if (String(p.id) !== id || p.departamento_id !== deptId) return p;
+        return Object.assign({}, p, { followup: p.followup === false });
+      });
       return payloadArea(deptId, areaTrancada(deptId));
     },
     apiCriarGatilho: function () {

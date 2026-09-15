@@ -39,6 +39,17 @@ assert.strictEqual(Logica.elegivelFollowUp(acao, d(2026, 8, 24)).ok, false, 'no 
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { email: '' }), hoje).motivo, 'sem_email');
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { status: 'Concluído' }), hoje).ok, false);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { prazo: d(2026, 9, 1) }), hoje).motivo, 'ainda_no_prazo');
+assert.strictEqual(Logica.followUpAcaoLigada({}), true);
+assert.strictEqual(Logica.followUpAcaoLigada({ followup: '' }), true);
+assert.strictEqual(Logica.followUpAcaoLigada({ followup: 'SIM' }), true);
+assert.strictEqual(Logica.followUpAcaoLigada({ followup: 'NAO' }), false);
+assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { followup: 'NAO' }), hoje).motivo, 'acao_desligada');
+var mesclado = Logica.mesclarImportacao(
+  [{ chave_origem: 'k1', ultimo_email_em: hoje, emails_enviados: 2, followup: 'NAO' }],
+  [{ chave_origem: 'k1', oque: 'novo' }]
+);
+assert.strictEqual(mesclado[0].followup, 'NAO');
+assert.strictEqual(mesclado[0].emails_enviados, 2);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { ultimo_email_em: hoje }), hoje).motivo,
   'ja_enviado_hoje'
 );

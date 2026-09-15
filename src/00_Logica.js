@@ -51,6 +51,12 @@ var Logica = (function () {
     return s === 'sim' || s === 's' || s === 'yes' || s === 'true' || s === '1' || s === 'ativo';
   }
 
+  function followUpAcaoLigada(acao) {
+    var s = texto(acao && (typeof acao === 'object' ? acao.followup : acao)).toLowerCase();
+    if (!s) return true;
+    return !(s === 'nao' || s === 'não' || s === 'no' || s === 'false' || s === '0' || s === 'off' || s === 'n');
+  }
+
   function slug(v) {
     return texto(v)
       .toLowerCase()
@@ -391,6 +397,9 @@ var Logica = (function () {
     if (encerrada(acao && acao.status)) {
       return { ok: false, motivo: 'encerrada' };
     }
+    if (!followUpAcaoLigada(acao)) {
+      return { ok: false, motivo: 'acao_desligada' };
+    }
     if (!opcoes.ignorarTemas && !temaFollowUpHabilitado(acao && acao.tema, temasHabilitados)) {
       return { ok: false, motivo: 'tema_desligado' };
     }
@@ -454,6 +463,7 @@ var Logica = (function () {
       if (!velho) return n;
       n.ultimo_email_em = velho.ultimo_email_em || '';
       n.emails_enviados = velho.emails_enviados || 0;
+      n.followup = velho.followup || n.followup || '';
       return n;
     });
   }
@@ -656,6 +666,7 @@ var Logica = (function () {
       status_classe: classeStatus(st),
       comentarios: texto(p.comentarios),
       tem_email: temEmail,
+      followup: followUpAcaoLigada(p),
       tooltip_email: temEmail
         ? texto(p.email)
         : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.',
@@ -893,6 +904,7 @@ var Logica = (function () {
     separarPorNegocio: separarPorNegocio,
     htmlFollowUp: htmlFollowUp,
     escaparHtml: escaparHtml,
+    followUpAcaoLigada: followUpAcaoLigada,
   };
 })();
 

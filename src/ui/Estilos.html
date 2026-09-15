@@ -710,7 +710,7 @@ table.dados tr.risco td { box-shadow: none; }
 .fluxo-area { position: relative; }
 .fluxo-progresso {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
   margin: 2px 0 14px;
 }
@@ -848,6 +848,32 @@ table.dados tr.risco td { box-shadow: none; }
 }
 .fluxo-espera p { margin: 0; }
 .fluxo-corpo .follow-area { overflow: visible; }
+.chip-cobranca {
+  height: 28px; padding: 0 10px; border-radius: 999px;
+  display: inline-flex; align-items: center;
+  font-size: 12px; font-weight: 520;
+  cursor: pointer; font-family: var(--fonte);
+  appearance: none; -webkit-appearance: none;
+  outline: none; border: 1px solid transparent;
+  white-space: nowrap;
+}
+.chip-cobranca:focus,
+.chip-cobranca:focus-visible { outline: none; }
+.chip-cobranca.ligado {
+  background: rgba(74, 148, 108, .22);
+  border-color: rgba(111, 207, 151, .4);
+  color: #D4F0DE;
+}
+.chip-cobranca.desligado {
+  background: rgba(237,232,224,.04);
+  border-color: var(--linha);
+  color: var(--tinta-3);
+}
+.barra-cobranca-plano {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--linha);
+}
 .senha-area-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
 .drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
 .rotulo-com-ajuda {
@@ -999,14 +1025,28 @@ table.dados tr.risco td { box-shadow: none; }
   border: 1px solid var(--linha); background: transparent;
   color: var(--tinta-2); font-size: 12.5px; font-weight: 450;
   cursor: pointer; font-family: var(--fonte);
-  transition: background var(--transicao), color var(--transicao), border-color var(--transicao);
+  appearance: none; -webkit-appearance: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--transicao), color var(--transicao), border-color var(--transicao), box-shadow var(--transicao);
 }
 .chip-tema:hover { background: rgba(237,232,224,.05); color: var(--tinta); border-color: var(--linha-forte); }
+.chip-tema:focus,
+.chip-tema:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--superficie), 0 0 0 4px rgba(237, 232, 224, .22);
+}
 .chip-tema.ativo,
 .chip-tema.todos.ativo {
-  background: var(--marca-suave);
-  border-color: rgba(228, 0, 43, .28);
-  color: #F4D5DA;
+  background: rgba(237, 232, 224, .12);
+  border-color: rgba(237, 232, 224, .28);
+  color: var(--tinta);
+}
+.chip-tema.ativo:hover,
+.chip-tema.todos.ativo:hover {
+  background: rgba(237, 232, 224, .16);
+  border-color: rgba(237, 232, 224, .38);
+  color: var(--tinta);
 }
 .chip-follow {
   height: 34px; padding: 0 12px 0 10px; border-radius: 999px;

@@ -29,7 +29,7 @@
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
     planosAreaFollowUp: { temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '' },
-    etapasArea: { fonte: true, quadro: false, cobranca: false },
+    etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
 
@@ -121,7 +121,7 @@
 
   function etapasAreaPadrao() {
     var temFonte = (Estado.fontesArea || []).length > 0;
-    return { fonte: !temFonte, quadro: temFonte, cobranca: false };
+    return { fonte: !temFonte, quadro: temFonte };
   }
 
   function carregarEtapasArea(deptId) {
@@ -133,9 +133,11 @@
         if (parsed && typeof parsed === 'object') {
           Estado.etapasArea = {
             fonte: !!parsed.fonte,
-            quadro: !!parsed.quadro,
-            cobranca: !!parsed.cobranca,
+            quadro: !!parsed.quadro || !!parsed.cobranca,
           };
+          if (!Estado.etapasArea.fonte && !Estado.etapasArea.quadro) {
+            Estado.etapasArea = etapasAreaPadrao();
+          }
           Estado._etapasAreaDoCache = true;
           return;
         }
@@ -174,13 +176,12 @@
     Estado.etapasArea = {
       fonte: id === 'fonte',
       quadro: id === 'quadro',
-      cobranca: id === 'cobranca',
     };
     salvarEtapasArea();
   }
 
   function avancarParaQuadro() {
-    Estado.etapasArea = { fonte: false, quadro: true, cobranca: false };
+    Estado.etapasArea = { fonte: false, quadro: true };
     salvarEtapasArea();
   }
 
@@ -661,7 +662,8 @@
       '</div>';
   }
 
-  function linhasTabelaPlanos(filtrados) {
+  function linhasTabelaPlanos(filtrados, ids) {
+    ids = ids || {};
     return filtrados.map(function (p) {
       var tipEmail = p.tem_email ? p.email : t('tooltip_sem_email');
       var emailCel = p.tem_email
@@ -669,6 +671,13 @@
         : '<span class="aviso-email" tabindex="0" data-tip="' + escapar(tipEmail) +
           '" title="' + escapar(tipEmail) + '">' + svg('ehs') + '</span>';
       var stLabel = rotuloStatusUi(p.status);
+      var cobrancaOn = p.followup !== false;
+      var cobrancaCel = ids.cobranca
+        ? '<td><button type="button" class="chip-cobranca ' + (cobrancaOn ? 'ligado' : 'desligado') +
+          '" data-followup-acao="' + escapar(p.id) +
+          '" title="' + escapar(cobrancaOn ? t('cobranca_acao_tip_on') : t('cobranca_acao_tip_off')) +
+          '">' + (cobrancaOn ? t('cobranca_acao_on') : t('cobranca_acao_off')) + '</button></td>'
+        : '';
       return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
         td(p.tema) +
         td(p.divisao) +
@@ -679,6 +688,7 @@
         '<td title="' + escapar(tipEmail) + '">' + emailCel + '</td>' +
         td(p.prazo_br) +
         '<td title="' + escapar(stLabel) + '"><span class="selo ' + p.status_classe + '">' + escapar(stLabel) + '</span></td>' +
+        cobrancaCel +
         td(p.comentarios, 'comentarios') +
         '</tr>';
     }).join('');
@@ -701,8 +711,9 @@
       th('tema', t('th_tema')) + th('divisao', t('th_divisao')) + th('area', t('th_area')) +
       th('oque', t('th_oque')) + th('como', t('th_como')) + th('responsavel', t('th_responsavel')) +
       th('email', t('th_email')) + th('prazo', t('th_prazo')) + th('status', t('th_status')) +
+      (ids.cobranca ? '<th>' + t('th_cobranca') + '</th>' : '') +
       th('comentarios', t('th_comentarios')) +
-      '</tr></thead><tbody>' + linhasTabelaPlanos(filtrados) + '</tbody></table></div>' +
+      '</tr></thead><tbody>' + linhasTabelaPlanos(filtrados, ids) + '</tbody></table></div>' +
       '<div class="painel-topo tabela-rodape" style="border-top:1px solid var(--linha);border-bottom:0">' +
       '<div class="secao-apoio">' + t('n_acoes', { n: filtrados.length, total: todos.length }) + '</div></div></div>';
   }
@@ -885,19 +896,6 @@
     }).join('') + '</div>';
   }
 
-  function pessoasFollowUpArea(lista) {
-    var set = {};
-    var out = [];
-    (lista || []).forEach(function (p) {
-      var email = String(p.email || '').trim().toLowerCase();
-      if (!email || email.indexOf('@') < 1 || set[email]) return;
-      set[email] = 1;
-      out.push({ email: email, nome: p.responsavel || email });
-    });
-    out.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome), localeUi()); });
-    return out;
-  }
-
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
       temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '',
@@ -924,42 +922,20 @@
       '</div>';
   }
 
-  function blocoFollowUpArea() {
+  function barraCobrancaPlano() {
     var fu = followUpAreaAtual();
-    var temas = unicos(Estado.planosArea || [], 'tema');
-    var pessoas = pessoasFollowUpArea(Estado.planosArea || []);
-    var off = {};
-    (fu.emailsOff || []).forEach(function (e) { off[String(e).toLowerCase()] = 1; });
-    var meu = String(fu.meuEmail || fu.gestorEmail || '').toLowerCase();
     var emailHint = fu.gestorEmail || fu.meuEmail || '—';
-    var listaPessoas = pessoas.length
-      ? '<div class="lista-emails-follow">' + pessoas.map(function (p) {
-          var on = !off[p.email];
-          var eu = meu && p.email === meu;
-          var dim = fu.soEu && !eu;
-          return '<button type="button" class="filtro-excel-item' + (dim ? ' opaco' : '') +
-            '" data-followup-email="' + escapar(p.email) + '">' +
-            '<span class="caixa' + (on ? ' marcada' : '') + '" aria-hidden="true"></span>' +
-            '<span><strong>' + escapar(tituloNome(p.nome)) + '</strong>' +
-            (eu ? ' · ' + t('planos_area_follow_eu') : '') +
-            '<small>' + escapar(p.email) + '</small></span></button>';
-        }).join('') + '</div>'
-      : '<div class="secao-apoio">' + t('planos_area_follow_sem_pessoas') + '</div>';
-    return '<div class="follow-area">' +
-      '<div class="secao-apoio" style="margin:0 0 12px">' + t('planos_area_follow_apoio') + '</div>' +
-      '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">' + t('temas_email') + '</div>' +
-      chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area') +
-      '<label class="check-encerradas" style="margin-top:14px">' +
+    var nOn = (Estado.planosArea || []).filter(function (p) { return p.followup !== false; }).length;
+    var nTot = (Estado.planosArea || []).length;
+    return '<div class="barra-cobranca-plano">' +
+      '<div class="secao-apoio" style="margin:0;flex:1 1 220px">' +
+      t('planos_area_cobranca_plano_apoio', { n: nOn, total: nTot }) + '</div>' +
+      '<label class="check-encerradas" style="margin:0" title="' +
+      escapar(t('planos_area_follow_so_eu_hint', { email: emailHint })) + '">' +
       '<input type="checkbox" data-followup-so-eu="1"' + (fu.soEu ? ' checked' : '') + '> ' +
       t('planos_area_follow_so_eu') + '</label>' +
-      '<div class="secao-apoio" style="margin:0 0 12px">' +
-      t('planos_area_follow_so_eu_hint', { email: emailHint }) + '</div>' +
-      '<div class="secao-titulo" style="font-size:13px;margin:8px 0 6px">' + t('planos_area_follow_pessoas') + '</div>' +
-      '<div class="secao-apoio" style="margin-bottom:8px">' + t('planos_area_follow_pessoas_apoio') + '</div>' +
-      listaPessoas +
-      '<div class="fluxo-avancar">' +
       '<button class="botao" type="button" data-followup-area-agora="1">' + t('enviar_followups') + '</button>' +
-      '</div></div>';
+      '</div>';
   }
 
   function listaPlanosArea() {
@@ -968,6 +944,7 @@
         busca: 'filtro-texto-area',
         limpar: 'limpar-filtros-area',
         vazio: 'planos_area_vazio',
+        cobranca: true,
       });
   }
 
@@ -985,23 +962,6 @@
     if (!(Estado.fontesArea || []).length) return t('planos_area_resumo_quadro_espera');
     var k = Estado.planosAreaKpis || {};
     return t('planos_area_resumo_quadro', { n: k.total || 0, atrasados: k.atrasados || 0 });
-  }
-
-  function resumoEtapaCobranca() {
-    var fu = followUpAreaAtual();
-    if (fu.soEu) return t('planos_area_resumo_cobranca_eu');
-    var pessoas = pessoasFollowUpArea(Estado.planosArea || []);
-    var off = {};
-    (fu.emailsOff || []).forEach(function (e) { off[String(e).toLowerCase()] = 1; });
-    var n = pessoas.filter(function (p) { return !off[p.email]; }).length;
-    var habilitados = listaTemas(fu.temas);
-    var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
-    var temaTxt = nenhum
-      ? t('planos_area_resumo_temas_nenhum')
-      : (!habilitados.length
-        ? t('planos_area_resumo_temas_todos')
-        : t('planos_area_resumo_temas_n', { n: habilitados.length }));
-    return t('planos_area_resumo_cobranca', { n: n, temas: temaTxt });
   }
 
   function corpoEtapaFonte(d) {
@@ -1025,13 +985,12 @@
     }
     return kpisHtml(Estado.planosAreaKpis) +
       listaPlanosArea() +
-      '<div class="fluxo-avancar"><button class="botao" type="button" data-abrir-etapa="cobranca">' +
-      t('planos_area_ir_cobranca') + '</button></div>';
+      barraCobrancaPlano();
   }
 
   function htmlFluxoProgresso() {
     return '<div class="fluxo-progresso" aria-hidden="true">' +
-      ['fonte', 'quadro', 'cobranca'].map(function (id) {
+      ['fonte', 'quadro'].map(function (id) {
         var cls = 'fluxo-seg';
         if (etapaAberta(id)) cls += ' atual';
         else if (etapaFeita(id)) cls += ' feita';
@@ -1080,8 +1039,6 @@
         resumoEtapaFonte(), function () { return corpoEtapaFonte(d); }) +
       etapaHtml('quadro', '2', t('planos_area_etapa_quadro'), t('planos_area_quadro_titulo'),
         resumoEtapaQuadro(), function () { return corpoEtapaQuadro(); }) +
-      etapaHtml('cobranca', '3', t('planos_area_etapa_cobranca'), t('planos_area_cobranca_titulo'),
-        resumoEtapaCobranca(), function () { return blocoFollowUpArea(); }) +
       '</div>';
   }
 
@@ -1735,6 +1692,24 @@
         e.preventDefault();
         e.stopPropagation();
         toggleFollowUpTemaArea(followTemaArea.getAttribute('data-followup-tema-area'));
+        return;
+      }
+      var followAcao = e.target.closest('[data-followup-acao]');
+      if (followAcao) {
+        e.preventDefault();
+        e.stopPropagation();
+        var deptAcao = Estado.deptAberto && Estado.deptAberto.id;
+        var idAcao = followAcao.getAttribute('data-followup-acao');
+        if (!deptAcao || !idAcao || Estado.carregando) return;
+        ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
+        chamar('apiAlternarFollowUpAcaoArea', deptAcao, idAcao).then(function (resp) {
+          ocupar(false);
+          aplicarPlanosArea(resp, { manterScroll: true });
+          toast(t('toast_followup_acao'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
         return;
       }
       var followEmail = e.target.closest('[data-followup-email]');
