@@ -70,6 +70,13 @@ function formatarAbas_() {
     if (idxPrazo > 0) planos.getRange(2, idxPrazo, Math.max(planos.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy');
     if (idxEmail > 0) planos.getRange(2, idxEmail, Math.max(planos.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy hh:mm');
   }
+  var area = ss.getSheetByName(ABAS.planosArea);
+  if (area) {
+    var idxPrazoA = ESQUEMA[ABAS.planosArea].indexOf('prazo') + 1;
+    var idxEmailA = ESQUEMA[ABAS.planosArea].indexOf('ultimo_email_em') + 1;
+    if (idxPrazoA > 0) area.getRange(2, idxPrazoA, Math.max(area.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy');
+    if (idxEmailA > 0) area.getRange(2, idxEmailA, Math.max(area.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy hh:mm');
+  }
 }
 
 function garantirConfig_() {
@@ -172,7 +179,7 @@ function sementesPlanosDemo_() {
 }
 
 function esconderAbasTecnicas_() {
-  [ABAS.config, ABAS.emails, ABAS.log].forEach(function (nome) {
+  [ABAS.config, ABAS.emails, ABAS.log, ABAS.planosArea].forEach(function (nome) {
     var aba = Repo.planilha().getSheetByName(nome);
     if (aba) aba.hideSheet();
   });

@@ -50,6 +50,7 @@ function apiHub() {
       cor: Logica.texto(d.cor) || '#E4002B',
       ordem: Number(d.ordem || 0),
       bandeira: Logica.normalizarBandeira(d.bandeira),
+      tem_senha_planos: Logica.temSenhaPlanos(d),
     };
   });
   var controles = Cadastros.controles().map(function (c) {
@@ -92,7 +93,13 @@ function apiHub() {
     temasDistintos: temasDistintos,
     temasFollowUp: temasFollowUp,
     fontes: fontes,
-    departamentosAdmin: Repo.ler(ABAS.departamentos),
+    departamentosAdmin: Repo.ler(ABAS.departamentos).map(function (d) {
+      var copia = {};
+      Object.keys(d).forEach(function (k) {
+        if (k !== 'senha_planos') copia[k] = d[k];
+      });
+      return copia;
+    }),
     controlesAdmin: Repo.ler(ABAS.controles),
     gatilho: estadoGatilho_(),
   };
@@ -190,11 +197,15 @@ function apiPreverFollowUps() {
   var total = 0;
   var temasJa = [];
   var vistos = {};
-  Cadastros.planos().forEach(function (plano) {
-    var forcado = Logica.elegivelFollowUp(plano, hoje, temasHabilitados, { ignorarJaEnviadoHoje: true });
+  Cadastros.planosFollowUp().forEach(function (plano) {
+    var area = plano._folha === 'area';
+    var forcado = Logica.elegivelFollowUp(plano, hoje, temasHabilitados, {
+      ignorarJaEnviadoHoje: true,
+      ignorarTemas: area,
+    });
     if (!forcado.ok) return;
     total++;
-    var normal = Logica.elegivelFollowUp(plano, hoje, temasHabilitados);
+    var normal = Logica.elegivelFollowUp(plano, hoje, temasHabilitados, { ignorarTemas: area });
     var tema = Logica.texto(plano.tema);
     if (!normal.ok && normal.motivo === 'ja_enviado_hoje' && tema && !vistos[tema]) {
       vistos[tema] = 1;
@@ -242,4 +253,135 @@ function excluirPorId_(abaNome, id) {
   if (atual) Repo.excluirLinha(abaNome, atual._linha);
   Repo.limparMemoria();
   return apiHub();
+}
+
+function hashSenhaPlanos_(deptId, senha) {
+  var s = 'opshub|' + String(deptId || '') + '|' + String(senha || '');
+  if (typeof Utilities === 'undefined') return s;
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, s, Utilities.Charset.UTF_8);
+  var out = [];
+  for (var i = 0; i < bytes.length; i++) {
+    var b = bytes[i];
+    if (b < 0) b += 256;
+    out.push(('0' + b.toString(16)).slice(-2));
+  }
+  return out.join('');
+}
+
+function cacheUsuario_() {
+  try { return CacheService.getUserCache(); } catch (e) { return null; }
+}
+
+function areaDesbloqueada_(deptId) {
+  var c = cacheUsuario_();
+  return !!(c && c.get('area_ok_' + deptId));
+}
+
+function desbloquearArea_(deptId) {
+  var c = cacheUsuario_();
+  if (c) c.put('area_ok_' + deptId, '1', 8 * 3600);
+}
+
+function deptPorId_(id) {
+  return Repo.ler(ABAS.departamentos).filter(function (d) { return String(d.id) === String(id); })[0];
+}
+
+function payloadPlanosArea_(dept) {
+  var hoje = hojeLocal_();
+  var lista = Logica.planosDoDepartamento(Cadastros.planosArea(), dept.id).map(function (p) {
+    return Logica.prepararAcaoParaUi(p, hoje);
+  });
+  return {
+    ok: true,
+    precisaSenha: false,
+    departamento_id: dept.id,
+    tem_senha_planos: Logica.temSenhaPlanos(dept),
+    planos: lista,
+    kpis: Logica.kpis(Logica.planosDoDepartamento(Cadastros.planosArea(), dept.id), hoje),
+  };
+}
+
+function apiPlanosArea(deptId) {
+  instalarSistema();
+  var dept = deptPorId_(deptId);
+  if (!dept) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
+  if (Logica.temSenhaPlanos(dept) && !areaDesbloqueada_(dept.id)) {
+    return { ok: false, precisaSenha: true, departamento_id: dept.id, tem_senha_planos: true, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+  }
+  return payloadPlanosArea_(dept);
+}
+
+function apiAbrirPlanosArea(deptId, senha) {
+  instalarSistema();
+  var dept = deptPorId_(deptId);
+  if (!dept) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
+  if (Logica.temSenhaPlanos(dept)) {
+    if (hashSenhaPlanos_(dept.id, senha) !== Logica.texto(dept.senha_planos)) {
+      return { ok: false, precisaSenha: true, senhaErrada: true, departamento_id: dept.id, tem_senha_planos: true, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+    }
+  }
+  desbloquearArea_(dept.id);
+  return payloadPlanosArea_(dept);
+}
+
+function apiSalvarPlanoArea(reg) {
+  instalarSistema();
+  if (!reg || !reg.departamento_id) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
+  var dept = deptPorId_(reg.departamento_id);
+  if (!dept) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
+  if (Logica.temSenhaPlanos(dept) && !areaDesbloqueada_(dept.id)) {
+    return { ok: false, precisaSenha: true, departamento_id: dept.id, tem_senha_planos: true, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+  }
+  if (!Logica.texto(reg.oque)) throw new Error(I18n.t(I18n.atual(), 'erro_oque'));
+  var id = Logica.texto(reg.id) || Logica.idNovo('A');
+  var atual = Repo.ler(ABAS.planosArea).filter(function (p) { return String(p.id) === String(id); })[0];
+  var montado = Logica.montarPlanoArea(reg, dept, id);
+  if (atual) {
+    montado.ultimo_email_em = atual.ultimo_email_em;
+    montado.emails_enviados = atual.emails_enviados;
+    Repo.atualizarRegistro(ABAS.planosArea, atual._linha, montado);
+  } else {
+    Repo.acrescentar(ABAS.planosArea, [montado]);
+  }
+  Repo.limparMemoria();
+  return payloadPlanosArea_(deptPorId_(dept.id));
+}
+
+function apiExcluirPlanoArea(id) {
+  instalarSistema();
+  var lista = Repo.ler(ABAS.planosArea);
+  var atual = lista.filter(function (p) { return String(p.id) === String(id); })[0];
+  if (!atual) {
+    return { ok: true, precisaSenha: false, departamento_id: '', tem_senha_planos: false, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+  }
+  var dept = deptPorId_(atual.departamento_id);
+  if (dept && Logica.temSenhaPlanos(dept) && !areaDesbloqueada_(dept.id)) {
+    return { ok: false, precisaSenha: true, departamento_id: dept.id, tem_senha_planos: true, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+  }
+  Repo.excluirLinha(ABAS.planosArea, atual._linha);
+  Repo.limparMemoria();
+  return dept ? payloadPlanosArea_(deptPorId_(dept.id)) : { ok: true, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+}
+
+function apiDefinirSenhaPlanosArea(deptId, senhaAtual, senhaNova) {
+  instalarSistema();
+  var dept = deptPorId_(deptId);
+  if (!dept) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
+  if (Logica.temSenhaPlanos(dept)) {
+    if (hashSenhaPlanos_(dept.id, senhaAtual) !== Logica.texto(dept.senha_planos)) {
+      throw new Error(I18n.t(I18n.atual(), 'erro_senha_atual'));
+    }
+  }
+  var hash = Logica.texto(senhaNova) ? hashSenhaPlanos_(dept.id, senhaNova) : '';
+  if (!hash && !Logica.temSenhaPlanos(dept)) {
+    var hubVazio = apiHub();
+    hubVazio.planosArea = payloadPlanosArea_(deptPorId_(dept.id));
+    return hubVazio;
+  }
+  Repo.atualizarRegistro(ABAS.departamentos, dept._linha, { senha_planos: hash });
+  Repo.limparMemoria();
+  if (hash) desbloquearArea_(dept.id);
+  var hub = apiHub();
+  hub.planosArea = payloadPlanosArea_(deptPorId_(dept.id));
+  return hub;
 }

@@ -79,6 +79,34 @@ assert.strictEqual(
   true,
   'envio manual pode repetir no mesmo dia'
 );
+assert.strictEqual(
+  Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'OEE' }), hoje, ['EHS'], { ignorarTemas: true }).ok,
+  true,
+  'planos da area ignoram chips globais de tema'
+);
+assert.strictEqual(Logica.temSenhaPlanos({ senha_planos: 'abc' }), true);
+assert.strictEqual(Logica.temSenhaPlanos({ senha_planos: '' }), false);
+assert.strictEqual(Logica.temSenhaPlanos({}), false);
+assert.strictEqual(
+  Logica.planosDoDepartamento(
+    [{ departamento_id: 'D-PROD', oque: 'a' }, { departamento_id: 'D-QUAL', oque: 'b' }],
+    'D-PROD'
+  ).length,
+  1
+);
+var montArea = Logica.montarPlanoArea(
+  { oque: 'SMED interno', email: 'A@B.COM', status: 'Aberto' },
+  { id: 'D-PROD', nome: 'Produção', bandeira: 'Solutions' },
+  'A1'
+);
+assert.strictEqual(montArea.id, 'A1');
+assert.strictEqual(montArea.departamento_id, 'D-PROD');
+assert.strictEqual(montArea.tema, 'Produção');
+assert.strictEqual(montArea.divisao, 'Solutions');
+assert.strictEqual(montArea.area, 'Produção');
+assert.strictEqual(montArea.oque, 'SMED interno');
+assert.strictEqual(montArea.email, 'a@b.com');
+assert.strictEqual(Logica.prepararAcaoParaUi(montArea, hoje).departamento_id, 'D-PROD');
 
 assert.strictEqual(Logica.statusEfetivo({ status: 'Aberto', prazo: d(2026, 8, 20) }, hoje), 'Atrasado');
 assert.strictEqual(Logica.statusEfetivo({ status: 'Concluído', prazo: d(2026, 8, 20) }, hoje), 'Concluído');
@@ -259,9 +287,16 @@ var htmlEn = Logica.htmlFollowUp({
 assert.ok(htmlEn.indexOf('Action past due') !== -1);
 assert.ok(htmlEn.indexOf('What?') !== -1);
 
+assert.strictEqual(I18n.t('pt', 'planos_area_kicker'), 'Planos da área');
+assert.strictEqual(I18n.t('en', 'planos_area_entrar'), 'Open plans');
+assert.strictEqual(I18n.t('es', 'planos_area_senha_errada'), 'Contraseña incorrecta.');
+
 Object.keys(I18n.TEXTOS.pt).forEach(function (k) {
   assert.ok(I18n.TEXTOS.en[k], 'en missing ' + k);
   assert.ok(I18n.TEXTOS.es[k], 'es missing ' + k);
+});
+Object.keys(I18n.TEXTOS.en).forEach(function (k) {
+  assert.ok(I18n.TEXTOS.pt[k], 'pt missing ' + k);
 });
 
 console.log('ok — ' + module.filename);
