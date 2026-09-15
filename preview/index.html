@@ -683,6 +683,24 @@ table.dados tr.risco td { box-shadow: none; }
   cursor: pointer; user-select: none;
 }
 .check-encerradas input { accent-color: var(--marca); }
+.lista-emails-follow {
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  max-height: 220px;
+  overflow: auto;
+  background: var(--bg);
+}
+.lista-emails-follow .filtro-excel-item { align-items: flex-start; }
+.lista-emails-follow small {
+  display: block;
+  color: var(--tinta-3);
+  font-size: 12px;
+  font-weight: 400;
+}
+.lista-emails-follow .opaco { opacity: .45; }
+.follow-area { overflow: visible; }
+.drawer-gestao .painel-planos { margin-top: 4px; }
+.drawer-gestao .temas-barra { margin-top: 4px; }
 .senha-area-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
 .drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
 .rotulo-com-ajuda {
@@ -1157,10 +1175,11 @@ table.dados tr.risco td { box-shadow: none; }
     planoArea('A1', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Congelar SMED da DDA2 só nesta área', como: 'Cronometrar setup e kit pré-montado no turno 1', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: 'Ação interna da produção' }),
     planoArea('A2', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Padronizar handover da DDA1', como: 'Checklist de 10 min no quadro da linha', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: '' }),
     planoArea('A3', 'D-QUAL', { fonte_id: 'FA2', tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
-    planoArea('A4', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
+    planoArea('A4', 'D-PROD', { fonte_id: 'FA1', tema: 'OEE', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
+    planoArea('A5', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Consultar outras plantas para problema de setup', como: 'Alinhar com Joly o padrão de SMED', responsavel: 'Joly Soares', email: 'joly.soares@example.com', prazo: add(-6), status: 'Aberto', comentarios: 'Atrasada só nesta área' }),
   ];
   var fontesArea = [
-    { id: 'FA1', departamento_id: 'D-PROD', nome: 'Ações internas Produção', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-prod', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '3 linhas' },
+    { id: 'FA1', departamento_id: 'D-PROD', nome: 'Ações internas Produção', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-prod', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '4 linhas' },
     { id: 'FA2', departamento_id: 'D-QUAL', nome: 'Ações internas Qualidade', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-qual', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '1 linha' },
   ];
   var senhasArea = { 'D-QUAL': 'gestor' };
@@ -1187,6 +1206,26 @@ table.dados tr.risco td { box-shadow: none; }
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
   var temasFollowUp = [];
   var followupsEnviadosHoje = {};
+  var followUpPorArea = {};
+  var emailSessao = 'christian.inacio@averydennison.com';
+
+  function followUpDept(deptId) {
+    if (!followUpPorArea[deptId]) {
+      followUpPorArea[deptId] = { temas: [], soEu: false, gestorEmail: '', emailsOff: [] };
+    }
+    return followUpPorArea[deptId];
+  }
+
+  function payloadFollowArea(deptId) {
+    var fu = followUpDept(deptId);
+    return {
+      temas: (fu.temas || []).slice(),
+      soEu: !!fu.soEu,
+      gestorEmail: fu.gestorEmail || '',
+      emailsOff: (fu.emailsOff || []).slice(),
+      meuEmail: emailSessao,
+    };
+  }
 
   function temasDistintos() {
     var set = {}; var out = [];
@@ -1228,6 +1267,7 @@ table.dados tr.risco td { box-shadow: none; }
       planos: lista,
       fontes: precisaSenha ? [] : fontesArea.filter(function (f) { return f.departamento_id === deptId; }),
       kpis: kpisLista(lista),
+      followup: payloadFollowArea(deptId),
     };
   }
 
@@ -1263,7 +1303,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.5.2' },
+        app: { nome: 'OpsHub', versao: '1.6.0' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -1335,30 +1375,73 @@ table.dados tr.risco td { box-shadow: none; }
       h.importacao = { fontes: fontes.length + fontesArea.length, linhas: planos.length + planosArea.length, avisos: [] };
       return h;
     },
-    apiEnviarFollowUpsAgora: function (forcar) {
-      function candidato(p, ignorarTemas) {
+    apiEnviarFollowUpsAgora: function (forcar, departamentoId) {
+      function candidato(p, area) {
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
         if (!p.tem_email || p.status !== 'Atrasado') return false;
-        if (!ignorarTemas && temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        if (!area) {
+          if (temasFollowUp.length === 1 && temasFollowUp[0] === '__NONE__') return false;
+          if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        } else {
+          var fu = followUpDept(p.departamento_id);
+          if (fu.temas.length === 1 && fu.temas[0] === '__NONE__') return false;
+          if (fu.temas.length && fu.temas.indexOf(p.tema) === -1) return false;
+          var email = String(p.email || '').toLowerCase();
+          if (fu.soEu) {
+            var g = String(fu.gestorEmail || emailSessao).toLowerCase();
+            if (email !== g) return false;
+          }
+          if ((fu.emailsOff || []).indexOf(email) !== -1) return false;
+        }
         if (!forcar && followupsEnviadosHoje[p.id]) return false;
         return true;
       }
-      var cand = planos.filter(function (p) { return candidato(p, false); })
-        .concat(planosArea.filter(function (p) { return candidato(p, true); }));
+      var cand = [];
+      if (!departamentoId) {
+        cand = planos.filter(function (p) { return candidato(p, false); })
+          .concat(planosArea.filter(function (p) { return candidato(p, true); }));
+      } else {
+        cand = planosArea.filter(function (p) {
+          return p.departamento_id === departamentoId && candidato(p, true);
+        });
+      }
       cand.forEach(function (p) { followupsEnviadosHoje[p.id] = true; });
-      return { enviados: cand.length, pulados: planos.length + planosArea.length - cand.length, erros: 0 };
+      var universo = departamentoId
+        ? planosArea.filter(function (p) { return p.departamento_id === departamentoId; }).length
+        : planos.length + planosArea.length;
+      return { enviados: cand.length, pulados: universo - cand.length, erros: 0 };
     },
-    apiPreverFollowUps: function () {
-      function candidato(p, ignorarTemas) {
+    apiPreverFollowUps: function (departamentoId) {
+      function candidato(p, area) {
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
         if (!p.tem_email || p.status !== 'Atrasado') return false;
-        if (!ignorarTemas && temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        if (!area) {
+          if (temasFollowUp.length === 1 && temasFollowUp[0] === '__NONE__') return false;
+          if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        } else {
+          var fu = followUpDept(p.departamento_id);
+          if (fu.temas.length === 1 && fu.temas[0] === '__NONE__') return false;
+          if (fu.temas.length && fu.temas.indexOf(p.tema) === -1) return false;
+          var email = String(p.email || '').toLowerCase();
+          if (fu.soEu) {
+            var g = String(fu.gestorEmail || emailSessao).toLowerCase();
+            if (email !== g) return false;
+          }
+          if ((fu.emailsOff || []).indexOf(email) !== -1) return false;
+        }
         return true;
       }
-      var cand = planos.filter(function (p) { return candidato(p, false); })
-        .concat(planosArea.filter(function (p) { return candidato(p, true); }));
+      var cand = [];
+      if (!departamentoId) {
+        cand = planos.filter(function (p) { return candidato(p, false); })
+          .concat(planosArea.filter(function (p) { return candidato(p, true); }));
+      } else {
+        cand = planosArea.filter(function (p) {
+          return p.departamento_id === departamentoId && candidato(p, true);
+        });
+      }
       var temasJa = [];
       var vistos = {};
       cand.forEach(function (p) {
@@ -1452,6 +1535,43 @@ table.dados tr.risco td { box-shadow: none; }
       else if (atuais.length === todos.length) temasFollowUp = [];
       else temasFollowUp = atuais;
       return hub();
+    },
+    apiAlternarTemaFollowUpArea: function (deptId, nome) {
+      nome = String(nome || '').trim();
+      var todos = [];
+      var set = {};
+      planosArea.forEach(function (p) {
+        if (p.departamento_id !== deptId || !p.tema || set[p.tema]) return;
+        set[p.tema] = 1;
+        todos.push(p.tema);
+      });
+      var fu = followUpDept(deptId);
+      var atuais = fu.temas.slice();
+      var nenhum = atuais.length === 1 && atuais[0] === '__NONE__';
+      if (!atuais.length) atuais = todos.slice();
+      if (nenhum) atuais = [];
+      var idx = atuais.indexOf(nome);
+      if (idx === -1) atuais.push(nome);
+      else atuais = atuais.filter(function (t) { return t !== nome; });
+      if (!atuais.length) fu.temas = ['__NONE__'];
+      else if (atuais.length === todos.length) fu.temas = [];
+      else fu.temas = atuais;
+      return payloadArea(deptId, areaTrancada(deptId));
+    },
+    apiDefinirFollowUpAreaEscopo: function (deptId, soEu) {
+      var fu = followUpDept(deptId);
+      var ligado = soEu === true || soEu === 'SIM' || soEu === 'true' || soEu === 1 || soEu === '1';
+      fu.soEu = ligado;
+      if (ligado) fu.gestorEmail = emailSessao;
+      return payloadArea(deptId, areaTrancada(deptId));
+    },
+    apiAlternarEmailFollowUpArea: function (deptId, email) {
+      email = String(email || '').trim().toLowerCase();
+      var fu = followUpDept(deptId);
+      var idx = fu.emailsOff.indexOf(email);
+      if (idx === -1) fu.emailsOff.push(email);
+      else fu.emailsOff.splice(idx, 1);
+      return payloadArea(deptId, areaTrancada(deptId));
     },
     apiCriarGatilho: function () {
       gatilho = { ativo: true, quantidade: 1, hora: 8 };
@@ -1548,7 +1668,7 @@ var I18n = (function () {
       planos_area_tip: 'Planos de ação desta área',
       planos_area_tip_lock: 'Planos de ação desta área (com senha)',
       planos_area_kicker: 'Planos da área',
-      planos_area_sub: 'Cole a URL da Google Sheet desta área — o OpsHub importa as ações como no consolidado. Elas ficam só aqui. O follow-up, os e-mails e o gatilho diário são os mesmos.',
+      planos_area_sub: 'Cole a URL da Google Sheet desta área — o OpsHub importa as ações como no consolidado. Elas ficam só aqui. O follow-up desta área é independente; o disparo diário da planta continua valendo.',
       planos_area_senha: 'Esta área protege os planos com senha',
       planos_area_senha_ph: 'Senha',
       planos_area_entrar: 'Abrir planos',
@@ -1572,6 +1692,16 @@ var I18n = (function () {
       planos_area_senha_ok: 'Senha dos planos atualizada.',
       planos_area_senha_remover: 'Remover senha',
       planos_area_mostrar_encerradas: 'Mostrar concluídas e canceladas',
+      planos_area_follow_apoio: 'Estes controles valem só para esta área. O plant manager configura o consolidado em Configurações. O gatilho diário da planta dispara os e-mails; aqui você escolhe temas e destinatários.',
+      planos_area_follow_so_eu: 'Cobrar só o meu e-mail',
+      planos_area_follow_so_eu_hint: 'Ligado: só {email} recebe a cobrança desta área. Desligado: todos os responsáveis do plano, menos quem você desmarcar abaixo.',
+      planos_area_follow_pessoas: 'Quem recebe a cobrança',
+      planos_area_follow_pessoas_apoio: 'Desmarque alguém para tirá-lo do follow-up desta área. A lista é só desta planilha.',
+      planos_area_follow_sem_pessoas: 'Nenhum e-mail válido nas ações desta área.',
+      planos_area_follow_eu: 'você',
+      toast_followup_escopo: 'Escopo de follow-up desta área atualizado.',
+      toast_followup_email: 'Destinatários de follow-up atualizados.',
+      erro_followup_sem_email: 'Não achei o seu e-mail nesta sessão. Abra o painel logado para cobrar só o seu endereço.',
       confirm_excluir_acao: 'Excluir esta ação?',
       erro_oque: 'Informe o que precisa ser feito.',
       erro_senha_confirma: 'As senhas não coincidem.',
@@ -1764,7 +1894,7 @@ var I18n = (function () {
       planos_area_tip: 'Action plans for this area',
       planos_area_tip_lock: 'Action plans for this area (password protected)',
       planos_area_kicker: 'Area action plans',
-      planos_area_sub: 'Paste this area’s Google Sheet URL — OpsHub imports the actions the same way as the plant board. They stay here only. Follow-up, emails and the daily trigger are the same.',
+      planos_area_sub: 'Paste this area’s Google Sheet URL — OpsHub imports the actions the same way as the plant board. They stay here only. Follow-up for this area is independent; the plant’s daily trigger still runs.',
       planos_area_senha: 'This area protects its plans with a password',
       planos_area_senha_ph: 'Password',
       planos_area_entrar: 'Open plans',
@@ -1788,6 +1918,16 @@ var I18n = (function () {
       planos_area_senha_ok: 'Area plans password updated.',
       planos_area_senha_remover: 'Remove password',
       planos_area_mostrar_encerradas: 'Show completed and cancelled',
+      planos_area_follow_apoio: 'These controls apply only to this area. The plant manager sets the plant-wide board in Settings. The plant’s daily trigger still sends the emails; here you choose themes and recipients.',
+      planos_area_follow_so_eu: 'Chase only my email',
+      planos_area_follow_so_eu_hint: 'On: only {email} is chased in this area. Off: every action owner, except people you uncheck below.',
+      planos_area_follow_pessoas: 'Who gets the reminder',
+      planos_area_follow_pessoas_apoio: 'Uncheck someone to keep them out of this area’s follow-up. The list comes only from this sheet.',
+      planos_area_follow_sem_pessoas: 'No valid emails on this area’s actions.',
+      planos_area_follow_eu: 'you',
+      toast_followup_escopo: 'This area’s follow-up scope was updated.',
+      toast_followup_email: 'Follow-up recipients updated.',
+      erro_followup_sem_email: 'Could not read your email in this session. Open the hub signed in to chase only your address.',
       confirm_excluir_acao: 'Delete this action?',
       erro_oque: 'Say what needs to be done.',
       erro_senha_confirma: 'Passwords do not match.',
@@ -1980,7 +2120,7 @@ var I18n = (function () {
       planos_area_tip: 'Planes de acción de esta área',
       planos_area_tip_lock: 'Planes de acción de esta área (con contraseña)',
       planos_area_kicker: 'Planes del área',
-      planos_area_sub: 'Pegue la URL de la Google Sheet de esta área — OpsHub importa las acciones igual que en el consolidado. Quedan solo aquí. El follow-up, los correos y el disparador diario son los mismos.',
+      planos_area_sub: 'Pegue la URL de la Google Sheet de esta área — OpsHub importa las acciones igual que en el consolidado. Quedan solo aquí. El follow-up de esta área es independiente; el disparador diario de la planta sigue valiendo.',
       planos_area_senha: 'Esta área protege los planes con contraseña',
       planos_area_senha_ph: 'Contraseña',
       planos_area_entrar: 'Abrir planes',
@@ -2004,6 +2144,16 @@ var I18n = (function () {
       planos_area_senha_ok: 'Contraseña de los planes actualizada.',
       planos_area_senha_remover: 'Quitar contraseña',
       planos_area_mostrar_encerradas: 'Mostrar completadas y canceladas',
+      planos_area_follow_apoio: 'Estos controles valen solo para esta área. El plant manager configura el consolidado en Ajustes. El disparador diario de la planta envía los correos; aquí elige temas y destinatarios.',
+      planos_area_follow_so_eu: 'Cobrar solo mi correo',
+      planos_area_follow_so_eu_hint: 'Activo: solo {email} recibe el cobro de esta área. Inactivo: todos los responsables del plan, salvo quien desmarque abajo.',
+      planos_area_follow_pessoas: 'Quién recibe el cobro',
+      planos_area_follow_pessoas_apoio: 'Desmarque a alguien para sacarlo del follow-up de esta área. La lista sale solo de esta hoja.',
+      planos_area_follow_sem_pessoas: 'Ningún correo válido en las acciones de esta área.',
+      planos_area_follow_eu: 'usted',
+      toast_followup_escopo: 'Alcance de follow-up de esta área actualizado.',
+      toast_followup_email: 'Destinatarios de follow-up actualizados.',
+      erro_followup_sem_email: 'No encontré su correo en esta sesión. Abra el panel con sesión iniciada para cobrar solo su dirección.',
       confirm_excluir_acao: '¿Eliminar esta acción?',
       erro_oque: 'Indique qué hay que hacer.',
       erro_senha_confirma: 'Las contraseñas no coinciden.',
@@ -2299,6 +2449,9 @@ if (typeof module !== 'undefined' && module.exports) {
     planosAreaMostrarEncerradas: false,
     fontesArea: [],
     formFonteArea: {},
+    filtrosArea: filtrosVazios(),
+    ordemArea: { campo: 'prazo', dir: 'asc' },
+    planosAreaFollowUp: { temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '' },
   };
 
   var ICONES_DEPT = [
@@ -2317,6 +2470,70 @@ if (typeof module !== 'undefined' && module.exports) {
       responsaveis: null,
       omitirEncerradas: true,
     };
+  }
+
+  function alvoFiltrosArea() {
+    if (Estado._forcarPlanta) return false;
+    return !!(Estado.deptAberto && Estado.deptModo === 'planos');
+  }
+
+  function filtrosAtivos() {
+    return alvoFiltrosArea() ? Estado.filtrosArea : Estado.filtros;
+  }
+
+  function ordemAtiva() {
+    return alvoFiltrosArea() ? Estado.ordemArea : Estado.ordem;
+  }
+
+  function listaPlanosFiltro() {
+    return alvoFiltrosArea() ? (Estado.planosArea || []) : ((Estado.hub && Estado.hub.planos) || []);
+  }
+
+  function chaveCacheFiltrosArea(deptId) {
+    return 'opshub_filtros_area_' + String(deptId || '');
+  }
+
+  function carregarFiltrosArea(deptId) {
+    var base = filtrosVazios();
+    var ordem = { campo: 'prazo', dir: 'asc' };
+    try {
+      var raw = localStorage.getItem(chaveCacheFiltrosArea(deptId));
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          Object.keys(base).forEach(function (k) {
+            if (parsed[k] !== undefined) base[k] = parsed[k];
+          });
+          if (parsed.ordem && parsed.ordem.campo) {
+            ordem.campo = parsed.ordem.campo;
+            ordem.dir = parsed.ordem.dir === 'desc' ? 'desc' : 'asc';
+          }
+        }
+      }
+    } catch (e) {}
+    Estado.filtrosArea = base;
+    Estado.ordemArea = ordem;
+  }
+
+  function salvarFiltrosArea() {
+    var id = Estado.deptAberto && Estado.deptAberto.id;
+    if (!id) return;
+    try {
+      var payload = {};
+      var f = Estado.filtrosArea || filtrosVazios();
+      Object.keys(filtrosVazios()).forEach(function (k) { payload[k] = f[k]; });
+      payload.ordem = Estado.ordemArea || { campo: 'prazo', dir: 'asc' };
+      localStorage.setItem(chaveCacheFiltrosArea(id), JSON.stringify(payload));
+    } catch (e) {}
+  }
+
+  function recarregarFiltrosUi() {
+    if (alvoFiltrosArea()) {
+      salvarFiltrosArea();
+      if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true });
+    } else {
+      render();
+    }
   }
 
     /* Glifos Lucide (ISC) embutidos — Apps Script nao pode puxar CDN. */
@@ -2624,14 +2841,14 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   function statusMarcado(valor) {
-    var f = Estado.filtros;
+    var f = filtrosAtivos();
     if (f.statuses != null) return f.statuses.indexOf(valor) !== -1;
     if (f.omitirEncerradas) return !statusEncerradoUi(valor);
     return true;
   }
 
   function rotuloFiltroStatus(valores) {
-    var f = Estado.filtros;
+    var f = filtrosAtivos();
     var marcados = (valores || []).filter(statusMarcado);
     if (!valores.length) return t('filtro_status');
     if (f.statuses == null && f.omitirEncerradas) return t('status_ativas');
@@ -2642,7 +2859,7 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   function temasAtivos(todosTemasUnicos) {
-    var f = Estado.filtros;
+    var f = filtrosAtivos();
     if (f.todosTemas) return todosTemasUnicos.slice();
     return f.temas || [];
   }
@@ -2653,7 +2870,7 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   function aplicaFiltros(lista) {
-    var f = Estado.filtros;
+    var f = filtrosAtivos();
     var temasPossiveis = unicos(lista, 'tema');
     var temas = temasAtivos(temasPossiveis);
     if (!temas.length) return [];
@@ -2688,7 +2905,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
   function painelExcel(eixo, label, valores) {
     var chave = chaveFiltro(eixo);
-    var sel = Estado.filtros[chave];
+    var sel = filtrosAtivos()[chave];
     var aberto = Estado.filtroAberto === eixo;
     var todosOn;
     var rotulo;
@@ -2742,8 +2959,8 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   function aplicaOrdem(lista) {
-    var campo = Estado.ordem.campo;
-    var dir = Estado.ordem.dir === 'desc' ? -1 : 1;
+    var campo = ordemAtiva().campo;
+    var dir = ordemAtiva().dir === 'desc' ? -1 : 1;
     return lista.slice().sort(function (a, b) {
       var va = a[campo] || '';
       var vb = b[campo] || '';
@@ -2760,37 +2977,29 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   function th(campo, rotulo) {
-    var ativo = Estado.ordem.campo === campo;
+    var ativo = ordemAtiva().campo === campo;
     return '<th data-ord="' + campo + '">' + rotulo +
-      (ativo ? '<span class="ord">' + (Estado.ordem.dir === 'asc' ? '↑' : '↓') + '</span>' : '') +
+      (ativo ? '<span class="ord">' + (ordemAtiva().dir === 'asc' ? '↑' : '↓') + '</span>' : '') +
       '</th>';
   }
 
-  function tabelaPlanos() {
-    var todos = Estado.hub.planos || [];
-    var temasPossiveis = unicos(todos, 'tema');
-    var semTema = !temasAtivos(temasPossiveis).length;
-    var filtrados = semTema ? [] : aplicaOrdem(aplicaFiltros(todos));
-    var cab =
-      '<div class="painel-topo">' +
-      '<input class="busca" id="filtro-texto" placeholder="' + escapar(t('busca_ph')) + '" value="' +
-      escapar(Estado.filtros.texto) + '">' +
+  function barraFiltros(todos, ids) {
+    ids = ids || {};
+    var buscaId = ids.busca || 'filtro-texto';
+    var limparId = ids.limpar || 'limpar-filtros';
+    return '<div class="painel-topo">' +
+      '<input class="busca" id="' + buscaId + '" placeholder="' + escapar(t('busca_ph')) + '" value="' +
+      escapar(filtrosAtivos().texto) + '">' +
       painelExcel('divisao', t('filtro_divisao'), unicos(todos, 'divisao')) +
       painelExcel('area', t('filtro_area'), unicos(todos, 'area')) +
       painelExcel('status', t('filtro_status'), unicos(todos, 'status')) +
       painelExcel('responsavel', t('filtro_responsavel'), unicos(todos, 'responsavel')) +
-      '<button type="button" class="botao" id="limpar-filtros">' + t('limpar') + '</button>' +
+      '<button type="button" class="botao" id="' + limparId + '">' + t('limpar') + '</button>' +
       '</div>';
+  }
 
-    var vazioMsg = semTema
-      ? t('vazio_tema')
-      : t('vazio_filtros');
-
-    if (!filtrados.length) {
-      return '<div class="painel painel-planos">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
-    }
-
-    var linhas = filtrados.map(function (p) {
+  function linhasTabelaPlanos(filtrados) {
+    return filtrados.map(function (p) {
       var tipEmail = p.tem_email ? p.email : t('tooltip_sem_email');
       var emailCel = p.tem_email
         ? escapar(p.email)
@@ -2810,16 +3019,33 @@ if (typeof module !== 'undefined' && module.exports) {
         td(p.comentarios, 'comentarios') +
         '</tr>';
     }).join('');
+  }
 
+  function tabelaPlanosDe(todos, ids) {
+    ids = ids || {};
+    var temasPossiveis = unicos(todos, 'tema');
+    var semTema = !temasAtivos(temasPossiveis).length;
+    var filtrados = semTema ? [] : aplicaOrdem(aplicaFiltros(todos));
+    var cab = barraFiltros(todos, ids);
+    var vazioMsg = !todos.length && ids.vazio
+      ? t(ids.vazio)
+      : (semTema ? t('vazio_tema') : t('vazio_filtros'));
+    if (!filtrados.length) {
+      return '<div class="painel painel-planos">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
+    }
     return '<div class="painel painel-planos">' + cab +
       '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
       th('tema', t('th_tema')) + th('divisao', t('th_divisao')) + th('area', t('th_area')) +
       th('oque', t('th_oque')) + th('como', t('th_como')) + th('responsavel', t('th_responsavel')) +
       th('email', t('th_email')) + th('prazo', t('th_prazo')) + th('status', t('th_status')) +
       th('comentarios', t('th_comentarios')) +
-      '</tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+      '</tr></thead><tbody>' + linhasTabelaPlanos(filtrados) + '</tbody></table></div>' +
       '<div class="painel-topo tabela-rodape" style="border-top:1px solid var(--linha);border-bottom:0">' +
       '<div class="secao-apoio">' + t('n_acoes', { n: filtrados.length, total: todos.length }) + '</div></div></div>';
+  }
+
+  function tabelaPlanos() {
+    return tabelaPlanosDe(Estado.hub.planos || []);
   }
 
   function negocioEfetivo(c, dept) {
@@ -2996,40 +3222,97 @@ if (typeof module !== 'undefined' && module.exports) {
     }).join('') + '</div>';
   }
 
+  function pessoasFollowUpArea(lista) {
+    var set = {};
+    var out = [];
+    (lista || []).forEach(function (p) {
+      var email = String(p.email || '').trim().toLowerCase();
+      if (!email || email.indexOf('@') < 1 || set[email]) return;
+      set[email] = 1;
+      out.push({ email: email, nome: p.responsavel || email });
+    });
+    out.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome), localeUi()); });
+    return out;
+  }
+
+  function followUpAreaAtual() {
+    return Estado.planosAreaFollowUp || {
+      temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '',
+    };
+  }
+
+  function chipsFollowUpLista(temas, habilitados, attr) {
+    temas = (temas || []).filter(function (nome) { return nome && nome !== '__NONE__'; });
+    habilitados = listaTemas(habilitados);
+    var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
+    var todos = !habilitados.length && !nenhum;
+    return '<div class="temas-chips">' +
+      (temas.length
+        ? temas.map(function (temaNome) {
+            var on = !nenhum && (todos || habilitados.indexOf(temaNome) !== -1);
+            return '<button type="button" class="chip-follow ' + (on ? 'ligado' : 'desligado') +
+              '" ' + attr + '="' + escapar(temaNome) + '" aria-pressed="' + (on ? 'true' : 'false') +
+              '" title="' + (on ? t('follow_tip_on') : t('follow_tip_off')) + '">' +
+              '<span class="chip-follow-ponto" aria-hidden="true"></span>' +
+              '<span class="chip-follow-nome">' + escapar(temaNome) + '</span>' +
+              '<span class="chip-follow-estado">' + (on ? t('follow_ligado') : t('follow_desligado')) + '</span></button>';
+          }).join('')
+        : '<div class="secao-apoio">' + t('importar_para_temas') + '</div>') +
+      '</div>';
+  }
+
+  function blocoFollowUpArea() {
+    var fu = followUpAreaAtual();
+    var temas = unicos(Estado.planosArea || [], 'tema');
+    var pessoas = pessoasFollowUpArea(Estado.planosArea || []);
+    var off = {};
+    (fu.emailsOff || []).forEach(function (e) { off[String(e).toLowerCase()] = 1; });
+    var meu = String(fu.meuEmail || fu.gestorEmail || '').toLowerCase();
+    var emailHint = fu.gestorEmail || fu.meuEmail || '—';
+    var listaPessoas = pessoas.length
+      ? '<div class="lista-emails-follow">' + pessoas.map(function (p) {
+          var on = !off[p.email];
+          var eu = meu && p.email === meu;
+          var dim = fu.soEu && !eu;
+          return '<button type="button" class="filtro-excel-item' + (dim ? ' opaco' : '') +
+            '" data-followup-email="' + escapar(p.email) + '">' +
+            '<span class="caixa' + (on ? ' marcada' : '') + '" aria-hidden="true"></span>' +
+            '<span><strong>' + escapar(tituloNome(p.nome)) + '</strong>' +
+            (eu ? ' · ' + t('planos_area_follow_eu') : '') +
+            '<small>' + escapar(p.email) + '</small></span></button>';
+        }).join('') + '</div>'
+      : '<div class="secao-apoio">' + t('planos_area_follow_sem_pessoas') + '</div>';
+    return '<div class="painel follow-area" style="margin:16px 0;padding:14px 16px">' +
+      '<div class="secao-titulo">' + t('mail_regra') + '</div>' +
+      '<div class="secao-apoio" style="margin:6px 0 12px">' + t('planos_area_follow_apoio') + '</div>' +
+      '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">' + t('temas_email') + '</div>' +
+      chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area') +
+      '<label class="check-encerradas" style="margin-top:14px">' +
+      '<input type="checkbox" data-followup-so-eu="1"' + (fu.soEu ? ' checked' : '') + '> ' +
+      t('planos_area_follow_so_eu') + '</label>' +
+      '<div class="secao-apoio" style="margin:0 0 12px">' +
+      t('planos_area_follow_so_eu_hint', { email: emailHint }) + '</div>' +
+      '<div class="secao-titulo" style="font-size:13px;margin:8px 0 6px">' + t('planos_area_follow_pessoas') + '</div>' +
+      '<div class="secao-apoio" style="margin-bottom:8px">' + t('planos_area_follow_pessoas_apoio') + '</div>' +
+      listaPessoas +
+      '<div style="margin-top:12px">' +
+      '<button class="botao" type="button" data-followup-area-agora="1">' + t('enviar_followups') + '</button>' +
+      '</div></div>';
+  }
+
   function listaPlanosArea() {
-    var todos = Estado.planosArea || [];
-    var lista = Estado.planosAreaMostrarEncerradas
-      ? todos
-      : todos.filter(function (p) { return !statusEncerradoUi(p.status); });
-    if (!lista.length) return '<div class="vazio">' + t('planos_area_vazio') + '</div>';
-    return '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
-      '<th>' + t('th_tema') + '</th><th>' + t('th_oque') + '</th><th>' + t('th_responsavel') + '</th>' +
-      '<th>' + t('th_email') + '</th><th>' + t('th_prazo') + '</th><th>' + t('th_status') + '</th>' +
-      '</tr></thead><tbody>' +
-      lista.map(function (p) {
-        var st = rotuloStatusUi(p.status);
-        var tipEmail = p.tem_email ? p.email : t('tooltip_sem_email');
-        var emailCel = p.tem_email
-          ? escapar(p.email)
-          : '<span class="aviso-email" tabindex="0" data-tip="' + escapar(tipEmail) +
-            '" title="' + escapar(tipEmail) + '">' + svg('ehs') + '</span>';
-        return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
-          '<td>' + escapar(p.tema) + '</td>' +
-          '<td class="principal" title="' + escapar(p.oque) + '">' + escapar(p.oque) + '</td>' +
-          '<td>' + escapar(p.responsavel) + '</td>' +
-          '<td title="' + escapar(tipEmail) + '">' + emailCel + '</td>' +
-          '<td>' + escapar(p.prazo_br) + '</td>' +
-          '<td><span class="selo ' + p.status_classe + '">' + escapar(st) + '</span></td>' +
-          '</tr>';
-      }).join('') +
-      '</tbody></table></div>';
+    return chipsTema(Estado.planosArea || []) +
+      tabelaPlanosDe(Estado.planosArea || [], {
+        busca: 'filtro-texto-area',
+        limpar: 'limpar-filtros-area',
+        vazio: 'planos_area_vazio',
+      });
   }
 
   function htmlPlanosArea(d) {
     if (Estado.planosAreaPrecisaSenha) {
       return '<form class="form-senha-area" data-abrir-planos-area="' + escapar(d.id) + '">' +
         '<div class="secao-titulo">' + t('planos_area_senha') + '</div>' +
-        '<div class="secao-apoio" style="margin-bottom:12px">' + t('planos_area_sub') + '</div>' +
         '<label>' + t('planos_area_senha_ph') +
         '<input name="senha" type="password" autocomplete="current-password"></label>' +
         '<div class="acoes-form"><button class="botao primario" type="submit">' + t('planos_area_entrar') + '</button></div>' +
@@ -3037,30 +3320,31 @@ if (typeof module !== 'undefined' && module.exports) {
     }
     return '<div class="drawer-gestao">' +
       kpisHtml(Estado.planosAreaKpis) +
-      '<div class="secao-apoio" style="margin-bottom:12px">' + t('planos_area_sub') + '</div>' +
       '<div class="painel-topo" style="margin-bottom:10px">' +
       '<button class="botao primario" type="button" data-importar-area="' + escapar(d.id) + '">' + t('importar_agora') + '</button>' +
       '<div class="secao-apoio">' + t('fontes_apoio') + '</div></div>' +
       listaFontesArea() +
-      '<label class="check-encerradas" style="margin-top:16px"><input type="checkbox" data-mostrar-encerradas-area="1"' +
-      (Estado.planosAreaMostrarEncerradas ? ' checked' : '') + '> ' + t('planos_area_mostrar_encerradas') + '</label>' +
+      blocoFollowUpArea() +
       listaPlanosArea() +
       '<div class="secao-titulo" style="margin-top:18px">' + t('planos_area_cadastrar') + '</div>' +
       formFonteArea(d) +
       '</div>';
   }
 
-  function aplicarPlanosArea(resp) {
+  function aplicarPlanosArea(resp, opts) {
     if (!resp) return;
     Estado.planosAreaPrecisaSenha = !!resp.precisaSenha;
     Estado.planosArea = resp.planos || [];
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
+    Estado.planosAreaFollowUp = resp.followup || {
+      temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '',
+    };
     if (resp.ok) {
       var d = Estado.deptAberto;
       if (d) d.tem_senha_planos = !!resp.tem_senha_planos;
     }
-    if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
+    if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto, opts);
     if (resp.importacao) {
       ocupar(false);
       setPilula(true, t('atualizado'));
@@ -3087,13 +3371,30 @@ if (typeof module !== 'undefined' && module.exports) {
     });
   }
 
-  function pintarDrawerPlanos(d) {
+  function pintarDrawerPlanos(d, opts) {
+    opts = opts || {};
+    var corpo = $('drawer-corpo');
+    var y = opts.manterScroll && corpo ? corpo.scrollTop : 0;
+    var buscaVal = '';
+    var buscaEl = $('filtro-texto-area');
+    if (opts.manterBusca && buscaEl) buscaVal = buscaEl.value;
     $('drawer').classList.add('largo');
     $('drawer-kicker').textContent = t('planos_area_kicker');
     $('drawer-titulo').textContent = d.nome;
     $('drawer-sub').textContent = t('planos_area_sub');
     $('drawer-corpo').innerHTML = htmlPlanosArea(d);
-    $('drawer-corpo').scrollTop = 0;
+    if (opts.manterScroll && corpo) corpo.scrollTop = y;
+    else $('drawer-corpo').scrollTop = 0;
+    if (opts.manterBusca) {
+      var b = $('filtro-texto-area');
+      if (b) {
+        if (buscaVal) b.value = buscaVal;
+        b.focus();
+        var v = b.value;
+        b.value = '';
+        b.value = v;
+      }
+    }
   }
 
   function carregarPlanosArea(id, senha) {
@@ -3127,6 +3428,8 @@ if (typeof module !== 'undefined' && module.exports) {
     var solutions = bandeira === 'Solutions';
     $('drawer').classList.remove('largo', 'extra-largo');
     if (modo === 'planos') {
+      carregarFiltrosArea(id);
+      Estado.filtroAberto = null;
       pintarDrawerPlanos(d);
     } else if (modo === 'editar') {
       $('drawer-kicker').textContent = bandeira
@@ -3250,11 +3553,16 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   function vistaPlanos() {
-    return '<div class="planos-cab">' +
-      kpisHtml(Estado.hub.kpis) +
-      chipsTema(Estado.hub.planos || []) +
-      '</div>' +
-      tabelaPlanos();
+    Estado._forcarPlanta = true;
+    try {
+      return '<div class="planos-cab">' +
+        kpisHtml(Estado.hub.kpis) +
+        chipsTema(Estado.hub.planos || []) +
+        '</div>' +
+        tabelaPlanos();
+    } finally {
+      Estado._forcarPlanta = false;
+    }
   }
 
   function vistaConfig() {
@@ -3308,26 +3616,11 @@ if (typeof module !== 'undefined' && module.exports) {
   function chipsFollowUp() {
     var temas = listaTemas(Estado.hub && Estado.hub.temasDistintos);
     if (!temas.length) temas = unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
-    temas = temas.filter(function (t) { return t && t !== '__NONE__'; });
-    var habilitados = listaTemas(Estado.hub && Estado.hub.temasFollowUp);
-    var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
-    var todos = !habilitados.length && !nenhum;
     return '<div class="temas-barra" style="margin-top:8px">' +
       '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">' + t('temas_email') + '</div>' +
       '<div class="secao-apoio" style="margin-bottom:10px">' + t('temas_email_apoio') + '</div>' +
-      '<div class="temas-chips">' +
-      (temas.length
-        ? temas.map(function (temaNome) {
-            var on = !nenhum && (todos || habilitados.indexOf(temaNome) !== -1);
-            return '<button type="button" class="chip-follow ' + (on ? 'ligado' : 'desligado') +
-              '" data-followup-tema="' + escapar(temaNome) + '" aria-pressed="' + (on ? 'true' : 'false') +
-              '" title="' + (on ? t('follow_tip_on') : t('follow_tip_off')) + '">' +
-              '<span class="chip-follow-ponto" aria-hidden="true"></span>' +
-              '<span class="chip-follow-nome">' + escapar(temaNome) + '</span>' +
-              '<span class="chip-follow-estado">' + (on ? t('follow_ligado') : t('follow_desligado')) + '</span></button>';
-          }).join('')
-        : '<div class="secao-apoio">' + t('importar_para_temas') + '</div>') +
-      '</div></div>';
+      chipsFollowUpLista(temas, Estado.hub && Estado.hub.temasFollowUp, 'data-followup-tema') +
+      '</div>';
   }
 
   function vistaMail() {
@@ -3378,7 +3671,7 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   function valoresEixo(eixo) {
-    var planos = (Estado.hub && Estado.hub.planos) || [];
+    var planos = listaPlanosFiltro();
     var campo = { divisao: 'divisao', area: 'area', status: 'status', responsavel: 'responsavel' }[eixo];
     return unicos(planos, campo);
   }
@@ -3386,8 +3679,9 @@ if (typeof module !== 'undefined' && module.exports) {
   function toggleExcelValor(eixo, valor) {
     var chave = chaveFiltro(eixo);
     var todos = valoresEixo(eixo);
-    var atual = Estado.filtros[chave];
-    if (eixo === 'status' && atual == null && Estado.filtros.omitirEncerradas) {
+    var f = filtrosAtivos();
+    var atual = f[chave];
+    if (eixo === 'status' && atual == null && f.omitirEncerradas) {
       atual = todos.filter(function (v) { return !statusEncerradoUi(v); });
     }
     var set;
@@ -3398,43 +3692,46 @@ if (typeof module !== 'undefined' && module.exports) {
     } else {
       set = atual.concat([valor]);
     }
-    if (eixo === 'status') Estado.filtros.omitirEncerradas = false;
-    Estado.filtros[chave] = set.length === todos.length ? null : set;
+    if (eixo === 'status') f.omitirEncerradas = false;
+    f[chave] = set.length === todos.length ? null : set;
   }
 
   function toggleExcelTodos(eixo) {
     var chave = chaveFiltro(eixo);
     var todos = valoresEixo(eixo);
+    var f = filtrosAtivos();
     if (eixo === 'status') {
       var todosOn = !todos.length || todos.every(statusMarcado);
-      Estado.filtros.statuses = null;
-      Estado.filtros.omitirEncerradas = !!todosOn;
+      f.statuses = null;
+      f.omitirEncerradas = !!todosOn;
       return;
     }
-    var atual = Estado.filtros[chave];
+    var atual = f[chave];
     var todosOn = atual == null || (todos.length && atual.length === todos.length);
-    Estado.filtros[chave] = todosOn ? [] : null;
+    f[chave] = todosOn ? [] : null;
   }
 
   function toggleTema(nome) {
-    var todos = unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
+    var todos = unicos(listaPlanosFiltro(), 'tema');
     var ativos = temasAtivos(todos);
     var idx = ativos.indexOf(nome);
     var proximo = idx === -1
       ? ativos.concat([nome])
-      : ativos.filter(function (t) { return t !== nome; });
-    Estado.filtros.todosTemas = !!todos.length && proximo.length === todos.length;
-    Estado.filtros.temas = Estado.filtros.todosTemas ? todos.slice() : proximo;
+      : ativos.filter(function (x) { return x !== nome; });
+    var f = filtrosAtivos();
+    f.todosTemas = !!todos.length && proximo.length === todos.length;
+    f.temas = f.todosTemas ? todos.slice() : proximo;
   }
 
   function marcarTodosTemas() {
-    var todos = unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
+    var todos = unicos(listaPlanosFiltro(), 'tema');
+    var f = filtrosAtivos();
     if (todosTemasMarcados(todos)) {
-      Estado.filtros.todosTemas = false;
-      Estado.filtros.temas = [];
+      f.todosTemas = false;
+      f.temas = [];
     } else {
-      Estado.filtros.todosTemas = true;
-      Estado.filtros.temas = todos.slice();
+      f.todosTemas = true;
+      f.temas = todos.slice();
     }
   }
 
@@ -3505,10 +3802,13 @@ if (typeof module !== 'undefined' && module.exports) {
     });
   }
 
-  function enviarFollowUpsAgoraUi() {
+  function enviarFollowUpsAgoraUi(departamentoId) {
     if (Estado.carregando) return;
     ocupar(true, t('ocupado_preparando'));
-    chamar('apiPreverFollowUps').then(function (prev) {
+    var prevP = departamentoId
+      ? chamar('apiPreverFollowUps', departamentoId)
+      : chamar('apiPreverFollowUps');
+    prevP.then(function (prev) {
       if (!prev || !prev.total) {
         ocupar(false);
         toast(t('toast_nenhum_followup'));
@@ -3520,11 +3820,27 @@ if (typeof module !== 'undefined' && module.exports) {
         if (!ok) return null;
       }
       ocupar(true, t('ocupado_enviando'));
-      return chamar('apiEnviarFollowUpsAgora', true);
+      return departamentoId
+        ? chamar('apiEnviarFollowUpsAgora', true, departamentoId)
+        : chamar('apiEnviarFollowUpsAgora', true);
     }).then(function (r) {
       if (!r) return;
       ocupar(false);
       toast(t('toast_followup', { enviados: r.enviados, pulados: r.pulados }));
+    }).catch(function (err) {
+      ocupar(false);
+      toast(err.message || err, true);
+    });
+  }
+
+  function toggleFollowUpTemaArea(nome) {
+    var deptId = Estado.deptAberto && Estado.deptAberto.id;
+    if (!nome || !deptId || Estado.carregando) return;
+    ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
+    chamar('apiAlternarTemaFollowUpArea', deptId, String(nome).trim()).then(function (resp) {
+      ocupar(false);
+      aplicarPlanosArea(resp, { manterScroll: true });
+      toast(t('toast_followup_temas'));
     }).catch(function (err) {
       ocupar(false);
       toast(err.message || err, true);
@@ -3555,6 +3871,7 @@ if (typeof module !== 'undefined' && module.exports) {
         Estado.planosArea = [];
         Estado.fontesArea = [];
         Estado.planosAreaPrecisaSenha = !!(dPlanos && dPlanos.tem_senha_planos);
+        carregarFiltrosArea(pid);
         abrirDept(pid, 'planos');
         carregarPlanosArea(pid);
         return;
@@ -3634,6 +3951,37 @@ if (typeof module !== 'undefined' && module.exports) {
         e.stopPropagation();
         return;
       }
+      var followTemaArea = e.target.closest('[data-followup-tema-area]');
+      if (followTemaArea) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFollowUpTemaArea(followTemaArea.getAttribute('data-followup-tema-area'));
+        return;
+      }
+      var followEmail = e.target.closest('[data-followup-email]');
+      if (followEmail) {
+        e.preventDefault();
+        e.stopPropagation();
+        var deptEmail = Estado.deptAberto && Estado.deptAberto.id;
+        if (!deptEmail || Estado.carregando) return;
+        ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
+        chamar('apiAlternarEmailFollowUpArea', deptEmail, followEmail.getAttribute('data-followup-email'))
+          .then(function (resp) {
+            ocupar(false);
+            aplicarPlanosArea(resp, { manterScroll: true });
+            toast(t('toast_followup_email'));
+          }).catch(function (err) {
+            ocupar(false);
+            toast(err.message || err, true);
+          });
+        return;
+      }
+      if (e.target.closest('[data-followup-area-agora]')) {
+        e.preventDefault();
+        var deptFu = Estado.deptAberto && Estado.deptAberto.id;
+        if (deptFu) enviarFollowUpsAgoraUi(deptFu);
+        return;
+      }
       var followTema = e.target.closest('[data-followup-tema]');
       if (followTema) {
         e.preventDefault();
@@ -3659,26 +4007,26 @@ if (typeof module !== 'undefined' && module.exports) {
       var temaTodos = e.target.closest('[data-tema-todos]');
       if (temaTodos) {
         marcarTodosTemas();
-        render();
+        recarregarFiltrosUi();
         return;
       }
       var chipTema = e.target.closest('[data-tema]');
       if (chipTema) {
         toggleTema(chipTema.getAttribute('data-tema'));
-        render();
+        recarregarFiltrosUi();
         return;
       }
       var abrirFiltro = e.target.closest('[data-abrir-filtro]');
       if (abrirFiltro) {
         var eixoAbrir = abrirFiltro.getAttribute('data-abrir-filtro');
         Estado.filtroAberto = Estado.filtroAberto === eixoAbrir ? null : eixoAbrir;
-        render();
+        recarregarFiltrosUi();
         return;
       }
       var filtroTodos = e.target.closest('[data-filtro-todos]');
       if (filtroTodos) {
         toggleExcelTodos(filtroTodos.getAttribute('data-filtro-todos'));
-        render();
+        recarregarFiltrosUi();
         return;
       }
       var filtroValor = e.target.closest('[data-filtro-valor]');
@@ -3687,12 +4035,12 @@ if (typeof module !== 'undefined' && module.exports) {
           filtroValor.getAttribute('data-filtro-eixo'),
           filtroValor.getAttribute('data-filtro-valor')
         );
-        render();
+        recarregarFiltrosUi();
         return;
       }
       if (Estado.filtroAberto && !e.target.closest('.filtro-excel')) {
         Estado.filtroAberto = null;
-        render();
+        recarregarFiltrosUi();
         return;
       }
       var pastaBtn = e.target.closest('[data-pasta-toggle]');
@@ -3746,9 +4094,17 @@ if (typeof module !== 'undefined' && module.exports) {
       var ord = e.target.closest('[data-ord]');
       if (ord) {
         var campoOrd = ord.getAttribute('data-ord');
-        if (Estado.ordem.campo === campoOrd) Estado.ordem.dir = Estado.ordem.dir === 'asc' ? 'desc' : 'asc';
-        else { Estado.ordem.campo = campoOrd; Estado.ordem.dir = 'asc'; }
-        render();
+        var alvoOrd = ordemAtiva();
+        if (alvoOrd.campo === campoOrd) alvoOrd.dir = alvoOrd.dir === 'asc' ? 'desc' : 'asc';
+        else { alvoOrd.campo = campoOrd; alvoOrd.dir = 'asc'; }
+        recarregarFiltrosUi();
+        return;
+      }
+      if (e.target.closest('#limpar-filtros-area')) {
+        Estado.filtrosArea = filtrosVazios();
+        Estado.ordemArea = { campo: 'prazo', dir: 'asc' };
+        Estado.filtroAberto = null;
+        recarregarFiltrosUi();
         return;
       }
       if (e.target.closest('#limpar-filtros')) {
@@ -3925,11 +4281,27 @@ if (typeof module !== 'undefined' && module.exports) {
         Estado.filtros.texto = e.target.value;
         renderTabelaSo();
       }
+      if (e.target.id === 'filtro-texto-area') {
+        Estado.filtrosArea.texto = e.target.value;
+        salvarFiltrosArea();
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true, manterBusca: true });
+      }
     });
     document.addEventListener('change', function (e) {
-      if (e.target.getAttribute && e.target.getAttribute('data-mostrar-encerradas-area')) {
-        Estado.planosAreaMostrarEncerradas = !!e.target.checked;
-        if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
+      if (e.target.getAttribute && e.target.getAttribute('data-followup-so-eu')) {
+        var deptSo = Estado.deptAberto && Estado.deptAberto.id;
+        if (!deptSo || Estado.carregando) return;
+        ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
+        chamar('apiDefinirFollowUpAreaEscopo', deptSo, e.target.checked ? 'SIM' : 'NAO')
+          .then(function (resp) {
+            ocupar(false);
+            aplicarPlanosArea(resp, { manterScroll: true });
+            toast(t('toast_followup_escopo'));
+          }).catch(function (err) {
+            ocupar(false);
+            toast(err.message || err, true);
+            if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true });
+          });
         return;
       }
       var cor = e.target.getAttribute && e.target.getAttribute('data-cor-input');
@@ -3940,7 +4312,7 @@ if (typeof module !== 'undefined' && module.exports) {
       if (e.key === 'Escape') {
         if (Estado.filtroAberto) {
           Estado.filtroAberto = null;
-          render();
+          recarregarFiltrosUi();
           return;
         }
         fecharDrawer();
@@ -4002,7 +4374,9 @@ if (typeof module !== 'undefined' && module.exports) {
 
   function renderTabelaSo() {
     if (Estado.vista !== 'planos') return;
+    Estado._forcarPlanta = true;
     render();
+    Estado._forcarPlanta = false;
     var busca = $('filtro-texto');
     if (busca) {
       busca.focus();

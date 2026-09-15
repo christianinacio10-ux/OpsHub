@@ -9,22 +9,61 @@ function rotinaDiaria() {
   return { importacao: resultadoImport, followup: envio };
 }
 
+function mapaDepartamentos_() {
+  var mapa = {};
+  Repo.ler(ABAS.departamentos).forEach(function (d) {
+    mapa[String(d.id)] = d;
+  });
+  return mapa;
+}
+
+function temasPlantaFollowUp_() {
+  return Logica.parseTemasFollowUp(Cadastros.config().texto('followup_temas', ''));
+}
+
+function planosFollowUpFiltrados_(opcoes) {
+  var planos = Cadastros.planosFollowUp();
+  var soDept = Logica.texto(opcoes && opcoes.departamento_id);
+  if (!soDept) return planos;
+  return planos.filter(function (p) {
+    return p._folha === 'area' && Logica.texto(p.departamento_id) === soDept;
+  });
+}
+
+function decisaoFollowUp_(plano, hoje, ctx) {
+  ctx = ctx || {};
+  var extra = { ignorarJaEnviadoHoje: !!ctx.ignorarJaEnviadoHoje };
+  var temas = ctx.temasPlanta;
+  var regra = null;
+  if (plano._folha === 'area') {
+    regra = Logica.regraFollowUpArea(ctx.depts && ctx.depts[String(plano.departamento_id)]);
+    temas = regra.temas;
+  }
+  var dec = Logica.elegivelFollowUp(plano, hoje, temas, extra);
+  if (!dec.ok) return dec;
+  if (regra && !Logica.emailFollowUpPermitido(dec.email, regra)) {
+    return { ok: false, motivo: 'email_desligado' };
+  }
+  return dec;
+}
+
 function enviarFollowUps(opcoes) {
   instalarSistema();
   opcoes = opcoes || {};
   var forcar = !!opcoes.forcar;
   var hoje = hojeLocal_();
-  var planos = Cadastros.planosFollowUp();
-  var temasHabilitados = Logica.parseTemasFollowUp(Cadastros.config().texto('followup_temas', ''));
+  var planos = planosFollowUpFiltrados_(opcoes);
+  var ctx = {
+    temasPlanta: temasPlantaFollowUp_(),
+    depts: mapaDepartamentos_(),
+    ignorarJaEnviadoHoje: forcar,
+  };
   var enviados = 0;
   var pulados = 0;
   var erros = 0;
 
   planos.forEach(function (plano) {
-    var dec = Logica.elegivelFollowUp(plano, hoje, temasHabilitados, {
-      ignorarJaEnviadoHoje: forcar,
-      ignorarTemas: plano._folha === 'area',
-    });
+    var dec = decisaoFollowUp_(plano, hoje, ctx);
     if (!dec.ok) {
       pulados++;
       return;

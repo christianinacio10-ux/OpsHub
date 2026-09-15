@@ -663,6 +663,63 @@ var Logica = (function () {
     };
   }
 
+  function parseEmailsOff(valor) {
+    return parseTemasFollowUp(valor).map(function (e) {
+      return texto(e).toLowerCase();
+    }).filter(Boolean);
+  }
+
+  function persistirEmailsOff(lista) {
+    var set = {};
+    var nomes = [];
+    (lista || []).forEach(function (e) {
+      var s = texto(e).toLowerCase();
+      if (s && !set[s]) {
+        set[s] = 1;
+        nomes.push(s);
+      }
+    });
+    return JSON.stringify(nomes);
+  }
+
+  function alternarEmailOff(email, atuais) {
+    email = texto(email).toLowerCase();
+    var lista = (atuais || []).map(function (e) { return texto(e).toLowerCase(); }).filter(Boolean);
+    var estava = false;
+    var proximo = [];
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i] === email) estava = true;
+      else proximo.push(lista[i]);
+    }
+    if (!estava && email) proximo.push(email);
+    return proximo;
+  }
+
+  function regraFollowUpArea(dept) {
+    dept = dept || {};
+    return {
+      temas: parseTemasFollowUp(dept.followup_temas),
+      soEu: sim(dept.followup_so_eu),
+      gestorEmail: texto(dept.followup_gestor_email).toLowerCase(),
+      emailsOff: parseEmailsOff(dept.followup_emails_off),
+    };
+  }
+
+  function emailFollowUpPermitido(email, regra) {
+    regra = regra || {};
+    var e = texto(email).toLowerCase();
+    if (!emailValido(e)) return false;
+    if (regra.soEu) {
+      var g = texto(regra.gestorEmail).toLowerCase();
+      if (!g || e !== g) return false;
+    }
+    var off = regra.emailsOff || [];
+    for (var i = 0; i < off.length; i++) {
+      if (texto(off[i]).toLowerCase() === e) return false;
+    }
+    return true;
+  }
+
   function temSenhaPlanos(dept) {
     return !!texto(dept && dept.senha_planos);
   }
@@ -809,6 +866,11 @@ var Logica = (function () {
     temaFollowUpHabilitado: temaFollowUpHabilitado,
     alternarTemaFollowUp: alternarTemaFollowUp,
     persistirTemasFollowUp: persistirTemasFollowUp,
+    parseEmailsOff: parseEmailsOff,
+    persistirEmailsOff: persistirEmailsOff,
+    alternarEmailOff: alternarEmailOff,
+    regraFollowUpArea: regraFollowUpArea,
+    emailFollowUpPermitido: emailFollowUpPermitido,
     elegivelFollowUp: elegivelFollowUp,
     linhaFonteParaPlano: linhaFonteParaPlano,
     mesclarImportacao: mesclarImportacao,

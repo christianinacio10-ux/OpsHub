@@ -77,10 +77,11 @@
     planoArea('A1', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Congelar SMED da DDA2 só nesta área', como: 'Cronometrar setup e kit pré-montado no turno 1', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: 'Ação interna da produção' }),
     planoArea('A2', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Padronizar handover da DDA1', como: 'Checklist de 10 min no quadro da linha', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: '' }),
     planoArea('A3', 'D-QUAL', { fonte_id: 'FA2', tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
-    planoArea('A4', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
+    planoArea('A4', 'D-PROD', { fonte_id: 'FA1', tema: 'OEE', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
+    planoArea('A5', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Consultar outras plantas para problema de setup', como: 'Alinhar com Joly o padrão de SMED', responsavel: 'Joly Soares', email: 'joly.soares@example.com', prazo: add(-6), status: 'Aberto', comentarios: 'Atrasada só nesta área' }),
   ];
   var fontesArea = [
-    { id: 'FA1', departamento_id: 'D-PROD', nome: 'Ações internas Produção', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-prod', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '3 linhas' },
+    { id: 'FA1', departamento_id: 'D-PROD', nome: 'Ações internas Produção', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-prod', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '4 linhas' },
     { id: 'FA2', departamento_id: 'D-QUAL', nome: 'Ações internas Qualidade', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-qual', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '1 linha' },
   ];
   var senhasArea = { 'D-QUAL': 'gestor' };
@@ -107,6 +108,26 @@
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
   var temasFollowUp = [];
   var followupsEnviadosHoje = {};
+  var followUpPorArea = {};
+  var emailSessao = 'christian.inacio@averydennison.com';
+
+  function followUpDept(deptId) {
+    if (!followUpPorArea[deptId]) {
+      followUpPorArea[deptId] = { temas: [], soEu: false, gestorEmail: '', emailsOff: [] };
+    }
+    return followUpPorArea[deptId];
+  }
+
+  function payloadFollowArea(deptId) {
+    var fu = followUpDept(deptId);
+    return {
+      temas: (fu.temas || []).slice(),
+      soEu: !!fu.soEu,
+      gestorEmail: fu.gestorEmail || '',
+      emailsOff: (fu.emailsOff || []).slice(),
+      meuEmail: emailSessao,
+    };
+  }
 
   function temasDistintos() {
     var set = {}; var out = [];
@@ -148,6 +169,7 @@
       planos: lista,
       fontes: precisaSenha ? [] : fontesArea.filter(function (f) { return f.departamento_id === deptId; }),
       kpis: kpisLista(lista),
+      followup: payloadFollowArea(deptId),
     };
   }
 
@@ -183,7 +205,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.5.2' },
+        app: { nome: 'OpsHub', versao: '1.6.0' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -255,30 +277,73 @@
       h.importacao = { fontes: fontes.length + fontesArea.length, linhas: planos.length + planosArea.length, avisos: [] };
       return h;
     },
-    apiEnviarFollowUpsAgora: function (forcar) {
-      function candidato(p, ignorarTemas) {
+    apiEnviarFollowUpsAgora: function (forcar, departamentoId) {
+      function candidato(p, area) {
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
         if (!p.tem_email || p.status !== 'Atrasado') return false;
-        if (!ignorarTemas && temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        if (!area) {
+          if (temasFollowUp.length === 1 && temasFollowUp[0] === '__NONE__') return false;
+          if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        } else {
+          var fu = followUpDept(p.departamento_id);
+          if (fu.temas.length === 1 && fu.temas[0] === '__NONE__') return false;
+          if (fu.temas.length && fu.temas.indexOf(p.tema) === -1) return false;
+          var email = String(p.email || '').toLowerCase();
+          if (fu.soEu) {
+            var g = String(fu.gestorEmail || emailSessao).toLowerCase();
+            if (email !== g) return false;
+          }
+          if ((fu.emailsOff || []).indexOf(email) !== -1) return false;
+        }
         if (!forcar && followupsEnviadosHoje[p.id]) return false;
         return true;
       }
-      var cand = planos.filter(function (p) { return candidato(p, false); })
-        .concat(planosArea.filter(function (p) { return candidato(p, true); }));
+      var cand = [];
+      if (!departamentoId) {
+        cand = planos.filter(function (p) { return candidato(p, false); })
+          .concat(planosArea.filter(function (p) { return candidato(p, true); }));
+      } else {
+        cand = planosArea.filter(function (p) {
+          return p.departamento_id === departamentoId && candidato(p, true);
+        });
+      }
       cand.forEach(function (p) { followupsEnviadosHoje[p.id] = true; });
-      return { enviados: cand.length, pulados: planos.length + planosArea.length - cand.length, erros: 0 };
+      var universo = departamentoId
+        ? planosArea.filter(function (p) { return p.departamento_id === departamentoId; }).length
+        : planos.length + planosArea.length;
+      return { enviados: cand.length, pulados: universo - cand.length, erros: 0 };
     },
-    apiPreverFollowUps: function () {
-      function candidato(p, ignorarTemas) {
+    apiPreverFollowUps: function (departamentoId) {
+      function candidato(p, area) {
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
         if (!p.tem_email || p.status !== 'Atrasado') return false;
-        if (!ignorarTemas && temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        if (!area) {
+          if (temasFollowUp.length === 1 && temasFollowUp[0] === '__NONE__') return false;
+          if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        } else {
+          var fu = followUpDept(p.departamento_id);
+          if (fu.temas.length === 1 && fu.temas[0] === '__NONE__') return false;
+          if (fu.temas.length && fu.temas.indexOf(p.tema) === -1) return false;
+          var email = String(p.email || '').toLowerCase();
+          if (fu.soEu) {
+            var g = String(fu.gestorEmail || emailSessao).toLowerCase();
+            if (email !== g) return false;
+          }
+          if ((fu.emailsOff || []).indexOf(email) !== -1) return false;
+        }
         return true;
       }
-      var cand = planos.filter(function (p) { return candidato(p, false); })
-        .concat(planosArea.filter(function (p) { return candidato(p, true); }));
+      var cand = [];
+      if (!departamentoId) {
+        cand = planos.filter(function (p) { return candidato(p, false); })
+          .concat(planosArea.filter(function (p) { return candidato(p, true); }));
+      } else {
+        cand = planosArea.filter(function (p) {
+          return p.departamento_id === departamentoId && candidato(p, true);
+        });
+      }
       var temasJa = [];
       var vistos = {};
       cand.forEach(function (p) {
@@ -372,6 +437,43 @@
       else if (atuais.length === todos.length) temasFollowUp = [];
       else temasFollowUp = atuais;
       return hub();
+    },
+    apiAlternarTemaFollowUpArea: function (deptId, nome) {
+      nome = String(nome || '').trim();
+      var todos = [];
+      var set = {};
+      planosArea.forEach(function (p) {
+        if (p.departamento_id !== deptId || !p.tema || set[p.tema]) return;
+        set[p.tema] = 1;
+        todos.push(p.tema);
+      });
+      var fu = followUpDept(deptId);
+      var atuais = fu.temas.slice();
+      var nenhum = atuais.length === 1 && atuais[0] === '__NONE__';
+      if (!atuais.length) atuais = todos.slice();
+      if (nenhum) atuais = [];
+      var idx = atuais.indexOf(nome);
+      if (idx === -1) atuais.push(nome);
+      else atuais = atuais.filter(function (t) { return t !== nome; });
+      if (!atuais.length) fu.temas = ['__NONE__'];
+      else if (atuais.length === todos.length) fu.temas = [];
+      else fu.temas = atuais;
+      return payloadArea(deptId, areaTrancada(deptId));
+    },
+    apiDefinirFollowUpAreaEscopo: function (deptId, soEu) {
+      var fu = followUpDept(deptId);
+      var ligado = soEu === true || soEu === 'SIM' || soEu === 'true' || soEu === 1 || soEu === '1';
+      fu.soEu = ligado;
+      if (ligado) fu.gestorEmail = emailSessao;
+      return payloadArea(deptId, areaTrancada(deptId));
+    },
+    apiAlternarEmailFollowUpArea: function (deptId, email) {
+      email = String(email || '').trim().toLowerCase();
+      var fu = followUpDept(deptId);
+      var idx = fu.emailsOff.indexOf(email);
+      if (idx === -1) fu.emailsOff.push(email);
+      else fu.emailsOff.splice(idx, 1);
+      return payloadArea(deptId, areaTrancada(deptId));
     },
     apiCriarGatilho: function () {
       gatilho = { ativo: true, quantidade: 1, hora: 8 };
