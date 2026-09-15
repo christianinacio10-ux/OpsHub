@@ -872,7 +872,7 @@
 
   function listaFontesArea() {
     var lista = Estado.fontesArea || [];
-    if (!lista.length) return '<div class="vazio">' + t('planos_area_sem_fonte') + '</div>';
+    if (!lista.length) return '';
     return '<div class="admin-lista">' + lista.map(function (f) {
       return '<div class="linha-admin">' +
         '<div><strong>' + escapar(f.nome || t('nome_fonte')) + '</strong><small>' +
