@@ -50,7 +50,7 @@ A primeira instalação (quando as abas ainda não existem) cria departamentos t
 2. Na **lista** de cada área, cole a **URL ou o ID** da planilha daquela área (`FONTES_AREA`). As ações ficam só ali.
 3. A origem precisa ter (nomes próximos valem) as colunas: Tema, Divisão, Área, O quê?, Como, Responsável, E-mail, Prazo, Status, Comentários.
 4. A conta que autorizou o OpsHub precisa ter acesso de leitura na origem.
-5. **Importar agora**, o **Atualizar** do painel, ou o gatilho diário — os três leem as fontes da planta e das áreas.
+5. O **Atualizar** do painel, salvar a URL na lista da área, ou o gatilho diário — os três leem as fontes da planta e das áreas.
 
 A importação substitui só as linhas daquela fonte. O histórico de e-mails de follow-up é preservado quando a linha de origem continua a mesma.
 

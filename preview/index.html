@@ -712,6 +712,148 @@ table.dados tr.risco td { box-shadow: none; }
   overflow: auto;
 }
 .drawer-gestao .temas-barra { margin-top: 4px; }
+
+.fluxo-area { position: relative; }
+.fluxo-progresso {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin: 2px 0 14px;
+}
+.fluxo-seg {
+  height: 3px;
+  border-radius: 99px;
+  background: var(--linha-forte);
+}
+.fluxo-seg.feita { background: color-mix(in srgb, var(--verde) 55%, var(--superficie-3)); }
+.fluxo-seg.atual { background: var(--marca); }
+
+.fluxo-etapa {
+  position: relative;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--superficie);
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: var(--sombra-1);
+  transition: border-color var(--transicao), box-shadow var(--transicao);
+}
+.fluxo-etapa:last-child { margin-bottom: 0; }
+.fluxo-etapa:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 31px;
+  bottom: -12px;
+  width: 2px;
+  height: 12px;
+  background: var(--linha-forte);
+  z-index: 1;
+}
+.fluxo-etapa.aberta {
+  border-color: var(--linha-forte);
+  box-shadow: var(--sombra-2);
+}
+.fluxo-cabeca {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--fonte);
+}
+.fluxo-cabeca:hover { background: rgba(237,232,224,.03); }
+.fluxo-num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 650;
+  letter-spacing: .02em;
+  background: var(--superficie-3);
+  color: var(--tinta-2);
+  border: 1px solid var(--linha-forte);
+  flex-shrink: 0;
+}
+.fluxo-etapa.aberta .fluxo-num {
+  background: var(--marca-suave);
+  color: var(--tinta);
+  border-color: rgba(228, 0, 43, .35);
+}
+.fluxo-etapa.feita:not(.aberta) .fluxo-num {
+  background: var(--verde-suave);
+  color: var(--verde);
+  border-color: rgba(143, 191, 154, .35);
+}
+.fluxo-meta { min-width: 0; }
+.fluxo-kicker {
+  display: block;
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+  font-weight: 600;
+}
+.fluxo-titulo {
+  display: block;
+  font-size: 15px;
+  font-weight: 560;
+  letter-spacing: -.02em;
+}
+.fluxo-resumo {
+  display: block;
+  font-size: 12.5px;
+  color: var(--tinta-3);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fluxo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--tinta-3);
+  border: 1px solid var(--linha);
+  padding: 5px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.fluxo-toggle svg {
+  width: 12px; height: 12px;
+  transition: transform var(--transicao);
+}
+.fluxo-etapa.aberta .fluxo-toggle svg { transform: rotate(180deg); }
+.fluxo-cabeca:hover .fluxo-toggle {
+  color: var(--tinta);
+  border-color: var(--linha-forte);
+}
+.fluxo-corpo {
+  padding: 4px 14px 16px;
+  border-top: 1px solid var(--linha);
+}
+.fluxo-corpo .form-grid { margin-bottom: 0; }
+.fluxo-corpo .kpis { margin: 4px 0 12px; }
+.fluxo-avancar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+.fluxo-espera {
+  padding: 18px 8px 8px;
+  color: var(--tinta-3);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.fluxo-espera p { margin: 0; }
+.fluxo-corpo .follow-area { overflow: visible; }
 .senha-area-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
 .drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
 .rotulo-com-ajuda {
@@ -1656,6 +1798,8 @@ var I18n = (function () {
       tela_cheia: 'Tela cheia',
       recolher_menu: 'Recolher menu',
       fechar: 'Fechar',
+      expandir: 'Expandir',
+      retrair: 'Recolher',
       carregando: 'Carregando',
       carregando_ellipsis: 'Carregando…',
       sincronizando: 'Sincronizando',
@@ -1679,7 +1823,7 @@ var I18n = (function () {
       planos_area_tip: 'Planos de ação desta área',
       planos_area_tip_lock: 'Planos de ação desta área (com senha)',
       planos_area_kicker: 'Planos da área',
-      planos_area_sub: 'Cole a URL da Google Sheet desta área — o OpsHub importa as ações como no consolidado. Elas ficam só aqui. O follow-up desta área é independente; o disparo diário da planta continua valendo.',
+      planos_area_sub: 'Três etapas: fonte, quadro e cobrança — só desta área.',
       planos_area_senha: 'Esta área protege os planos com senha',
       planos_area_senha_ph: 'Senha',
       planos_area_entrar: 'Abrir planos',
@@ -1689,6 +1833,25 @@ var I18n = (function () {
       planos_area_salvar: 'Salvar e importar',
       planos_area_atualizar: 'Atualizar fonte',
       planos_area_sem_fonte: 'Cadastre a URL da planilha de origem desta área.',
+      planos_area_etapa_fonte: 'Começo',
+      planos_area_etapa_quadro: 'Meio',
+      planos_area_etapa_cobranca: 'Fim',
+      planos_area_fonte_titulo: 'De onde entram as ações',
+      planos_area_quadro_titulo: 'Acompanhar e filtrar',
+      planos_area_cobranca_titulo: 'Quem recebe o follow-up',
+      planos_area_fonte_apoio: 'Cole a URL da Google Sheet desta área. O OpsHub importa como no consolidado da planta; as ações ficam só aqui. O disparo diário da planta continua valendo.',
+      planos_area_resumo_fonte_vazia: 'Cole a URL da planilha desta área',
+      planos_area_resumo_fonte_pronta: 'Pronta para importar',
+      planos_area_resumo_quadro_espera: 'Cadastre a fonte para ver o quadro',
+      planos_area_resumo_quadro: '{n} ações · {atrasados} atrasadas',
+      planos_area_resumo_cobranca_eu: 'Só o seu e-mail',
+      planos_area_resumo_cobranca: '{n} pessoas · {temas}',
+      planos_area_resumo_temas_todos: 'todos os temas',
+      planos_area_resumo_temas_nenhum: 'nenhum tema',
+      planos_area_resumo_temas_n: '{n} temas',
+      planos_area_ir_quadro: 'Ir para o quadro',
+      planos_area_ir_fonte: 'Cadastrar fonte',
+      planos_area_ir_cobranca: 'Configurar cobrança',
       campo_oque: 'O quê?',
       campo_como: 'Como',
       campo_prazo: 'Prazo',
@@ -1882,6 +2045,8 @@ var I18n = (function () {
       tela_cheia: 'Full screen',
       recolher_menu: 'Collapse menu',
       fechar: 'Close',
+      expandir: 'Expand',
+      retrair: 'Collapse',
       carregando: 'Loading',
       carregando_ellipsis: 'Loading…',
       sincronizando: 'Syncing',
@@ -1905,7 +2070,7 @@ var I18n = (function () {
       planos_area_tip: 'Action plans for this area',
       planos_area_tip_lock: 'Action plans for this area (password protected)',
       planos_area_kicker: 'Area action plans',
-      planos_area_sub: 'Paste this area’s Google Sheet URL — OpsHub imports the actions the same way as the plant board. They stay here only. Follow-up for this area is independent; the plant’s daily trigger still runs.',
+      planos_area_sub: 'Three steps: source, board and chase — this area only.',
       planos_area_senha: 'This area protects its plans with a password',
       planos_area_senha_ph: 'Password',
       planos_area_entrar: 'Open plans',
@@ -1915,6 +2080,25 @@ var I18n = (function () {
       planos_area_salvar: 'Save and import',
       planos_area_atualizar: 'Update source',
       planos_area_sem_fonte: 'Add the source spreadsheet URL for this area.',
+      planos_area_etapa_fonte: 'Start',
+      planos_area_etapa_quadro: 'Middle',
+      planos_area_etapa_cobranca: 'End',
+      planos_area_fonte_titulo: 'Where the actions come from',
+      planos_area_quadro_titulo: 'Track and filter',
+      planos_area_cobranca_titulo: 'Who gets the follow-up',
+      planos_area_fonte_apoio: 'Paste this area’s Google Sheet URL. OpsHub imports like the plant board; the actions stay here only. The plant’s daily trigger still runs.',
+      planos_area_resumo_fonte_vazia: 'Paste this area’s spreadsheet URL',
+      planos_area_resumo_fonte_pronta: 'Ready to import',
+      planos_area_resumo_quadro_espera: 'Add the source to see the board',
+      planos_area_resumo_quadro: '{n} actions · {atrasados} overdue',
+      planos_area_resumo_cobranca_eu: 'Only your email',
+      planos_area_resumo_cobranca: '{n} people · {temas}',
+      planos_area_resumo_temas_todos: 'all themes',
+      planos_area_resumo_temas_nenhum: 'no themes',
+      planos_area_resumo_temas_n: '{n} themes',
+      planos_area_ir_quadro: 'Go to the board',
+      planos_area_ir_fonte: 'Add source',
+      planos_area_ir_cobranca: 'Set up chase',
       campo_oque: 'What?',
       campo_como: 'How',
       campo_prazo: 'Due date',
@@ -2108,6 +2292,8 @@ var I18n = (function () {
       tela_cheia: 'Pantalla completa',
       recolher_menu: 'Contraer menú',
       fechar: 'Cerrar',
+      expandir: 'Expandir',
+      retrair: 'Replegar',
       carregando: 'Cargando',
       carregando_ellipsis: 'Cargando…',
       sincronizando: 'Sincronizando',
@@ -2131,7 +2317,7 @@ var I18n = (function () {
       planos_area_tip: 'Planes de acción de esta área',
       planos_area_tip_lock: 'Planes de acción de esta área (con contraseña)',
       planos_area_kicker: 'Planes del área',
-      planos_area_sub: 'Pegue la URL de la Google Sheet de esta área — OpsHub importa las acciones igual que en el consolidado. Quedan solo aquí. El follow-up de esta área es independiente; el disparador diario de la planta sigue valiendo.',
+      planos_area_sub: 'Tres etapas: fuente, tablero y cobro — solo de esta área.',
       planos_area_senha: 'Esta área protege los planes con contraseña',
       planos_area_senha_ph: 'Contraseña',
       planos_area_entrar: 'Abrir planes',
@@ -2141,6 +2327,25 @@ var I18n = (function () {
       planos_area_salvar: 'Guardar e importar',
       planos_area_atualizar: 'Actualizar fuente',
       planos_area_sem_fonte: 'Registre la URL de la hoja de origen de esta área.',
+      planos_area_etapa_fonte: 'Inicio',
+      planos_area_etapa_quadro: 'Medio',
+      planos_area_etapa_cobranca: 'Cierre',
+      planos_area_fonte_titulo: 'De dónde entran las acciones',
+      planos_area_quadro_titulo: 'Seguir y filtrar',
+      planos_area_cobranca_titulo: 'Quién recibe el follow-up',
+      planos_area_fonte_apoio: 'Pegue la URL de la Google Sheet de esta área. OpsHub importa igual que el consolidado de la planta; las acciones quedan solo aquí. El disparador diario de la planta sigue valiendo.',
+      planos_area_resumo_fonte_vazia: 'Pegue la URL de la hoja de esta área',
+      planos_area_resumo_fonte_pronta: 'Lista para importar',
+      planos_area_resumo_quadro_espera: 'Registre la fuente para ver el tablero',
+      planos_area_resumo_quadro: '{n} acciones · {atrasados} vencidas',
+      planos_area_resumo_cobranca_eu: 'Solo su correo',
+      planos_area_resumo_cobranca: '{n} personas · {temas}',
+      planos_area_resumo_temas_todos: 'todos los temas',
+      planos_area_resumo_temas_nenhum: 'ningún tema',
+      planos_area_resumo_temas_n: '{n} temas',
+      planos_area_ir_quadro: 'Ir al tablero',
+      planos_area_ir_fonte: 'Registrar fuente',
+      planos_area_ir_cobranca: 'Configurar cobro',
       campo_oque: '¿Qué?',
       campo_como: 'Cómo',
       campo_prazo: 'Plazo',
@@ -2463,6 +2668,8 @@ if (typeof module !== 'undefined' && module.exports) {
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
     planosAreaFollowUp: { temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '' },
+    etapasArea: { fonte: true, quadro: false, cobranca: false },
+    _etapasAreaDoCache: false,
   };
 
   var ICONES_DEPT = [
@@ -2547,6 +2754,89 @@ if (typeof module !== 'undefined' && module.exports) {
     }
   }
 
+  function chaveCacheEtapasArea(deptId) {
+    return 'opshub_etapas_area_' + String(deptId || '');
+  }
+
+  function etapasAreaPadrao() {
+    var temFonte = (Estado.fontesArea || []).length > 0;
+    return { fonte: !temFonte, quadro: temFonte, cobranca: false };
+  }
+
+  function carregarEtapasArea(deptId) {
+    Estado._etapasAreaDoCache = false;
+    try {
+      var raw = localStorage.getItem(chaveCacheEtapasArea(deptId));
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          Estado.etapasArea = {
+            fonte: !!parsed.fonte,
+            quadro: !!parsed.quadro,
+            cobranca: !!parsed.cobranca,
+          };
+          Estado._etapasAreaDoCache = true;
+          return;
+        }
+      }
+    } catch (e) {}
+    Estado.etapasArea = etapasAreaPadrao();
+  }
+
+  function salvarEtapasArea() {
+    var id = Estado.deptAberto && Estado.deptAberto.id;
+    if (!id) return;
+    try {
+      localStorage.setItem(
+        chaveCacheEtapasArea(id),
+        JSON.stringify(Estado.etapasArea || etapasAreaPadrao())
+      );
+      Estado._etapasAreaDoCache = true;
+    } catch (e) {}
+  }
+
+  function etapaAberta(id) {
+    return !!(Estado.etapasArea && Estado.etapasArea[id]);
+  }
+
+  function definirEtapa(id, aberta) {
+    if (!Estado.etapasArea) Estado.etapasArea = etapasAreaPadrao();
+    Estado.etapasArea[id] = !!aberta;
+    salvarEtapasArea();
+  }
+
+  function toggleEtapa(id) {
+    definirEtapa(id, !etapaAberta(id));
+  }
+
+  function focarEtapa(id) {
+    Estado.etapasArea = {
+      fonte: id === 'fonte',
+      quadro: id === 'quadro',
+      cobranca: id === 'cobranca',
+    };
+    salvarEtapasArea();
+  }
+
+  function avancarParaQuadro() {
+    Estado.etapasArea = { fonte: false, quadro: true, cobranca: false };
+    salvarEtapasArea();
+  }
+
+  function aplicarEtapasPadraoSeVazio() {
+    if (Estado._etapasAreaDoCache) return;
+    Estado.etapasArea = etapasAreaPadrao();
+  }
+
+  function etapaFeita(id) {
+    if (id === 'fonte') return (Estado.fontesArea || []).length > 0;
+    if (id === 'quadro') {
+      var k = Estado.planosAreaKpis || {};
+      return (k.total || (Estado.planosArea || []).length || 0) > 0;
+    }
+    return false;
+  }
+
     /* Glifos Lucide (ISC) embutidos — Apps Script nao pode puxar CDN. */
     var ICONES = {
       menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
@@ -2568,6 +2858,7 @@ if (typeof module !== 'undefined' && module.exports) {
     ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.8.4-1.4 1-1.4 1.9V14M12 17h.01"/>',
     lista: '<path d="M8 6H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h4"/>',
     cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    chevron: '<path d="M6 9l6 6 6-6"/>',
   };
 
   function svg(nome, extra) {
@@ -3220,7 +3511,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
   function listaFontesArea() {
     var lista = Estado.fontesArea || [];
-    if (!lista.length) return '<div class="vazio">' + t('planos_area_sem_fonte') + '</div>';
+    if (!lista.length) return '';
     return '<div class="admin-lista">' + lista.map(function (f) {
       return '<div class="linha-admin">' +
         '<div><strong>' + escapar(f.nome || t('nome_fonte')) + '</strong><small>' +
@@ -3293,9 +3584,8 @@ if (typeof module !== 'undefined' && module.exports) {
             '<small>' + escapar(p.email) + '</small></span></button>';
         }).join('') + '</div>'
       : '<div class="secao-apoio">' + t('planos_area_follow_sem_pessoas') + '</div>';
-    return '<div class="painel follow-area" style="margin:16px 0;padding:14px 16px">' +
-      '<div class="secao-titulo">' + t('mail_regra') + '</div>' +
-      '<div class="secao-apoio" style="margin:6px 0 12px">' + t('planos_area_follow_apoio') + '</div>' +
+    return '<div class="follow-area">' +
+      '<div class="secao-apoio" style="margin:0 0 12px">' + t('planos_area_follow_apoio') + '</div>' +
       '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">' + t('temas_email') + '</div>' +
       chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area') +
       '<label class="check-encerradas" style="margin-top:14px">' +
@@ -3306,7 +3596,7 @@ if (typeof module !== 'undefined' && module.exports) {
       '<div class="secao-titulo" style="font-size:13px;margin:8px 0 6px">' + t('planos_area_follow_pessoas') + '</div>' +
       '<div class="secao-apoio" style="margin-bottom:8px">' + t('planos_area_follow_pessoas_apoio') + '</div>' +
       listaPessoas +
-      '<div style="margin-top:12px">' +
+      '<div class="fluxo-avancar">' +
       '<button class="botao" type="button" data-followup-area-agora="1">' + t('enviar_followups') + '</button>' +
       '</div></div>';
   }
@@ -3320,6 +3610,100 @@ if (typeof module !== 'undefined' && module.exports) {
       });
   }
 
+  function resumoEtapaFonte() {
+    var lista = Estado.fontesArea || [];
+    if (!lista.length) return t('planos_area_resumo_fonte_vazia');
+    var f = lista[0];
+    var extra = f.ultimo_status
+      ? String(f.ultimo_status) + (f.ultimo_detalhe ? ' · ' + f.ultimo_detalhe : '')
+      : t('planos_area_resumo_fonte_pronta');
+    return (f.nome || t('nome_fonte')) + ' · ' + extra;
+  }
+
+  function resumoEtapaQuadro() {
+    if (!(Estado.fontesArea || []).length) return t('planos_area_resumo_quadro_espera');
+    var k = Estado.planosAreaKpis || {};
+    return t('planos_area_resumo_quadro', { n: k.total || 0, atrasados: k.atrasados || 0 });
+  }
+
+  function resumoEtapaCobranca() {
+    var fu = followUpAreaAtual();
+    if (fu.soEu) return t('planos_area_resumo_cobranca_eu');
+    var pessoas = pessoasFollowUpArea(Estado.planosArea || []);
+    var off = {};
+    (fu.emailsOff || []).forEach(function (e) { off[String(e).toLowerCase()] = 1; });
+    var n = pessoas.filter(function (p) { return !off[p.email]; }).length;
+    var habilitados = listaTemas(fu.temas);
+    var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
+    var temaTxt = nenhum
+      ? t('planos_area_resumo_temas_nenhum')
+      : (!habilitados.length
+        ? t('planos_area_resumo_temas_todos')
+        : t('planos_area_resumo_temas_n', { n: habilitados.length }));
+    return t('planos_area_resumo_cobranca', { n: n, temas: temaTxt });
+  }
+
+  function corpoEtapaFonte(d) {
+    var temFonte = (Estado.fontesArea || []).length > 0;
+    return listaFontesArea() +
+      '<div class="secao-apoio" style="margin:8px 0 10px">' + t('planos_area_fonte_apoio') + '</div>' +
+      '<div class="secao-apoio" style="margin-bottom:10px">' + t('fontes_apoio') + '</div>' +
+      formFonteArea(d) +
+      (temFonte
+        ? '<div class="fluxo-avancar"><button class="botao primario" type="button" data-abrir-etapa="quadro">' +
+          t('planos_area_ir_quadro') + '</button></div>'
+        : '');
+  }
+
+  function corpoEtapaQuadro() {
+    if (!(Estado.fontesArea || []).length) {
+      return '<div class="fluxo-espera">' +
+        '<p>' + t('planos_area_resumo_quadro_espera') + '</p>' +
+        '<button class="botao primario" type="button" data-abrir-etapa="fonte">' +
+        t('planos_area_ir_fonte') + '</button></div>';
+    }
+    return kpisHtml(Estado.planosAreaKpis) +
+      listaPlanosArea() +
+      '<div class="fluxo-avancar"><button class="botao" type="button" data-abrir-etapa="cobranca">' +
+      t('planos_area_ir_cobranca') + '</button></div>';
+  }
+
+  function htmlFluxoProgresso() {
+    return '<div class="fluxo-progresso" aria-hidden="true">' +
+      ['fonte', 'quadro', 'cobranca'].map(function (id) {
+        var cls = 'fluxo-seg';
+        if (etapaAberta(id)) cls += ' atual';
+        else if (etapaFeita(id)) cls += ' feita';
+        return '<span class="' + cls + '"></span>';
+      }).join('') +
+      '</div>';
+  }
+
+  function etapaHtml(id, num, kicker, titulo, resumo, corpoFn) {
+    var aberta = etapaAberta(id);
+    var feita = etapaFeita(id);
+    var cls = 'fluxo-etapa' + (aberta ? ' aberta' : '') + (feita ? ' feita' : '');
+    var marca = feita && !aberta ? '✓' : num;
+    var corpo = '';
+    if (aberta) {
+      corpo = typeof corpoFn === 'function' ? corpoFn() : (corpoFn || '');
+    }
+    return '<section class="' + cls + '" data-etapa="' + id + '">' +
+      '<button type="button" class="fluxo-cabeca" data-toggle-etapa="' + id +
+      '" aria-expanded="' + (aberta ? 'true' : 'false') + '">' +
+      '<span class="fluxo-num" aria-hidden="true">' + marca + '</span>' +
+      '<span class="fluxo-meta">' +
+      '<span class="fluxo-kicker">' + kicker + '</span>' +
+      '<span class="fluxo-titulo">' + titulo + '</span>' +
+      '<span class="fluxo-resumo">' + escapar(resumo) + '</span>' +
+      '</span>' +
+      '<span class="fluxo-toggle">' +
+      svg('chevron') + ' ' + (aberta ? t('retrair') : t('expandir')) +
+      '</span></button>' +
+      (aberta ? '<div class="fluxo-corpo">' + corpo + '</div>' : '') +
+      '</section>';
+  }
+
   function htmlPlanosArea(d) {
     if (Estado.planosAreaPrecisaSenha) {
       return '<form class="form-senha-area" data-abrir-planos-area="' + escapar(d.id) + '">' +
@@ -3329,16 +3713,14 @@ if (typeof module !== 'undefined' && module.exports) {
         '<div class="acoes-form"><button class="botao primario" type="submit">' + t('planos_area_entrar') + '</button></div>' +
         '</form>';
     }
-    return '<div class="drawer-gestao">' +
-      kpisHtml(Estado.planosAreaKpis) +
-      '<div class="painel-topo" style="margin-bottom:10px">' +
-      '<button class="botao primario" type="button" data-importar-area="' + escapar(d.id) + '">' + t('importar_agora') + '</button>' +
-      '<div class="secao-apoio">' + t('fontes_apoio') + '</div></div>' +
-      listaFontesArea() +
-      blocoFollowUpArea() +
-      listaPlanosArea() +
-      '<div class="secao-titulo" style="margin-top:18px">' + t('planos_area_cadastrar') + '</div>' +
-      formFonteArea(d) +
+    return '<div class="drawer-gestao fluxo-area">' +
+      htmlFluxoProgresso() +
+      etapaHtml('fonte', '1', t('planos_area_etapa_fonte'), t('planos_area_fonte_titulo'),
+        resumoEtapaFonte(), function () { return corpoEtapaFonte(d); }) +
+      etapaHtml('quadro', '2', t('planos_area_etapa_quadro'), t('planos_area_quadro_titulo'),
+        resumoEtapaQuadro(), function () { return corpoEtapaQuadro(); }) +
+      etapaHtml('cobranca', '3', t('planos_area_etapa_cobranca'), t('planos_area_cobranca_titulo'),
+        resumoEtapaCobranca(), function () { return blocoFollowUpArea(); }) +
       '</div>';
   }
 
@@ -3354,6 +3736,11 @@ if (typeof module !== 'undefined' && module.exports) {
     if (resp.ok) {
       var d = Estado.deptAberto;
       if (d) d.tem_senha_planos = !!resp.tem_senha_planos;
+    }
+    aplicarEtapasPadraoSeVazio();
+    if (resp.importacao && resp.importacao.linhas > 0) {
+      avancarParaQuadro();
+      opts = Object.assign({}, opts, { focarEtapa: 'quadro' });
     }
     if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto, opts);
     if (resp.importacao) {
@@ -3406,6 +3793,10 @@ if (typeof module !== 'undefined' && module.exports) {
         b.value = v;
       }
     }
+    if (opts.focarEtapa) {
+      var elEtapa = document.querySelector('[data-etapa="' + opts.focarEtapa + '"]');
+      if (elEtapa && elEtapa.scrollIntoView) elEtapa.scrollIntoView({ block: 'nearest' });
+    }
   }
 
   function carregarPlanosArea(id, senha) {
@@ -3440,6 +3831,7 @@ if (typeof module !== 'undefined' && module.exports) {
     $('drawer').classList.remove('largo', 'extra-largo');
     if (modo === 'planos') {
       carregarFiltrosArea(id);
+      carregarEtapasArea(id);
       Estado.filtroAberto = null;
       pintarDrawerPlanos(d);
     } else if (modo === 'editar') {
@@ -3883,20 +4275,40 @@ if (typeof module !== 'undefined' && module.exports) {
         Estado.fontesArea = [];
         Estado.planosAreaPrecisaSenha = !!(dPlanos && dPlanos.tem_senha_planos);
         carregarFiltrosArea(pid);
+        carregarEtapasArea(pid);
         abrirDept(pid, 'planos');
         carregarPlanosArea(pid);
         return;
       }
+      var toggleEtapaBtn = e.target.closest('[data-toggle-etapa]');
+      if (toggleEtapaBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleEtapa(toggleEtapaBtn.getAttribute('data-toggle-etapa'));
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true });
+        return;
+      }
+      var abrirEtapaBtn = e.target.closest('[data-abrir-etapa]');
+      if (abrirEtapaBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var idAbrir = abrirEtapaBtn.getAttribute('data-abrir-etapa');
+        focarEtapa(idAbrir);
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { focarEtapa: idAbrir });
+        return;
+      }
       if (e.target.closest('[data-cancelar-fonte-area]')) {
         Estado.formFonteArea = {};
-        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
+        definirEtapa('fonte', true);
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { focarEtapa: 'fonte' });
         return;
       }
       var editFonteArea = e.target.closest('[data-edit-fonte-area]');
       if (editFonteArea) {
         var idFa = editFonteArea.getAttribute('data-edit-fonte-area');
         Estado.formFonteArea = (Estado.fontesArea || []).filter(function (x) { return String(x.id) === String(idFa); })[0] || {};
-        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
+        definirEtapa('fonte', true);
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { focarEtapa: 'fonte' });
         return;
       }
       var delFonteArea = e.target.closest('[data-del-fonte-area]');
@@ -3912,11 +4324,6 @@ if (typeof module !== 'undefined' && module.exports) {
           ocupar(false);
           toast(err.message || err, true);
         });
-        return;
-      }
-      var importarArea = e.target.closest('[data-importar-area]');
-      if (importarArea) {
-        importarPlanosAreaUi(importarArea.getAttribute('data-importar-area'));
         return;
       }
       var remSenha = e.target.closest('[data-remover-senha-area]');

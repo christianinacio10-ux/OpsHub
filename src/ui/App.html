@@ -29,6 +29,8 @@
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
     planosAreaFollowUp: { temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '' },
+    etapasArea: { fonte: true, quadro: false, cobranca: false },
+    _etapasAreaDoCache: false,
   };
 
   var ICONES_DEPT = [
@@ -113,6 +115,89 @@
     }
   }
 
+  function chaveCacheEtapasArea(deptId) {
+    return 'opshub_etapas_area_' + String(deptId || '');
+  }
+
+  function etapasAreaPadrao() {
+    var temFonte = (Estado.fontesArea || []).length > 0;
+    return { fonte: !temFonte, quadro: temFonte, cobranca: false };
+  }
+
+  function carregarEtapasArea(deptId) {
+    Estado._etapasAreaDoCache = false;
+    try {
+      var raw = localStorage.getItem(chaveCacheEtapasArea(deptId));
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          Estado.etapasArea = {
+            fonte: !!parsed.fonte,
+            quadro: !!parsed.quadro,
+            cobranca: !!parsed.cobranca,
+          };
+          Estado._etapasAreaDoCache = true;
+          return;
+        }
+      }
+    } catch (e) {}
+    Estado.etapasArea = etapasAreaPadrao();
+  }
+
+  function salvarEtapasArea() {
+    var id = Estado.deptAberto && Estado.deptAberto.id;
+    if (!id) return;
+    try {
+      localStorage.setItem(
+        chaveCacheEtapasArea(id),
+        JSON.stringify(Estado.etapasArea || etapasAreaPadrao())
+      );
+      Estado._etapasAreaDoCache = true;
+    } catch (e) {}
+  }
+
+  function etapaAberta(id) {
+    return !!(Estado.etapasArea && Estado.etapasArea[id]);
+  }
+
+  function definirEtapa(id, aberta) {
+    if (!Estado.etapasArea) Estado.etapasArea = etapasAreaPadrao();
+    Estado.etapasArea[id] = !!aberta;
+    salvarEtapasArea();
+  }
+
+  function toggleEtapa(id) {
+    definirEtapa(id, !etapaAberta(id));
+  }
+
+  function focarEtapa(id) {
+    Estado.etapasArea = {
+      fonte: id === 'fonte',
+      quadro: id === 'quadro',
+      cobranca: id === 'cobranca',
+    };
+    salvarEtapasArea();
+  }
+
+  function avancarParaQuadro() {
+    Estado.etapasArea = { fonte: false, quadro: true, cobranca: false };
+    salvarEtapasArea();
+  }
+
+  function aplicarEtapasPadraoSeVazio() {
+    if (Estado._etapasAreaDoCache) return;
+    Estado.etapasArea = etapasAreaPadrao();
+  }
+
+  function etapaFeita(id) {
+    if (id === 'fonte') return (Estado.fontesArea || []).length > 0;
+    if (id === 'quadro') {
+      var k = Estado.planosAreaKpis || {};
+      return (k.total || (Estado.planosArea || []).length || 0) > 0;
+    }
+    return false;
+  }
+
     /* Glifos Lucide (ISC) embutidos — Apps Script nao pode puxar CDN. */
     var ICONES = {
       menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
@@ -134,6 +219,7 @@
     ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.8.4-1.4 1-1.4 1.9V14M12 17h.01"/>',
     lista: '<path d="M8 6H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h4"/>',
     cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    chevron: '<path d="M6 9l6 6 6-6"/>',
   };
 
   function svg(nome, extra) {
@@ -786,7 +872,7 @@
 
   function listaFontesArea() {
     var lista = Estado.fontesArea || [];
-    if (!lista.length) return '<div class="vazio">' + t('planos_area_sem_fonte') + '</div>';
+    if (!lista.length) return '';
     return '<div class="admin-lista">' + lista.map(function (f) {
       return '<div class="linha-admin">' +
         '<div><strong>' + escapar(f.nome || t('nome_fonte')) + '</strong><small>' +
@@ -859,9 +945,8 @@
             '<small>' + escapar(p.email) + '</small></span></button>';
         }).join('') + '</div>'
       : '<div class="secao-apoio">' + t('planos_area_follow_sem_pessoas') + '</div>';
-    return '<div class="painel follow-area" style="margin:16px 0;padding:14px 16px">' +
-      '<div class="secao-titulo">' + t('mail_regra') + '</div>' +
-      '<div class="secao-apoio" style="margin:6px 0 12px">' + t('planos_area_follow_apoio') + '</div>' +
+    return '<div class="follow-area">' +
+      '<div class="secao-apoio" style="margin:0 0 12px">' + t('planos_area_follow_apoio') + '</div>' +
       '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">' + t('temas_email') + '</div>' +
       chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area') +
       '<label class="check-encerradas" style="margin-top:14px">' +
@@ -872,7 +957,7 @@
       '<div class="secao-titulo" style="font-size:13px;margin:8px 0 6px">' + t('planos_area_follow_pessoas') + '</div>' +
       '<div class="secao-apoio" style="margin-bottom:8px">' + t('planos_area_follow_pessoas_apoio') + '</div>' +
       listaPessoas +
-      '<div style="margin-top:12px">' +
+      '<div class="fluxo-avancar">' +
       '<button class="botao" type="button" data-followup-area-agora="1">' + t('enviar_followups') + '</button>' +
       '</div></div>';
   }
@@ -886,6 +971,100 @@
       });
   }
 
+  function resumoEtapaFonte() {
+    var lista = Estado.fontesArea || [];
+    if (!lista.length) return t('planos_area_resumo_fonte_vazia');
+    var f = lista[0];
+    var extra = f.ultimo_status
+      ? String(f.ultimo_status) + (f.ultimo_detalhe ? ' · ' + f.ultimo_detalhe : '')
+      : t('planos_area_resumo_fonte_pronta');
+    return (f.nome || t('nome_fonte')) + ' · ' + extra;
+  }
+
+  function resumoEtapaQuadro() {
+    if (!(Estado.fontesArea || []).length) return t('planos_area_resumo_quadro_espera');
+    var k = Estado.planosAreaKpis || {};
+    return t('planos_area_resumo_quadro', { n: k.total || 0, atrasados: k.atrasados || 0 });
+  }
+
+  function resumoEtapaCobranca() {
+    var fu = followUpAreaAtual();
+    if (fu.soEu) return t('planos_area_resumo_cobranca_eu');
+    var pessoas = pessoasFollowUpArea(Estado.planosArea || []);
+    var off = {};
+    (fu.emailsOff || []).forEach(function (e) { off[String(e).toLowerCase()] = 1; });
+    var n = pessoas.filter(function (p) { return !off[p.email]; }).length;
+    var habilitados = listaTemas(fu.temas);
+    var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
+    var temaTxt = nenhum
+      ? t('planos_area_resumo_temas_nenhum')
+      : (!habilitados.length
+        ? t('planos_area_resumo_temas_todos')
+        : t('planos_area_resumo_temas_n', { n: habilitados.length }));
+    return t('planos_area_resumo_cobranca', { n: n, temas: temaTxt });
+  }
+
+  function corpoEtapaFonte(d) {
+    var temFonte = (Estado.fontesArea || []).length > 0;
+    return listaFontesArea() +
+      '<div class="secao-apoio" style="margin:8px 0 10px">' + t('planos_area_fonte_apoio') + '</div>' +
+      '<div class="secao-apoio" style="margin-bottom:10px">' + t('fontes_apoio') + '</div>' +
+      formFonteArea(d) +
+      (temFonte
+        ? '<div class="fluxo-avancar"><button class="botao primario" type="button" data-abrir-etapa="quadro">' +
+          t('planos_area_ir_quadro') + '</button></div>'
+        : '');
+  }
+
+  function corpoEtapaQuadro() {
+    if (!(Estado.fontesArea || []).length) {
+      return '<div class="fluxo-espera">' +
+        '<p>' + t('planos_area_resumo_quadro_espera') + '</p>' +
+        '<button class="botao primario" type="button" data-abrir-etapa="fonte">' +
+        t('planos_area_ir_fonte') + '</button></div>';
+    }
+    return kpisHtml(Estado.planosAreaKpis) +
+      listaPlanosArea() +
+      '<div class="fluxo-avancar"><button class="botao" type="button" data-abrir-etapa="cobranca">' +
+      t('planos_area_ir_cobranca') + '</button></div>';
+  }
+
+  function htmlFluxoProgresso() {
+    return '<div class="fluxo-progresso" aria-hidden="true">' +
+      ['fonte', 'quadro', 'cobranca'].map(function (id) {
+        var cls = 'fluxo-seg';
+        if (etapaAberta(id)) cls += ' atual';
+        else if (etapaFeita(id)) cls += ' feita';
+        return '<span class="' + cls + '"></span>';
+      }).join('') +
+      '</div>';
+  }
+
+  function etapaHtml(id, num, kicker, titulo, resumo, corpoFn) {
+    var aberta = etapaAberta(id);
+    var feita = etapaFeita(id);
+    var cls = 'fluxo-etapa' + (aberta ? ' aberta' : '') + (feita ? ' feita' : '');
+    var marca = feita && !aberta ? '✓' : num;
+    var corpo = '';
+    if (aberta) {
+      corpo = typeof corpoFn === 'function' ? corpoFn() : (corpoFn || '');
+    }
+    return '<section class="' + cls + '" data-etapa="' + id + '">' +
+      '<button type="button" class="fluxo-cabeca" data-toggle-etapa="' + id +
+      '" aria-expanded="' + (aberta ? 'true' : 'false') + '">' +
+      '<span class="fluxo-num" aria-hidden="true">' + marca + '</span>' +
+      '<span class="fluxo-meta">' +
+      '<span class="fluxo-kicker">' + kicker + '</span>' +
+      '<span class="fluxo-titulo">' + titulo + '</span>' +
+      '<span class="fluxo-resumo">' + escapar(resumo) + '</span>' +
+      '</span>' +
+      '<span class="fluxo-toggle">' +
+      svg('chevron') + ' ' + (aberta ? t('retrair') : t('expandir')) +
+      '</span></button>' +
+      (aberta ? '<div class="fluxo-corpo">' + corpo + '</div>' : '') +
+      '</section>';
+  }
+
   function htmlPlanosArea(d) {
     if (Estado.planosAreaPrecisaSenha) {
       return '<form class="form-senha-area" data-abrir-planos-area="' + escapar(d.id) + '">' +
@@ -895,16 +1074,14 @@
         '<div class="acoes-form"><button class="botao primario" type="submit">' + t('planos_area_entrar') + '</button></div>' +
         '</form>';
     }
-    return '<div class="drawer-gestao">' +
-      kpisHtml(Estado.planosAreaKpis) +
-      '<div class="painel-topo" style="margin-bottom:10px">' +
-      '<button class="botao primario" type="button" data-importar-area="' + escapar(d.id) + '">' + t('importar_agora') + '</button>' +
-      '<div class="secao-apoio">' + t('fontes_apoio') + '</div></div>' +
-      listaFontesArea() +
-      blocoFollowUpArea() +
-      listaPlanosArea() +
-      '<div class="secao-titulo" style="margin-top:18px">' + t('planos_area_cadastrar') + '</div>' +
-      formFonteArea(d) +
+    return '<div class="drawer-gestao fluxo-area">' +
+      htmlFluxoProgresso() +
+      etapaHtml('fonte', '1', t('planos_area_etapa_fonte'), t('planos_area_fonte_titulo'),
+        resumoEtapaFonte(), function () { return corpoEtapaFonte(d); }) +
+      etapaHtml('quadro', '2', t('planos_area_etapa_quadro'), t('planos_area_quadro_titulo'),
+        resumoEtapaQuadro(), function () { return corpoEtapaQuadro(); }) +
+      etapaHtml('cobranca', '3', t('planos_area_etapa_cobranca'), t('planos_area_cobranca_titulo'),
+        resumoEtapaCobranca(), function () { return blocoFollowUpArea(); }) +
       '</div>';
   }
 
@@ -920,6 +1097,11 @@
     if (resp.ok) {
       var d = Estado.deptAberto;
       if (d) d.tem_senha_planos = !!resp.tem_senha_planos;
+    }
+    aplicarEtapasPadraoSeVazio();
+    if (resp.importacao && resp.importacao.linhas > 0) {
+      avancarParaQuadro();
+      opts = Object.assign({}, opts, { focarEtapa: 'quadro' });
     }
     if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto, opts);
     if (resp.importacao) {
@@ -972,6 +1154,10 @@
         b.value = v;
       }
     }
+    if (opts.focarEtapa) {
+      var elEtapa = document.querySelector('[data-etapa="' + opts.focarEtapa + '"]');
+      if (elEtapa && elEtapa.scrollIntoView) elEtapa.scrollIntoView({ block: 'nearest' });
+    }
   }
 
   function carregarPlanosArea(id, senha) {
@@ -1006,6 +1192,7 @@
     $('drawer').classList.remove('largo', 'extra-largo');
     if (modo === 'planos') {
       carregarFiltrosArea(id);
+      carregarEtapasArea(id);
       Estado.filtroAberto = null;
       pintarDrawerPlanos(d);
     } else if (modo === 'editar') {
@@ -1449,20 +1636,40 @@
         Estado.fontesArea = [];
         Estado.planosAreaPrecisaSenha = !!(dPlanos && dPlanos.tem_senha_planos);
         carregarFiltrosArea(pid);
+        carregarEtapasArea(pid);
         abrirDept(pid, 'planos');
         carregarPlanosArea(pid);
         return;
       }
+      var toggleEtapaBtn = e.target.closest('[data-toggle-etapa]');
+      if (toggleEtapaBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleEtapa(toggleEtapaBtn.getAttribute('data-toggle-etapa'));
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true });
+        return;
+      }
+      var abrirEtapaBtn = e.target.closest('[data-abrir-etapa]');
+      if (abrirEtapaBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var idAbrir = abrirEtapaBtn.getAttribute('data-abrir-etapa');
+        focarEtapa(idAbrir);
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { focarEtapa: idAbrir });
+        return;
+      }
       if (e.target.closest('[data-cancelar-fonte-area]')) {
         Estado.formFonteArea = {};
-        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
+        definirEtapa('fonte', true);
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { focarEtapa: 'fonte' });
         return;
       }
       var editFonteArea = e.target.closest('[data-edit-fonte-area]');
       if (editFonteArea) {
         var idFa = editFonteArea.getAttribute('data-edit-fonte-area');
         Estado.formFonteArea = (Estado.fontesArea || []).filter(function (x) { return String(x.id) === String(idFa); })[0] || {};
-        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
+        definirEtapa('fonte', true);
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { focarEtapa: 'fonte' });
         return;
       }
       var delFonteArea = e.target.closest('[data-del-fonte-area]');
@@ -1478,11 +1685,6 @@
           ocupar(false);
           toast(err.message || err, true);
         });
-        return;
-      }
-      var importarArea = e.target.closest('[data-importar-area]');
-      if (importarArea) {
-        importarPlanosAreaUi(importarArea.getAttribute('data-importar-area'));
         return;
       }
       var remSenha = e.target.closest('[data-remover-senha-area]');
