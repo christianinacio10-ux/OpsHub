@@ -1,10 +1,49 @@
 function importarTodasAsFontes() {
   instalarSistema();
-  var fontes = Cadastros.fontes().filter(function (f) { return Logica.fonteAtiva(f); });
-  if (!fontes.length) {
+  var planta = importarListaFontes_(
+    Cadastros.fontes().filter(function (f) { return Logica.fonteAtiva(f); }),
+    ABAS.planos,
+    ABAS.fontes,
+    null
+  );
+  var area = importarFontesArea_();
+  var fontes = (planta.fontes || 0) + (area.fontes || 0);
+  var linhas = (planta.linhas || 0) + (area.linhas || 0);
+  var avisos = (planta.avisos || []).concat(area.avisos || []);
+  if (!fontes) {
     Repo.registrarLog('importar', 'OK', 'Nenhuma fonte ativa.');
-    return { fontes: 0, linhas: 0, avisos: [I18n.t(I18n.atual(), 'aviso_sem_fonte_ativa')] };
+    return {
+      fontes: 0,
+      linhas: 0,
+      avisos: avisos.length ? avisos : [I18n.t(I18n.atual(), 'aviso_sem_fonte_ativa')],
+    };
   }
+  Repo.registrarLog('importar', avisos.length ? 'AVISO' : 'OK', linhas + ' linhas de ' + fontes + ' fontes');
+  return { fontes: fontes, linhas: linhas, avisos: avisos };
+}
+
+function importarFontesArea_(soDeptId) {
+  var deptId = Logica.texto(soDeptId);
+  var fontes = Cadastros.fontesArea().filter(function (f) {
+    if (!Logica.fonteAtiva(f)) return false;
+    if (deptId && Logica.texto(f.departamento_id) !== deptId) return false;
+    return true;
+  });
+  if (!fontes.length) return { fontes: 0, linhas: 0, avisos: [] };
+  var depts = {};
+  Repo.ler(ABAS.departamentos).forEach(function (d) {
+    depts[Logica.texto(d.id)] = d;
+  });
+  return importarListaFontes_(fontes, ABAS.planosArea, ABAS.fontesArea, function (novos, fonte) {
+    var dept = depts[Logica.texto(fonte.departamento_id)] || { id: fonte.departamento_id };
+    return (novos || []).map(function (p) {
+      return Logica.marcarPlanoDaArea(p, dept);
+    });
+  });
+}
+
+function importarListaFontes_(fontes, abaDestino, abaCadastroFontes, preparar) {
+  if (!fontes || !fontes.length) return { fontes: 0, linhas: 0, avisos: [] };
 
   var avisos = [];
   var importadosPorFonte = {};
@@ -13,9 +52,10 @@ function importarTodasAsFontes() {
   fontes.forEach(function (fonte) {
     try {
       var novos = lerFonte_(fonte);
+      if (preparar) novos = preparar(novos, fonte) || novos;
       importadosPorFonte[fonte.id] = novos;
       total += novos.length;
-      Repo.atualizarRegistro(ABAS.fontes, fonte._linha, {
+      Repo.atualizarRegistro(abaCadastroFontes, fonte._linha, {
         ultima_execucao: new Date(),
         ultimo_status: novos.length ? 'OK' : 'VAZIO',
         ultimo_detalhe: novos.length + ' linhas',
@@ -26,7 +66,7 @@ function importarTodasAsFontes() {
     } catch (e) {
       var msg = e && e.message ? e.message : String(e);
       avisos.push((fonte.nome || fonte.id) + ': ' + msg);
-      Repo.atualizarRegistro(ABAS.fontes, fonte._linha, {
+      Repo.atualizarRegistro(abaCadastroFontes, fonte._linha, {
         ultima_execucao: new Date(),
         ultimo_status: 'ERRO',
         ultimo_detalhe: msg,
@@ -35,7 +75,7 @@ function importarTodasAsFontes() {
     }
   });
 
-  var atuais = Cadastros.planos();
+  var atuais = Repo.ler(abaDestino);
   var manter = atuais.filter(function (p) {
     return !importadosPorFonte.hasOwnProperty(p.fonte_id);
   });
@@ -52,9 +92,8 @@ function importarTodasAsFontes() {
     return p;
   });
 
-  Repo.substituirAba(ABAS.planos, final);
+  Repo.substituirAba(abaDestino, final);
   Repo.limparMemoria();
-  Repo.registrarLog('importar', avisos.length ? 'AVISO' : 'OK', total + ' linhas de ' + fontes.length + ' fontes');
   return { fontes: fontes.length, linhas: total, avisos: avisos };
 }
 

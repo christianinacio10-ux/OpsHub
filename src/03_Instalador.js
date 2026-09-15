@@ -179,7 +179,7 @@ function sementesPlanosDemo_() {
 }
 
 function esconderAbasTecnicas_() {
-  [ABAS.config, ABAS.emails, ABAS.log, ABAS.planosArea].forEach(function (nome) {
+  [ABAS.config, ABAS.emails, ABAS.log, ABAS.planosArea, ABAS.fontesArea].forEach(function (nome) {
     var aba = Repo.planilha().getSheetByName(nome);
     if (aba) aba.hideSheet();
   });

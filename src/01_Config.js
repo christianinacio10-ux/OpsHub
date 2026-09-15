@@ -4,7 +4,7 @@
  */
 var APP = {
   nome: 'OpsHub',
-  versao: '1.5.0',
+  versao: '1.5.1',
 };
 
 var ABAS = {
@@ -12,6 +12,7 @@ var ABAS = {
   departamentos: 'DEPARTAMENTOS',
   controles: 'CONTROLES',
   fontes: 'FONTES_PLANOS',
+  fontesArea: 'FONTES_AREA',
   planos: 'PLANOS_ACAO',
   planosArea: 'PLANOS_AREA',
   emails: 'EMAILS_ENVIADOS',
@@ -26,6 +27,10 @@ ESQUEMA[ABAS.fontes] = [
   'id', 'nome', 'referencia', 'aba', 'linha_cabecalho',
   'ativo', 'ultima_execucao', 'ultimo_status', 'ultimo_detalhe',
 ];
+ESQUEMA[ABAS.fontesArea] = [
+  'id', 'departamento_id', 'nome', 'referencia', 'aba', 'linha_cabecalho',
+  'ativo', 'ultima_execucao', 'ultimo_status', 'ultimo_detalhe',
+];
 ESQUEMA[ABAS.planos] = [
   'id', 'fonte_id', 'fonte_nome', 'chave_origem',
   'tema', 'divisao', 'area', 'oque', 'como',
@@ -33,7 +38,8 @@ ESQUEMA[ABAS.planos] = [
   'ultimo_email_em', 'emails_enviados', 'atualizado_em',
 ];
 ESQUEMA[ABAS.planosArea] = [
-  'id', 'departamento_id', 'tema', 'divisao', 'area', 'oque', 'como',
+  'id', 'departamento_id', 'fonte_id', 'fonte_nome', 'chave_origem',
+  'tema', 'divisao', 'area', 'oque', 'como',
   'responsavel', 'email', 'prazo', 'status', 'comentarios',
   'ultimo_email_em', 'emails_enviados', 'atualizado_em',
 ];

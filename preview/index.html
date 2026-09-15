@@ -657,7 +657,12 @@ table.dados tr.risco td { box-shadow: none; }
 .drawer-gestao {
   margin-top: 0; padding-top: 0; border-top: 0;
 }
-.drawer-gestao .kpis { margin-bottom: 12px; }
+.drawer-gestao .tabela-wrap { overflow: auto; }
+.drawer-gestao table.dados td.principal {
+  max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.drawer-gestao .admin-lista { margin: 4px 0 8px; }
+.drawer-gestao .linha-admin small { word-break: break-all; }
 .form-senha-area {
   display: flex; flex-direction: column; gap: 10px;
   padding: 18px; border: 1px solid var(--linha);
@@ -1144,14 +1149,19 @@ table.dados tr.risco td { box-shadow: none; }
   function planoArea(id, deptId, o) {
     var p = plano(id, o);
     p.departamento_id = deptId;
+    p.fonte_id = o.fonte_id || '';
     return p;
   }
 
   var planosArea = [
-    planoArea('A1', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Congelar SMED da DDA2 só nesta área', como: 'Cronometrar setup e kit pré-montado no turno 1', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: 'Ação interna da produção' }),
-    planoArea('A2', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Padronizar handover da DDA1', como: 'Checklist de 10 min no quadro da linha', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: '' }),
-    planoArea('A3', 'D-QUAL', { tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
-    planoArea('A4', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
+    planoArea('A1', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Congelar SMED da DDA2 só nesta área', como: 'Cronometrar setup e kit pré-montado no turno 1', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: 'Ação interna da produção' }),
+    planoArea('A2', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Padronizar handover da DDA1', como: 'Checklist de 10 min no quadro da linha', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: '' }),
+    planoArea('A3', 'D-QUAL', { fonte_id: 'FA2', tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
+    planoArea('A4', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
+  ];
+  var fontesArea = [
+    { id: 'FA1', departamento_id: 'D-PROD', nome: 'Ações internas Produção', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-prod', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '3 linhas' },
+    { id: 'FA2', departamento_id: 'D-QUAL', nome: 'Ações internas Qualidade', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-qual', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '1 linha' },
   ];
   var senhasArea = { 'D-QUAL': 'gestor' };
   var areaDesbloqueadas = {};
@@ -1216,6 +1226,7 @@ table.dados tr.risco td { box-shadow: none; }
       departamento_id: deptId,
       tem_senha_planos: !!senhasArea[deptId],
       planos: lista,
+      fontes: precisaSenha ? [] : fontesArea.filter(function (f) { return f.departamento_id === deptId; }),
       kpis: kpisLista(lista),
     };
   }
@@ -1252,7 +1263,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.5.0' },
+        app: { nome: 'OpsHub', versao: '1.5.1' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -1316,10 +1327,12 @@ table.dados tr.risco td { box-shadow: none; }
       fontes = fontes.filter(function (d) { return d.id !== id; });
       return hub();
     },
-    apiImportarAgora: function () { return { fontes: fontes.length, linhas: planos.length, avisos: [] }; },
+    apiImportarAgora: function () {
+      return { fontes: fontes.length + fontesArea.length, linhas: planos.length + planosArea.length, avisos: [] };
+    },
     apiAtualizar: function () {
       var h = hub();
-      h.importacao = { fontes: fontes.length, linhas: planos.length, avisos: [] };
+      h.importacao = { fontes: fontes.length + fontesArea.length, linhas: planos.length + planosArea.length, avisos: [] };
       return h;
     },
     apiEnviarFollowUpsAgora: function (forcar) {
@@ -1367,38 +1380,53 @@ table.dados tr.risco td { box-shadow: none; }
       areaDesbloqueadas[deptId] = true;
       return payloadArea(deptId, false);
     },
-    apiSalvarPlanoArea: function (reg) {
+    apiSalvarFonteArea: function (reg) {
       if (!reg || !reg.departamento_id) throw new Error('Registro vazio.');
       if (areaTrancada(reg.departamento_id)) return payloadArea(reg.departamento_id, true);
-      if (!String(reg.oque || '').trim()) throw new Error('Informe o que precisa ser feito.');
-      var dept = departamentos.filter(function (d) { return d.id === reg.departamento_id; })[0] || {};
-      var id = reg.id || nid('A');
-      var atual = planosArea.filter(function (p) { return String(p.id) === String(id); })[0];
-      var montado = planoArea(id, reg.departamento_id, {
-        tema: dept.nome || 'Área',
-        divisao: dept.bandeira || '',
-        area: dept.nome || '',
-        oque: reg.oque,
-        como: reg.como,
-        responsavel: reg.responsavel,
-        email: (reg.email || '').toLowerCase(),
-        prazo: reg.prazo ? new Date(reg.prazo + 'T00:00:00') : add(7),
-        status: reg.status || 'Aberto',
-        comentarios: reg.comentarios,
-      });
+      if (!String(reg.referencia || '').trim()) throw new Error('Cole a URL completa ou o ID da Google Sheet.');
+      var id = reg.id || nid('FA');
+      var registro = {
+        id: id,
+        departamento_id: reg.departamento_id,
+        nome: reg.nome || 'Fonte da área',
+        referencia: reg.referencia,
+        aba: reg.aba || '',
+        linha_cabecalho: Number(reg.linha_cabecalho || 1) || 1,
+        ativo: reg.ativo || 'SIM',
+        ultima_execucao: new Date(),
+        ultimo_status: 'OK',
+        ultimo_detalhe: 'preview',
+      };
+      var atual = fontesArea.filter(function (f) { return String(f.id) === String(id); })[0];
       if (atual) {
-        planosArea = planosArea.map(function (p) { return String(p.id) === String(id) ? montado : p; });
+        fontesArea = fontesArea.map(function (f) { return String(f.id) === String(id) ? registro : f; });
       } else {
-        planosArea.push(montado);
+        fontesArea.push(registro);
       }
-      return payloadArea(reg.departamento_id, false);
+      var payload = payloadArea(reg.departamento_id, false);
+      payload.importacao = {
+        fontes: 1,
+        linhas: payload.planos.filter(function (p) { return String(p.fonte_id || '') === String(id) || !p.fonte_id; }).length || payload.planos.length,
+        avisos: [],
+      };
+      return payload;
     },
-    apiExcluirPlanoArea: function (id) {
-      var atual = planosArea.filter(function (p) { return String(p.id) === String(id); })[0];
-      if (!atual) return payloadArea('', false);
+    apiExcluirFonteArea: function (id) {
+      var atual = fontesArea.filter(function (f) { return String(f.id) === String(id); })[0];
+      if (!atual) {
+        return { ok: true, precisaSenha: false, departamento_id: '', tem_senha_planos: false, planos: [], fontes: [], kpis: kpisLista([]) };
+      }
       if (areaTrancada(atual.departamento_id)) return payloadArea(atual.departamento_id, true);
-      planosArea = planosArea.filter(function (p) { return String(p.id) !== String(id); });
+      fontesArea = fontesArea.filter(function (f) { return String(f.id) !== String(id); });
+      planosArea = planosArea.filter(function (p) { return String(p.fonte_id) !== String(id); });
       return payloadArea(atual.departamento_id, false);
+    },
+    apiImportarPlanosArea: function (deptId) {
+      if (areaTrancada(deptId)) return payloadArea(deptId, true);
+      var nFontes = fontesArea.filter(function (f) { return f.departamento_id === deptId; }).length;
+      var payload = payloadArea(deptId, false);
+      payload.importacao = { fontes: nFontes, linhas: nFontes ? payload.planos.length : 0, avisos: [] };
+      return payload;
     },
     apiDefinirSenhaPlanosArea: function (deptId, senhaAtual, senhaNova) {
       if (senhasArea[deptId] && String(senhaAtual || '') !== senhasArea[deptId]) {
@@ -1464,6 +1492,8 @@ table.dados tr.risco td { box-shadow: none; }
             apiCriarGatilho: 550,
             apiRemoverGatilhos: 550,
             apiAlternarTemaFollowUp: 500,
+            apiSalvarFonteArea: 700,
+            apiImportarPlanosArea: 700,
           };
           var delay = lentos[nome] || 40;
           setTimeout(function () { ok(out); }, delay);
@@ -1523,15 +1553,16 @@ var I18n = (function () {
       planos_area_tip: 'Planos de ação desta área',
       planos_area_tip_lock: 'Planos de ação desta área (com senha)',
       planos_area_kicker: 'Planos da área',
-      planos_area_sub: 'Só este departamento vê estes planos no painel. Não entram no consolidado da planta. O follow-up e o gatilho são os mesmos.',
+      planos_area_sub: 'Cole a URL da Google Sheet desta área — o OpsHub importa as ações como no consolidado. Elas ficam só aqui. O follow-up, os e-mails e o gatilho diário são os mesmos.',
       planos_area_senha: 'Esta área protege os planos com senha',
       planos_area_senha_ph: 'Senha',
       planos_area_entrar: 'Abrir planos',
       planos_area_senha_errada: 'Senha incorreta.',
-      planos_area_vazio: 'Nenhuma ação pendente nesta área.',
-      planos_area_cadastrar: 'Nova ação da área',
-      planos_area_salvar: 'Salvar ação',
-      planos_area_atualizar: 'Atualizar ação',
+      planos_area_vazio: 'Nenhuma ação importada nesta área.',
+      planos_area_cadastrar: 'Fonte desta área',
+      planos_area_salvar: 'Salvar e importar',
+      planos_area_atualizar: 'Atualizar fonte',
+      planos_area_sem_fonte: 'Cadastre a URL da planilha de origem desta área.',
       campo_oque: 'O quê?',
       campo_como: 'Como',
       campo_prazo: 'Prazo',
@@ -1737,15 +1768,16 @@ var I18n = (function () {
       planos_area_tip: 'Action plans for this area',
       planos_area_tip_lock: 'Action plans for this area (password protected)',
       planos_area_kicker: 'Area action plans',
-      planos_area_sub: 'Only this department sees these plans in the hub. They stay out of the plant-wide board. Follow-up and the daily trigger work the same way.',
+      planos_area_sub: 'Paste this area’s Google Sheet URL — OpsHub imports the actions the same way as the plant board. They stay here only. Follow-up, emails and the daily trigger are the same.',
       planos_area_senha: 'This area protects its plans with a password',
       planos_area_senha_ph: 'Password',
       planos_area_entrar: 'Open plans',
       planos_area_senha_errada: 'Incorrect password.',
-      planos_area_vazio: 'No open actions in this area.',
-      planos_area_cadastrar: 'New area action',
-      planos_area_salvar: 'Save action',
-      planos_area_atualizar: 'Update action',
+      planos_area_vazio: 'No actions imported in this area.',
+      planos_area_cadastrar: 'Source for this area',
+      planos_area_salvar: 'Save and import',
+      planos_area_atualizar: 'Update source',
+      planos_area_sem_fonte: 'Add the source spreadsheet URL for this area.',
       campo_oque: 'What?',
       campo_como: 'How',
       campo_prazo: 'Due date',
@@ -1951,15 +1983,16 @@ var I18n = (function () {
       planos_area_tip: 'Planes de acción de esta área',
       planos_area_tip_lock: 'Planes de acción de esta área (con contraseña)',
       planos_area_kicker: 'Planes del área',
-      planos_area_sub: 'Solo este departamento ve estos planes en el panel. No entran en el consolidado de la planta. El follow-up y el disparador son los mismos.',
+      planos_area_sub: 'Pegue la URL de la Google Sheet de esta área — OpsHub importa las acciones igual que en el consolidado. Quedan solo aquí. El follow-up, los correos y el disparador diario son los mismos.',
       planos_area_senha: 'Esta área protege los planes con contraseña',
       planos_area_senha_ph: 'Contraseña',
       planos_area_entrar: 'Abrir planes',
       planos_area_senha_errada: 'Contraseña incorrecta.',
-      planos_area_vazio: 'Ninguna acción pendiente en esta área.',
-      planos_area_cadastrar: 'Nueva acción del área',
-      planos_area_salvar: 'Guardar acción',
-      planos_area_atualizar: 'Actualizar acción',
+      planos_area_vazio: 'Ninguna acción importada en esta área.',
+      planos_area_cadastrar: 'Fuente de esta área',
+      planos_area_salvar: 'Guardar e importar',
+      planos_area_atualizar: 'Actualizar fuente',
+      planos_area_sem_fonte: 'Registre la URL de la hoja de origen de esta área.',
       campo_oque: '¿Qué?',
       campo_como: 'Cómo',
       campo_prazo: 'Plazo',
@@ -2266,7 +2299,8 @@ if (typeof module !== 'undefined' && module.exports) {
     planosAreaKpis: null,
     planosAreaPrecisaSenha: false,
     planosAreaMostrarEncerradas: false,
-    formPlanoArea: {},
+    fontesArea: [],
+    formFonteArea: {},
   };
 
   var ICONES_DEPT = [
@@ -2933,30 +2967,35 @@ if (typeof module !== 'undefined' && module.exports) {
       '</div></form></div>';
   }
 
-  function opcoesStatusPlano(atual) {
-    var canonicos = ['Aberto', 'Em andamento', 'Concluído', 'Cancelado'];
-    var chaves = ['status_aberto', 'status_andamento', 'status_concluido', 'status_cancelado'];
-    return canonicos.map(function (v, i) {
-      return '<option value="' + v + '"' + (atual === v ? ' selected' : '') + '>' + t(chaves[i]) + '</option>';
-    }).join('');
-  }
-
-  function formPlanoArea(dept) {
-    var f = Estado.formPlanoArea || {};
-    return '<form class="form-grid" data-plano-area="1">' +
+  function formFonteArea(dept) {
+    var f = Estado.formFonteArea || {};
+    return '<form class="form-grid" data-fonte-area="1">' +
       (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
       '<input type="hidden" name="departamento_id" value="' + escapar(dept.id) + '">' +
-      campo('oque', t('campo_oque'), f.oque, { span2: true }) +
-      campo('como', t('campo_como'), f.como, { span2: true, area: true }) +
-      campo('responsavel', t('th_responsavel'), f.responsavel) +
-      campo('email', t('campo_email'), f.email) +
-      campo('prazo', t('campo_prazo'), f.prazo || '', { tipo: 'date' }) +
-      campo('status', t('campo_status'), f.status, { opcoes: opcoesStatusPlano(f.status || 'Aberto') }) +
-      campo('comentarios', t('campo_comentarios'), f.comentarios, { span2: true }) +
+      campo('nome', t('nome_fonte'), f.nome) +
+      campo('aba', t('aba_opcional'), f.aba) +
+      campo('referencia', t('url_sheet'), f.referencia, { span2: true }) +
+      campo('linha_cabecalho', t('linha_cabecalho'), f.linha_cabecalho || 1, { tipo: 'number' }) +
+      campo('ativo', t('campo_ativo'), f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">' +
       (f.id ? t('planos_area_atualizar') : t('planos_area_salvar')) + '</button>' +
-      (f.id ? '<button class="botao" type="button" data-cancelar-plano-area="1">' + t('cancelar') + '</button>' : '') +
+      (f.id ? '<button class="botao" type="button" data-cancelar-fonte-area="1">' + t('limpar') + '</button>' : '') +
       '</div></form>';
+  }
+
+  function listaFontesArea() {
+    var lista = Estado.fontesArea || [];
+    if (!lista.length) return '<div class="vazio">' + t('planos_area_sem_fonte') + '</div>';
+    return '<div class="admin-lista">' + lista.map(function (f) {
+      return '<div class="linha-admin">' +
+        '<div><strong>' + escapar(f.nome || t('nome_fonte')) + '</strong><small>' +
+        escapar(f.referencia) + (f.aba ? ' · ' + t('aba_prefix') + ' ' + escapar(f.aba) : '') +
+        (f.ultimo_status ? ' · ' + escapar(f.ultimo_status) + ' ' + escapar(f.ultimo_detalhe) : '') +
+        '</small></div>' +
+        '<div><button class="botao" type="button" data-edit-fonte-area="' + escapar(f.id) + '">' + t('editar') + '</button> ' +
+        '<button class="botao perigo" type="button" data-del-fonte-area="' + escapar(f.id) + '">' + t('excluir') + '</button></div>' +
+        '</div>';
+    }).join('') + '</div>';
   }
 
   function listaPlanosArea() {
@@ -2966,17 +3005,23 @@ if (typeof module !== 'undefined' && module.exports) {
       : todos.filter(function (p) { return !statusEncerradoUi(p.status); });
     if (!lista.length) return '<div class="vazio">' + t('planos_area_vazio') + '</div>';
     return '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
-      '<th>' + t('th_oque') + '</th><th>' + t('th_responsavel') + '</th><th>' + t('th_prazo') + '</th>' +
-      '<th>' + t('th_status') + '</th><th></th></tr></thead><tbody>' +
+      '<th>' + t('th_tema') + '</th><th>' + t('th_oque') + '</th><th>' + t('th_responsavel') + '</th>' +
+      '<th>' + t('th_email') + '</th><th>' + t('th_prazo') + '</th><th>' + t('th_status') + '</th>' +
+      '</tr></thead><tbody>' +
       lista.map(function (p) {
         var st = rotuloStatusUi(p.status);
+        var tipEmail = p.tem_email ? p.email : t('tooltip_sem_email');
+        var emailCel = p.tem_email
+          ? escapar(p.email)
+          : '<span class="aviso-email" tabindex="0" data-tip="' + escapar(tipEmail) +
+            '" title="' + escapar(tipEmail) + '">' + svg('ehs') + '</span>';
         return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
+          '<td>' + escapar(p.tema) + '</td>' +
           '<td class="principal" title="' + escapar(p.oque) + '">' + escapar(p.oque) + '</td>' +
           '<td>' + escapar(p.responsavel) + '</td>' +
+          '<td title="' + escapar(tipEmail) + '">' + emailCel + '</td>' +
           '<td>' + escapar(p.prazo_br) + '</td>' +
           '<td><span class="selo ' + p.status_classe + '">' + escapar(st) + '</span></td>' +
-          '<td><button type="button" class="botao" data-edit-plano-area="' + escapar(p.id) + '">' + t('editar') + '</button> ' +
-          '<button type="button" class="botao perigo" data-del-plano-area="' + escapar(p.id) + '">' + t('excluir') + '</button></td>' +
           '</tr>';
       }).join('') +
       '</tbody></table></div>';
@@ -2995,11 +3040,15 @@ if (typeof module !== 'undefined' && module.exports) {
     return '<div class="drawer-gestao">' +
       kpisHtml(Estado.planosAreaKpis) +
       '<div class="secao-apoio" style="margin-bottom:12px">' + t('planos_area_sub') + '</div>' +
-      '<label class="check-encerradas"><input type="checkbox" data-mostrar-encerradas-area="1"' +
+      '<div class="painel-topo" style="margin-bottom:10px">' +
+      '<button class="botao primario" type="button" data-importar-area="' + escapar(d.id) + '">' + t('importar_agora') + '</button>' +
+      '<div class="secao-apoio">' + t('fontes_apoio') + '</div></div>' +
+      listaFontesArea() +
+      '<label class="check-encerradas" style="margin-top:16px"><input type="checkbox" data-mostrar-encerradas-area="1"' +
       (Estado.planosAreaMostrarEncerradas ? ' checked' : '') + '> ' + t('planos_area_mostrar_encerradas') + '</label>' +
       listaPlanosArea() +
       '<div class="secao-titulo" style="margin-top:18px">' + t('planos_area_cadastrar') + '</div>' +
-      formPlanoArea(d) +
+      formFonteArea(d) +
       '</div>';
   }
 
@@ -3007,12 +3056,19 @@ if (typeof module !== 'undefined' && module.exports) {
     if (!resp) return;
     Estado.planosAreaPrecisaSenha = !!resp.precisaSenha;
     Estado.planosArea = resp.planos || [];
+    Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     if (resp.ok) {
       var d = Estado.deptAberto;
       if (d) d.tem_senha_planos = !!resp.tem_senha_planos;
     }
     if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
+    if (resp.importacao) {
+      ocupar(false);
+      setPilula(true, t('atualizado'));
+      var msg = mensagemImportacao(resp.importacao);
+      if (msg) toast(msg, resp.importacao.linhas === 0);
+    }
   }
 
   function pintarDrawerPlanos(d) {
@@ -3021,6 +3077,7 @@ if (typeof module !== 'undefined' && module.exports) {
     $('drawer-titulo').textContent = d.nome;
     $('drawer-sub').textContent = t('planos_area_sub');
     $('drawer-corpo').innerHTML = htmlPlanosArea(d);
+    $('drawer-corpo').scrollTop = 0;
   }
 
   function carregarPlanosArea(id, senha) {
@@ -3105,7 +3162,8 @@ if (typeof module !== 'undefined' && module.exports) {
     Estado.deptModo = 'ver';
     Estado.aparenciaAberta = false;
     Estado.formDrawer = { tipo: '', data: {} };
-    Estado.formPlanoArea = {};
+    Estado.formFonteArea = {};
+    Estado.fontesArea = [];
     Estado.planosAreaPrecisaSenha = false;
   }
 
@@ -3477,34 +3535,47 @@ if (typeof module !== 'undefined' && module.exports) {
         var dPlanos = ((Estado.hub && Estado.hub.departamentos) || []).filter(function (x) {
           return x.id === pid;
         })[0];
-        Estado.formPlanoArea = {};
+        Estado.formFonteArea = {};
         Estado.planosArea = [];
+        Estado.fontesArea = [];
         Estado.planosAreaPrecisaSenha = !!(dPlanos && dPlanos.tem_senha_planos);
         abrirDept(pid, 'planos');
         carregarPlanosArea(pid);
         return;
       }
-      if (e.target.closest('[data-cancelar-plano-area]')) {
-        Estado.formPlanoArea = {};
+      if (e.target.closest('[data-cancelar-fonte-area]')) {
+        Estado.formFonteArea = {};
         if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
         return;
       }
-      var editPlano = e.target.closest('[data-edit-plano-area]');
-      if (editPlano) {
-        var idPl = editPlano.getAttribute('data-edit-plano-area');
-        Estado.formPlanoArea = (Estado.planosArea || []).filter(function (x) { return String(x.id) === String(idPl); })[0] || {};
+      var editFonteArea = e.target.closest('[data-edit-fonte-area]');
+      if (editFonteArea) {
+        var idFa = editFonteArea.getAttribute('data-edit-fonte-area');
+        Estado.formFonteArea = (Estado.fontesArea || []).filter(function (x) { return String(x.id) === String(idFa); })[0] || {};
         if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
         return;
       }
-      var delPlano = e.target.closest('[data-del-plano-area]');
-      if (delPlano) {
-        if (!confirm(t('confirm_excluir_acao'))) return;
+      var delFonteArea = e.target.closest('[data-del-fonte-area]');
+      if (delFonteArea) {
+        if (!confirm(t('confirm_excluir'))) return;
         ocupar(true, t('carregando_ellipsis'));
-        chamar('apiExcluirPlanoArea', delPlano.getAttribute('data-del-plano-area')).then(function (resp) {
+        chamar('apiExcluirFonteArea', delFonteArea.getAttribute('data-del-fonte-area')).then(function (resp) {
           ocupar(false);
-          Estado.formPlanoArea = {};
+          Estado.formFonteArea = {};
           aplicarPlanosArea(resp);
           toast(t('toast_removido'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
+        return;
+      }
+      var importarArea = e.target.closest('[data-importar-area]');
+      if (importarArea) {
+        ocupar(true, t('ocupado_importando'));
+        chamar('apiImportarPlanosArea', importarArea.getAttribute('data-importar-area')).then(function (resp) {
+          ocupar(false);
+          aplicarPlanosArea(resp);
         }).catch(function (err) {
           ocupar(false);
           toast(err.message || err, true);
@@ -3788,16 +3859,15 @@ if (typeof module !== 'undefined' && module.exports) {
           });
         return;
       }
-      var planoForm = e.target.closest('form[data-plano-area]');
-      if (planoForm) {
+      var fonteAreaForm = e.target.closest('form[data-fonte-area]');
+      if (fonteAreaForm) {
         e.preventDefault();
-        var dados = lerForm(planoForm);
-        ocupar(true, t('carregando_ellipsis'));
-        chamar('apiSalvarPlanoArea', dados).then(function (resp) {
+        var dadosFonte = lerForm(fonteAreaForm);
+        ocupar(true, t('ocupado_importando'));
+        chamar('apiSalvarFonteArea', dadosFonte).then(function (resp) {
           ocupar(false);
-          Estado.formPlanoArea = {};
+          Estado.formFonteArea = {};
           aplicarPlanosArea(resp);
-          if (resp && resp.ok) toast(t('toast_salvo'));
         }).catch(function (err) {
           ocupar(false);
           toast(err.message || err, true);
@@ -3924,6 +3994,9 @@ if (typeof module !== 'undefined' && module.exports) {
     ocupar(true, t('ocupado_importando'));
     return chamar('apiAtualizar').then(function (hub) {
       aplicarHub(hub, hub.importacao);
+      if (Estado.deptAberto && Estado.deptModo === 'planos') {
+        return carregarPlanosArea(Estado.deptAberto.id);
+      }
     }).catch(function (err) {
       ocupar(false);
       setPilula(false, t('erro'));

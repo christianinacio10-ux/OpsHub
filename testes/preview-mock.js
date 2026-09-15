@@ -69,14 +69,19 @@
   function planoArea(id, deptId, o) {
     var p = plano(id, o);
     p.departamento_id = deptId;
+    p.fonte_id = o.fonte_id || '';
     return p;
   }
 
   var planosArea = [
-    planoArea('A1', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Congelar SMED da DDA2 só nesta área', como: 'Cronometrar setup e kit pré-montado no turno 1', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: 'Ação interna da produção' }),
-    planoArea('A2', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Padronizar handover da DDA1', como: 'Checklist de 10 min no quadro da linha', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: '' }),
-    planoArea('A3', 'D-QUAL', { tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
-    planoArea('A4', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
+    planoArea('A1', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Congelar SMED da DDA2 só nesta área', como: 'Cronometrar setup e kit pré-montado no turno 1', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: 'Ação interna da produção' }),
+    planoArea('A2', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Padronizar handover da DDA1', como: 'Checklist de 10 min no quadro da linha', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: '' }),
+    planoArea('A3', 'D-QUAL', { fonte_id: 'FA2', tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
+    planoArea('A4', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
+  ];
+  var fontesArea = [
+    { id: 'FA1', departamento_id: 'D-PROD', nome: 'Ações internas Produção', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-prod', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '3 linhas' },
+    { id: 'FA2', departamento_id: 'D-QUAL', nome: 'Ações internas Qualidade', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-qual', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '1 linha' },
   ];
   var senhasArea = { 'D-QUAL': 'gestor' };
   var areaDesbloqueadas = {};
@@ -141,6 +146,7 @@
       departamento_id: deptId,
       tem_senha_planos: !!senhasArea[deptId],
       planos: lista,
+      fontes: precisaSenha ? [] : fontesArea.filter(function (f) { return f.departamento_id === deptId; }),
       kpis: kpisLista(lista),
     };
   }
@@ -177,7 +183,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.5.0' },
+        app: { nome: 'OpsHub', versao: '1.5.1' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -241,10 +247,12 @@
       fontes = fontes.filter(function (d) { return d.id !== id; });
       return hub();
     },
-    apiImportarAgora: function () { return { fontes: fontes.length, linhas: planos.length, avisos: [] }; },
+    apiImportarAgora: function () {
+      return { fontes: fontes.length + fontesArea.length, linhas: planos.length + planosArea.length, avisos: [] };
+    },
     apiAtualizar: function () {
       var h = hub();
-      h.importacao = { fontes: fontes.length, linhas: planos.length, avisos: [] };
+      h.importacao = { fontes: fontes.length + fontesArea.length, linhas: planos.length + planosArea.length, avisos: [] };
       return h;
     },
     apiEnviarFollowUpsAgora: function (forcar) {
@@ -292,38 +300,53 @@
       areaDesbloqueadas[deptId] = true;
       return payloadArea(deptId, false);
     },
-    apiSalvarPlanoArea: function (reg) {
+    apiSalvarFonteArea: function (reg) {
       if (!reg || !reg.departamento_id) throw new Error('Registro vazio.');
       if (areaTrancada(reg.departamento_id)) return payloadArea(reg.departamento_id, true);
-      if (!String(reg.oque || '').trim()) throw new Error('Informe o que precisa ser feito.');
-      var dept = departamentos.filter(function (d) { return d.id === reg.departamento_id; })[0] || {};
-      var id = reg.id || nid('A');
-      var atual = planosArea.filter(function (p) { return String(p.id) === String(id); })[0];
-      var montado = planoArea(id, reg.departamento_id, {
-        tema: dept.nome || 'Área',
-        divisao: dept.bandeira || '',
-        area: dept.nome || '',
-        oque: reg.oque,
-        como: reg.como,
-        responsavel: reg.responsavel,
-        email: (reg.email || '').toLowerCase(),
-        prazo: reg.prazo ? new Date(reg.prazo + 'T00:00:00') : add(7),
-        status: reg.status || 'Aberto',
-        comentarios: reg.comentarios,
-      });
+      if (!String(reg.referencia || '').trim()) throw new Error('Cole a URL completa ou o ID da Google Sheet.');
+      var id = reg.id || nid('FA');
+      var registro = {
+        id: id,
+        departamento_id: reg.departamento_id,
+        nome: reg.nome || 'Fonte da área',
+        referencia: reg.referencia,
+        aba: reg.aba || '',
+        linha_cabecalho: Number(reg.linha_cabecalho || 1) || 1,
+        ativo: reg.ativo || 'SIM',
+        ultima_execucao: new Date(),
+        ultimo_status: 'OK',
+        ultimo_detalhe: 'preview',
+      };
+      var atual = fontesArea.filter(function (f) { return String(f.id) === String(id); })[0];
       if (atual) {
-        planosArea = planosArea.map(function (p) { return String(p.id) === String(id) ? montado : p; });
+        fontesArea = fontesArea.map(function (f) { return String(f.id) === String(id) ? registro : f; });
       } else {
-        planosArea.push(montado);
+        fontesArea.push(registro);
       }
-      return payloadArea(reg.departamento_id, false);
+      var payload = payloadArea(reg.departamento_id, false);
+      payload.importacao = {
+        fontes: 1,
+        linhas: payload.planos.filter(function (p) { return String(p.fonte_id || '') === String(id) || !p.fonte_id; }).length || payload.planos.length,
+        avisos: [],
+      };
+      return payload;
     },
-    apiExcluirPlanoArea: function (id) {
-      var atual = planosArea.filter(function (p) { return String(p.id) === String(id); })[0];
-      if (!atual) return payloadArea('', false);
+    apiExcluirFonteArea: function (id) {
+      var atual = fontesArea.filter(function (f) { return String(f.id) === String(id); })[0];
+      if (!atual) {
+        return { ok: true, precisaSenha: false, departamento_id: '', tem_senha_planos: false, planos: [], fontes: [], kpis: kpisLista([]) };
+      }
       if (areaTrancada(atual.departamento_id)) return payloadArea(atual.departamento_id, true);
-      planosArea = planosArea.filter(function (p) { return String(p.id) !== String(id); });
+      fontesArea = fontesArea.filter(function (f) { return String(f.id) !== String(id); });
+      planosArea = planosArea.filter(function (p) { return String(p.fonte_id) !== String(id); });
       return payloadArea(atual.departamento_id, false);
+    },
+    apiImportarPlanosArea: function (deptId) {
+      if (areaTrancada(deptId)) return payloadArea(deptId, true);
+      var nFontes = fontesArea.filter(function (f) { return f.departamento_id === deptId; }).length;
+      var payload = payloadArea(deptId, false);
+      payload.importacao = { fontes: nFontes, linhas: nFontes ? payload.planos.length : 0, avisos: [] };
+      return payload;
     },
     apiDefinirSenhaPlanosArea: function (deptId, senhaAtual, senhaNova) {
       if (senhasArea[deptId] && String(senhaAtual || '') !== senhasArea[deptId]) {
@@ -389,6 +412,8 @@
             apiCriarGatilho: 550,
             apiRemoverGatilhos: 550,
             apiAlternarTemaFollowUp: 500,
+            apiSalvarFonteArea: 700,
+            apiImportarPlanosArea: 700,
           };
           var delay = lentos[nome] || 40;
           setTimeout(function () { ok(out); }, delay);
