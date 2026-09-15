@@ -14,14 +14,17 @@ function enviarFollowUps(opcoes) {
   opcoes = opcoes || {};
   var forcar = !!opcoes.forcar;
   var hoje = hojeLocal_();
-  var planos = Cadastros.planos();
+  var planos = Cadastros.planosFollowUp();
   var temasHabilitados = Logica.parseTemasFollowUp(Cadastros.config().texto('followup_temas', ''));
   var enviados = 0;
   var pulados = 0;
   var erros = 0;
 
   planos.forEach(function (plano) {
-    var dec = Logica.elegivelFollowUp(plano, hoje, temasHabilitados, { ignorarJaEnviadoHoje: forcar });
+    var dec = Logica.elegivelFollowUp(plano, hoje, temasHabilitados, {
+      ignorarJaEnviadoHoje: forcar,
+      ignorarTemas: plano._folha === 'area',
+    });
     if (!dec.ok) {
       pulados++;
       return;
@@ -29,7 +32,8 @@ function enviarFollowUps(opcoes) {
     try {
       enviarEmailAcao_(plano, dec, hoje);
       var n = Number(plano.emails_enviados || 0) + 1;
-      Repo.atualizarRegistro(ABAS.planos, plano._linha, {
+      var abaPlano = plano._folha === 'area' ? ABAS.planosArea : ABAS.planos;
+      Repo.atualizarRegistro(abaPlano, plano._linha, {
         ultimo_email_em: new Date(),
         emails_enviados: n,
       });

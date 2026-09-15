@@ -391,7 +391,7 @@ var Logica = (function () {
     if (encerrada(acao && acao.status)) {
       return { ok: false, motivo: 'encerrada' };
     }
-    if (!temaFollowUpHabilitado(acao && acao.tema, temasHabilitados)) {
+    if (!opcoes.ignorarTemas && !temaFollowUpHabilitado(acao && acao.tema, temasHabilitados)) {
       return { ok: false, motivo: 'tema_desligado' };
     }
     var prazo = paraData(acao && acao.prazo);
@@ -659,6 +659,38 @@ var Logica = (function () {
       tooltip_email: temEmail
         ? texto(p.email)
         : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.',
+      departamento_id: texto(p.departamento_id),
+    };
+  }
+
+  function temSenhaPlanos(dept) {
+    return !!texto(dept && dept.senha_planos);
+  }
+
+  function planosDoDepartamento(lista, deptId) {
+    var id = texto(deptId);
+    return (lista || []).filter(function (p) { return texto(p.departamento_id) === id; });
+  }
+
+  function montarPlanoArea(reg, dept, id) {
+    dept = dept || {};
+    reg = reg || {};
+    return {
+      id: texto(id) || idNovo('A'),
+      departamento_id: texto(dept.id || reg.departamento_id),
+      tema: texto(reg.tema) || texto(dept.nome),
+      divisao: texto(reg.divisao) || texto(dept.bandeira),
+      area: texto(reg.area) || texto(dept.nome),
+      oque: texto(reg.oque),
+      como: texto(reg.como),
+      responsavel: texto(reg.responsavel),
+      email: texto(reg.email).toLowerCase(),
+      prazo: paraData(reg.prazo),
+      status: tituloStatus(reg.status) || 'Aberto',
+      comentarios: texto(reg.comentarios),
+      ultimo_email_em: reg.ultimo_email_em || '',
+      emails_enviados: Number(reg.emails_enviados || 0),
+      atualizado_em: new Date(),
     };
   }
 
@@ -802,6 +834,9 @@ var Logica = (function () {
     extrairIdPlanilha: extrairIdPlanilha,
     idNovo: idNovo,
     prepararAcaoParaUi: prepararAcaoParaUi,
+    temSenhaPlanos: temSenhaPlanos,
+    planosDoDepartamento: planosDoDepartamento,
+    montarPlanoArea: montarPlanoArea,
     normalizarBandeira: normalizarBandeira,
     negocioDoControle: negocioDoControle,
     partesPasta: partesPasta,

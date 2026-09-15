@@ -6,8 +6,8 @@ Tema dark, sidebar no mesmo espírito do Controle Hora por Hora, com a marca Ave
 
 ## O que o painel faz
 
-- **Departamentos clicáveis** na aba OpsHub abrem uma subtela só com os arquivos da área. A engrenagem do card abre a configuração (ícone, cor e inclusão/edição de arquivos). Cada área tem a **divisão** Apparel, Smartrac ou Solutions (a coluna na planilha continua `bandeira`). Em Solutions o modal de visualização mostra três colunas. Arraste os cards para reordenar.
-- **Planos de ação** com resumo (KPIs) e filtro por tema: a tabela começa vazia até o gestor marcar um ou mais temas, ou **Todos**. Os demais eixos (divisão, área, status, responsável) são multi-seleção no estilo Excel.
+- **Departamentos clicáveis** na aba OpsHub abrem uma subtela só com os arquivos da área. A **lista** no card abre os planos de ação daquela área (não entram no consolidado da planta). A engrenagem configura o card (ícone, cor, arquivos e senha opcional da lista). Cada área tem a **divisão** Apparel, Smartrac ou Solutions (a coluna na planilha continua `bandeira`). Em Solutions o modal de visualização mostra três colunas. Arraste os cards para reordenar.
+- **Planos de ação** com resumo (KPIs) e filtro por tema: a tabela começa vazia até o gestor marcar um ou mais temas, ou **Todos**. Os demais eixos (divisão, área, status, responsável) são multi-seleção no estilo Excel. Os planos cadastrados pela lista da área ficam só ali.
 - **Configurações** reúne departamentos, fontes de importação e follow-up/gatilho.
 - **Follow-up por e-mail:** depois de 1 dia de atraso, um e-mail por dia para o responsável, até a data ser reprogramada na origem. Em Follow-up e gatilho, chips ligam ou desligam quais temas entram no e-mail (vazio = todos). Sem e-mail cadastrado, nada é enviado — a linha mostra o aviso no tooltip.
 
@@ -33,10 +33,11 @@ node testes/empacotar.js
 
 | Aba | Uso |
 | --- | --- |
-| `DEPARTAMENTOS` | Áreas do hub (nome, ícone, cor, ordem, divisão Apparel/Smartrac/Solutions na coluna `bandeira`) |
+| `DEPARTAMENTOS` | Áreas do hub (nome, ícone, cor, ordem, divisão Apparel/Smartrac/Solutions na coluna `bandeira`, senha opcional em `senha_planos`) |
 | `CONTROLES` | Links de cada departamento (negócio Apparel/Smartrac/Solutions e agrupamento opcional, ex.: Linha / Programa) |
 | `FONTES_PLANOS` | Google Sheets de origem dos planos |
-| `PLANOS_ACAO` | Consolidado importado (não edite na mão se vier de fonte) |
+| `PLANOS_ACAO` | Consolidado importado da planta (não edite na mão se vier de fonte) |
+| `PLANOS_AREA` | Planos privados por departamento (aba oculta; a importação não a substitui) |
 | `_CONFIG` | Timezone, hora do gatilho, nome do remetente, temas de follow-up |
 | `EMAILS_ENVIADOS` / `_LOG` | Auditoria (ocultas) |
 
@@ -58,7 +59,7 @@ A importação substitui só as linhas daquela fonte. O histórico de e-mails de
 - Depois, **um e-mail por dia** no gatilho automático, até o prazo na origem ir para uma data futura (ou a ação ser concluída/cancelada).
 - **Enviar follow-ups agora** pode repetir no mesmo dia. Se já houve envio, o painel avisa e pergunta se deseja cobrar de novo aquele tema.
 - Sem e-mail válido: não envia. Na tabela, o ícone amarelo explica: *Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.*
-- Em **Configurações → Follow-up e gatilho**, os chips dos temas importados ligam ou desligam o envio. Lista vazia em `_CONFIG.followup_temas` = todos os temas.
+- Em **Configurações → Follow-up e gatilho**, os chips dos temas importados ligam ou desligam o envio. Lista vazia em `_CONFIG.followup_temas` = todos os temas. Planos da área entram no mesmo gatilho e **não** usam esses chips (para não vazar o tema no consolidado).
 
 Crie o gatilho pelo menu **OpsHub → Ativar gatilho** ou em **Configurações → Follow-up e gatilho** (padrão: 08h, fuso `America/Sao_Paulo`). A rotina importa as fontes e em seguida envia os e-mails.
 

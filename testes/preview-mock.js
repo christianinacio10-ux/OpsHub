@@ -66,6 +66,21 @@
     };
   }
 
+  function planoArea(id, deptId, o) {
+    var p = plano(id, o);
+    p.departamento_id = deptId;
+    return p;
+  }
+
+  var planosArea = [
+    planoArea('A1', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Congelar SMED da DDA2 só nesta área', como: 'Cronometrar setup e kit pré-montado no turno 1', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: 'Ação interna da produção' }),
+    planoArea('A2', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Padronizar handover da DDA1', como: 'Checklist de 10 min no quadro da linha', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: '' }),
+    planoArea('A3', 'D-QUAL', { tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
+    planoArea('A4', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
+  ];
+  var senhasArea = { 'D-QUAL': 'gestor' };
+  var areaDesbloqueadas = {};
+
   var planos = [
     plano('1', { tema: 'Segurança', divisao: 'Operations', area: 'EHS', oque: 'Eliminar desvio de bloqueio LOTO na DDA2', como: 'Padronizar checklist de LOTO e treinar turno 1 e 2', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(5), status: 'Em andamento', comentarios: 'Treinamento agendado' }),
     plano('2', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Reduzir NC de epóxi irregular', como: 'Ajustar janela de viscosidade e inspeção visual a cada 2h', responsavel: 'Bruno Lima', email: '', prazo: add(-3), status: 'Aberto', comentarios: 'Aguardando e-mail do responsável' }),
@@ -98,29 +113,56 @@
     return out;
   }
 
-  function hub() {
-    var atrasados = planos.filter(function (p) { return p.status === 'Atrasado'; }).length;
-    var concluidos = planos.filter(function (p) {
+  function kpisLista(lista) {
+    var atrasados = lista.filter(function (p) { return p.status === 'Atrasado'; }).length;
+    var concluidos = lista.filter(function (p) {
       return String(p.status || '').toLowerCase().indexOf('conclu') === 0;
     }).length;
-    var abertos = planos.filter(function (p) {
+    var abertos = lista.filter(function (p) {
       var s = String(p.status || '').toLowerCase();
       return s.indexOf('conclu') !== 0 && s.indexOf('cancel') !== 0;
     }).length;
-    var semEmail = planos.filter(function (p) {
+    var semEmail = lista.filter(function (p) {
       var s = String(p.status || '').toLowerCase();
       return !p.tem_email && s.indexOf('conclu') !== 0 && s.indexOf('cancel') !== 0;
     }).length;
+    return { total: lista.length, atrasados: atrasados, abertos: abertos, semEmail: semEmail, concluidos: concluidos };
+  }
+
+  function payloadArea(deptId, precisaSenha, extra) {
+    extra = extra || {};
+    var lista = precisaSenha
+      ? []
+      : planosArea.filter(function (p) { return p.departamento_id === deptId; });
+    return {
+      ok: !precisaSenha,
+      precisaSenha: !!precisaSenha,
+      senhaErrada: !!extra.senhaErrada,
+      departamento_id: deptId,
+      tem_senha_planos: !!senhasArea[deptId],
+      planos: lista,
+      kpis: kpisLista(lista),
+    };
+  }
+
+  function areaTrancada(deptId) {
+    return !!senhasArea[deptId] && !areaDesbloqueadas[deptId];
+  }
+
+  function hub() {
     return {
       hoje: ymd(hoje),
       departamentos: departamentos.map(function (d) {
-        return { id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor, ordem: d.ordem, bandeira: d.bandeira };
+        return {
+          id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor,
+          ordem: d.ordem, bandeira: d.bandeira, tem_senha_planos: !!senhasArea[d.id],
+        };
       }),
       controles: controles.map(function (c) {
         return { id: c.id, departamento_id: c.departamento_id, nome: c.nome, descricao: c.descricao, url: c.url, ordem: c.ordem, negocio: c.negocio, pasta: c.pasta };
       }),
       planos: planos,
-      kpis: { total: planos.length, atrasados: atrasados, abertos: abertos, semEmail: semEmail, concluidos: concluidos },
+      kpis: kpisLista(planos),
       temasDistintos: temasDistintos(),
       temasFollowUp: temasFollowUp.slice(),
       fontes: fontes,
@@ -135,7 +177,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.4.0' },
+        app: { nome: 'OpsHub', versao: '1.5.0' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -206,23 +248,29 @@
       return h;
     },
     apiEnviarFollowUpsAgora: function (forcar) {
-      var cand = planos.filter(function (p) {
-        if (p.status === 'Concluído' || p.status === 'Cancelado') return false;
+      function candidato(p, ignorarTemas) {
+        var s = String(p.status || '').toLowerCase();
+        if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
         if (!p.tem_email || p.status !== 'Atrasado') return false;
-        if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        if (!ignorarTemas && temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
         if (!forcar && followupsEnviadosHoje[p.id]) return false;
         return true;
-      });
+      }
+      var cand = planos.filter(function (p) { return candidato(p, false); })
+        .concat(planosArea.filter(function (p) { return candidato(p, true); }));
       cand.forEach(function (p) { followupsEnviadosHoje[p.id] = true; });
-      return { enviados: cand.length, pulados: planos.length - cand.length, erros: 0 };
+      return { enviados: cand.length, pulados: planos.length + planosArea.length - cand.length, erros: 0 };
     },
     apiPreverFollowUps: function () {
-      var cand = planos.filter(function (p) {
-        if (p.status === 'Concluído' || p.status === 'Cancelado') return false;
+      function candidato(p, ignorarTemas) {
+        var s = String(p.status || '').toLowerCase();
+        if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
         if (!p.tem_email || p.status !== 'Atrasado') return false;
-        if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        if (!ignorarTemas && temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
         return true;
-      });
+      }
+      var cand = planos.filter(function (p) { return candidato(p, false); })
+        .concat(planosArea.filter(function (p) { return candidato(p, true); }));
       var temasJa = [];
       var vistos = {};
       cand.forEach(function (p) {
@@ -232,6 +280,65 @@
         }
       });
       return { total: cand.length, temasJaEnviadosHoje: temasJa };
+    },
+    apiPlanosArea: function (deptId) {
+      if (areaTrancada(deptId)) return payloadArea(deptId, true);
+      return payloadArea(deptId, false);
+    },
+    apiAbrirPlanosArea: function (deptId, senha) {
+      if (senhasArea[deptId] && String(senha || '') !== senhasArea[deptId]) {
+        return payloadArea(deptId, true, { senhaErrada: true });
+      }
+      areaDesbloqueadas[deptId] = true;
+      return payloadArea(deptId, false);
+    },
+    apiSalvarPlanoArea: function (reg) {
+      if (!reg || !reg.departamento_id) throw new Error('Registro vazio.');
+      if (areaTrancada(reg.departamento_id)) return payloadArea(reg.departamento_id, true);
+      if (!String(reg.oque || '').trim()) throw new Error('Informe o que precisa ser feito.');
+      var dept = departamentos.filter(function (d) { return d.id === reg.departamento_id; })[0] || {};
+      var id = reg.id || nid('A');
+      var atual = planosArea.filter(function (p) { return String(p.id) === String(id); })[0];
+      var montado = planoArea(id, reg.departamento_id, {
+        tema: dept.nome || 'Área',
+        divisao: dept.bandeira || '',
+        area: dept.nome || '',
+        oque: reg.oque,
+        como: reg.como,
+        responsavel: reg.responsavel,
+        email: (reg.email || '').toLowerCase(),
+        prazo: reg.prazo ? new Date(reg.prazo + 'T00:00:00') : add(7),
+        status: reg.status || 'Aberto',
+        comentarios: reg.comentarios,
+      });
+      if (atual) {
+        planosArea = planosArea.map(function (p) { return String(p.id) === String(id) ? montado : p; });
+      } else {
+        planosArea.push(montado);
+      }
+      return payloadArea(reg.departamento_id, false);
+    },
+    apiExcluirPlanoArea: function (id) {
+      var atual = planosArea.filter(function (p) { return String(p.id) === String(id); })[0];
+      if (!atual) return payloadArea('', false);
+      if (areaTrancada(atual.departamento_id)) return payloadArea(atual.departamento_id, true);
+      planosArea = planosArea.filter(function (p) { return String(p.id) !== String(id); });
+      return payloadArea(atual.departamento_id, false);
+    },
+    apiDefinirSenhaPlanosArea: function (deptId, senhaAtual, senhaNova) {
+      if (senhasArea[deptId] && String(senhaAtual || '') !== senhasArea[deptId]) {
+        throw new Error('Senha atual incorreta.');
+      }
+      if (String(senhaNova || '').trim()) {
+        senhasArea[deptId] = String(senhaNova);
+        areaDesbloqueadas[deptId] = true;
+      } else if (senhasArea[deptId]) {
+        delete senhasArea[deptId];
+        delete areaDesbloqueadas[deptId];
+      }
+      var h = hub();
+      h.planosArea = payloadArea(deptId, false);
+      return h;
     },
     apiAlternarTemaFollowUp: function (nome) {
       nome = String(nome || '').trim();

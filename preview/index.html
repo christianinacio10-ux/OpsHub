@@ -657,6 +657,28 @@ table.dados tr.risco td { box-shadow: none; }
 .drawer-gestao {
   margin-top: 0; padding-top: 0; border-top: 0;
 }
+.drawer-gestao .kpis { margin-bottom: 12px; }
+.form-senha-area {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 18px; border: 1px solid var(--linha);
+  border-radius: var(--raio); background: var(--superficie);
+}
+.form-senha-area label {
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: 12px; color: var(--tinta-3);
+}
+.form-senha-area input {
+  height: 36px; border-radius: var(--raio-p); border: 1px solid var(--linha);
+  background: var(--bg); color: var(--tinta);
+  padding: 0 10px; font-family: var(--fonte); font-size: 13px;
+}
+.check-encerradas {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 12px; color: var(--tinta-2); font-size: 13px;
+  cursor: pointer; user-select: none;
+}
+.check-encerradas input { accent-color: var(--marca); }
+.senha-area-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
 .drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
 .rotulo-com-ajuda {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1119,6 +1141,21 @@ table.dados tr.risco td { box-shadow: none; }
     };
   }
 
+  function planoArea(id, deptId, o) {
+    var p = plano(id, o);
+    p.departamento_id = deptId;
+    return p;
+  }
+
+  var planosArea = [
+    planoArea('A1', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Congelar SMED da DDA2 só nesta área', como: 'Cronometrar setup e kit pré-montado no turno 1', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: 'Ação interna da produção' }),
+    planoArea('A2', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Padronizar handover da DDA1', como: 'Checklist de 10 min no quadro da linha', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: '' }),
+    planoArea('A3', 'D-QUAL', { tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
+    planoArea('A4', 'D-PROD', { tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
+  ];
+  var senhasArea = { 'D-QUAL': 'gestor' };
+  var areaDesbloqueadas = {};
+
   var planos = [
     plano('1', { tema: 'Segurança', divisao: 'Operations', area: 'EHS', oque: 'Eliminar desvio de bloqueio LOTO na DDA2', como: 'Padronizar checklist de LOTO e treinar turno 1 e 2', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(5), status: 'Em andamento', comentarios: 'Treinamento agendado' }),
     plano('2', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Reduzir NC de epóxi irregular', como: 'Ajustar janela de viscosidade e inspeção visual a cada 2h', responsavel: 'Bruno Lima', email: '', prazo: add(-3), status: 'Aberto', comentarios: 'Aguardando e-mail do responsável' }),
@@ -1151,29 +1188,56 @@ table.dados tr.risco td { box-shadow: none; }
     return out;
   }
 
-  function hub() {
-    var atrasados = planos.filter(function (p) { return p.status === 'Atrasado'; }).length;
-    var concluidos = planos.filter(function (p) {
+  function kpisLista(lista) {
+    var atrasados = lista.filter(function (p) { return p.status === 'Atrasado'; }).length;
+    var concluidos = lista.filter(function (p) {
       return String(p.status || '').toLowerCase().indexOf('conclu') === 0;
     }).length;
-    var abertos = planos.filter(function (p) {
+    var abertos = lista.filter(function (p) {
       var s = String(p.status || '').toLowerCase();
       return s.indexOf('conclu') !== 0 && s.indexOf('cancel') !== 0;
     }).length;
-    var semEmail = planos.filter(function (p) {
+    var semEmail = lista.filter(function (p) {
       var s = String(p.status || '').toLowerCase();
       return !p.tem_email && s.indexOf('conclu') !== 0 && s.indexOf('cancel') !== 0;
     }).length;
+    return { total: lista.length, atrasados: atrasados, abertos: abertos, semEmail: semEmail, concluidos: concluidos };
+  }
+
+  function payloadArea(deptId, precisaSenha, extra) {
+    extra = extra || {};
+    var lista = precisaSenha
+      ? []
+      : planosArea.filter(function (p) { return p.departamento_id === deptId; });
+    return {
+      ok: !precisaSenha,
+      precisaSenha: !!precisaSenha,
+      senhaErrada: !!extra.senhaErrada,
+      departamento_id: deptId,
+      tem_senha_planos: !!senhasArea[deptId],
+      planos: lista,
+      kpis: kpisLista(lista),
+    };
+  }
+
+  function areaTrancada(deptId) {
+    return !!senhasArea[deptId] && !areaDesbloqueadas[deptId];
+  }
+
+  function hub() {
     return {
       hoje: ymd(hoje),
       departamentos: departamentos.map(function (d) {
-        return { id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor, ordem: d.ordem, bandeira: d.bandeira };
+        return {
+          id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor,
+          ordem: d.ordem, bandeira: d.bandeira, tem_senha_planos: !!senhasArea[d.id],
+        };
       }),
       controles: controles.map(function (c) {
         return { id: c.id, departamento_id: c.departamento_id, nome: c.nome, descricao: c.descricao, url: c.url, ordem: c.ordem, negocio: c.negocio, pasta: c.pasta };
       }),
       planos: planos,
-      kpis: { total: planos.length, atrasados: atrasados, abertos: abertos, semEmail: semEmail, concluidos: concluidos },
+      kpis: kpisLista(planos),
       temasDistintos: temasDistintos(),
       temasFollowUp: temasFollowUp.slice(),
       fontes: fontes,
@@ -1188,7 +1252,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.4.0' },
+        app: { nome: 'OpsHub', versao: '1.5.0' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -1259,23 +1323,29 @@ table.dados tr.risco td { box-shadow: none; }
       return h;
     },
     apiEnviarFollowUpsAgora: function (forcar) {
-      var cand = planos.filter(function (p) {
-        if (p.status === 'Concluído' || p.status === 'Cancelado') return false;
+      function candidato(p, ignorarTemas) {
+        var s = String(p.status || '').toLowerCase();
+        if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
         if (!p.tem_email || p.status !== 'Atrasado') return false;
-        if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        if (!ignorarTemas && temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
         if (!forcar && followupsEnviadosHoje[p.id]) return false;
         return true;
-      });
+      }
+      var cand = planos.filter(function (p) { return candidato(p, false); })
+        .concat(planosArea.filter(function (p) { return candidato(p, true); }));
       cand.forEach(function (p) { followupsEnviadosHoje[p.id] = true; });
-      return { enviados: cand.length, pulados: planos.length - cand.length, erros: 0 };
+      return { enviados: cand.length, pulados: planos.length + planosArea.length - cand.length, erros: 0 };
     },
     apiPreverFollowUps: function () {
-      var cand = planos.filter(function (p) {
-        if (p.status === 'Concluído' || p.status === 'Cancelado') return false;
+      function candidato(p, ignorarTemas) {
+        var s = String(p.status || '').toLowerCase();
+        if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
         if (!p.tem_email || p.status !== 'Atrasado') return false;
-        if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
+        if (!ignorarTemas && temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
         return true;
-      });
+      }
+      var cand = planos.filter(function (p) { return candidato(p, false); })
+        .concat(planosArea.filter(function (p) { return candidato(p, true); }));
       var temasJa = [];
       var vistos = {};
       cand.forEach(function (p) {
@@ -1285,6 +1355,65 @@ table.dados tr.risco td { box-shadow: none; }
         }
       });
       return { total: cand.length, temasJaEnviadosHoje: temasJa };
+    },
+    apiPlanosArea: function (deptId) {
+      if (areaTrancada(deptId)) return payloadArea(deptId, true);
+      return payloadArea(deptId, false);
+    },
+    apiAbrirPlanosArea: function (deptId, senha) {
+      if (senhasArea[deptId] && String(senha || '') !== senhasArea[deptId]) {
+        return payloadArea(deptId, true, { senhaErrada: true });
+      }
+      areaDesbloqueadas[deptId] = true;
+      return payloadArea(deptId, false);
+    },
+    apiSalvarPlanoArea: function (reg) {
+      if (!reg || !reg.departamento_id) throw new Error('Registro vazio.');
+      if (areaTrancada(reg.departamento_id)) return payloadArea(reg.departamento_id, true);
+      if (!String(reg.oque || '').trim()) throw new Error('Informe o que precisa ser feito.');
+      var dept = departamentos.filter(function (d) { return d.id === reg.departamento_id; })[0] || {};
+      var id = reg.id || nid('A');
+      var atual = planosArea.filter(function (p) { return String(p.id) === String(id); })[0];
+      var montado = planoArea(id, reg.departamento_id, {
+        tema: dept.nome || 'Área',
+        divisao: dept.bandeira || '',
+        area: dept.nome || '',
+        oque: reg.oque,
+        como: reg.como,
+        responsavel: reg.responsavel,
+        email: (reg.email || '').toLowerCase(),
+        prazo: reg.prazo ? new Date(reg.prazo + 'T00:00:00') : add(7),
+        status: reg.status || 'Aberto',
+        comentarios: reg.comentarios,
+      });
+      if (atual) {
+        planosArea = planosArea.map(function (p) { return String(p.id) === String(id) ? montado : p; });
+      } else {
+        planosArea.push(montado);
+      }
+      return payloadArea(reg.departamento_id, false);
+    },
+    apiExcluirPlanoArea: function (id) {
+      var atual = planosArea.filter(function (p) { return String(p.id) === String(id); })[0];
+      if (!atual) return payloadArea('', false);
+      if (areaTrancada(atual.departamento_id)) return payloadArea(atual.departamento_id, true);
+      planosArea = planosArea.filter(function (p) { return String(p.id) !== String(id); });
+      return payloadArea(atual.departamento_id, false);
+    },
+    apiDefinirSenhaPlanosArea: function (deptId, senhaAtual, senhaNova) {
+      if (senhasArea[deptId] && String(senhaAtual || '') !== senhasArea[deptId]) {
+        throw new Error('Senha atual incorreta.');
+      }
+      if (String(senhaNova || '').trim()) {
+        senhasArea[deptId] = String(senhaNova);
+        areaDesbloqueadas[deptId] = true;
+      } else if (senhasArea[deptId]) {
+        delete senhasArea[deptId];
+        delete areaDesbloqueadas[deptId];
+      }
+      var h = hub();
+      h.planosArea = payloadArea(deptId, false);
+      return h;
     },
     apiAlternarTemaFollowUp: function (nome) {
       nome = String(nome || '').trim();
@@ -1386,11 +1515,41 @@ var I18n = (function () {
       kpi_sem_email: 'Sem e-mail',
       kpi_concluidas: 'Concluídas',
       hub_titulo: 'Controles-chave por departamento',
-      hub_apoio: 'Arraste para reordenar. A engrenagem configura o card. Clique no card para abrir os arquivos.',
+      hub_apoio: 'Arraste para reordenar. A lista abre os planos da área; a engrenagem configura o card. Clique no card para abrir os arquivos.',
       n_controle: '{n} controle',
       n_controles: '{n} controles',
       abrir: 'Abrir',
       config_card_tip: 'Configurar ícone, cor e arquivos',
+      planos_area_tip: 'Planos de ação desta área',
+      planos_area_tip_lock: 'Planos de ação desta área (com senha)',
+      planos_area_kicker: 'Planos da área',
+      planos_area_sub: 'Só este departamento vê estes planos no painel. Não entram no consolidado da planta. O follow-up e o gatilho são os mesmos.',
+      planos_area_senha: 'Esta área protege os planos com senha',
+      planos_area_senha_ph: 'Senha',
+      planos_area_entrar: 'Abrir planos',
+      planos_area_senha_errada: 'Senha incorreta.',
+      planos_area_vazio: 'Nenhuma ação pendente nesta área.',
+      planos_area_cadastrar: 'Nova ação da área',
+      planos_area_salvar: 'Salvar ação',
+      planos_area_atualizar: 'Atualizar ação',
+      campo_oque: 'O quê?',
+      campo_como: 'Como',
+      campo_prazo: 'Prazo',
+      campo_comentarios: 'Comentários',
+      campo_status: 'Status',
+      campo_email: 'E-mail',
+      planos_area_senha_bloco: 'Senha dos planos da área',
+      planos_area_senha_hint: 'Opcional. Trava a lista no painel para outros gestores. Quem tem a planilha ainda pode ver a aba oculta.',
+      planos_area_senha_nova: 'Nova senha',
+      planos_area_senha_confirma: 'Confirmar senha',
+      planos_area_senha_atual: 'Senha atual',
+      planos_area_senha_ok: 'Senha dos planos atualizada.',
+      planos_area_senha_remover: 'Remover senha',
+      planos_area_mostrar_encerradas: 'Mostrar concluídas e canceladas',
+      confirm_excluir_acao: 'Excluir esta ação?',
+      erro_oque: 'Informe o que precisa ser feito.',
+      erro_senha_confirma: 'As senhas não coincidem.',
+      erro_senha_atual: 'Senha atual incorreta.',
       filtrar_tema: 'Filtrar por tema',
       todos: 'Todos',
       busca_ph: 'Buscar tema, área, o quê, responsável…',
@@ -1570,11 +1729,41 @@ var I18n = (function () {
       kpi_sem_email: 'No email',
       kpi_concluidas: 'Done',
       hub_titulo: 'Key controls by department',
-      hub_apoio: 'Drag to reorder. The gear configures the card. Click a card to open its files.',
+      hub_apoio: 'Drag to reorder. The list opens this area’s action plans; the gear configures the card. Click a card to open its files.',
       n_controle: '{n} control',
       n_controles: '{n} controls',
       abrir: 'Open',
       config_card_tip: 'Configure icon, color and files',
+      planos_area_tip: 'Action plans for this area',
+      planos_area_tip_lock: 'Action plans for this area (password protected)',
+      planos_area_kicker: 'Area action plans',
+      planos_area_sub: 'Only this department sees these plans in the hub. They stay out of the plant-wide board. Follow-up and the daily trigger work the same way.',
+      planos_area_senha: 'This area protects its plans with a password',
+      planos_area_senha_ph: 'Password',
+      planos_area_entrar: 'Open plans',
+      planos_area_senha_errada: 'Incorrect password.',
+      planos_area_vazio: 'No open actions in this area.',
+      planos_area_cadastrar: 'New area action',
+      planos_area_salvar: 'Save action',
+      planos_area_atualizar: 'Update action',
+      campo_oque: 'What?',
+      campo_como: 'How',
+      campo_prazo: 'Due date',
+      campo_comentarios: 'Comments',
+      campo_status: 'Status',
+      campo_email: 'Email',
+      planos_area_senha_bloco: 'Password for area plans',
+      planos_area_senha_hint: 'Optional. Locks the list in the hub for other managers. Anyone with the spreadsheet can still see the hidden sheet.',
+      planos_area_senha_nova: 'New password',
+      planos_area_senha_confirma: 'Confirm password',
+      planos_area_senha_atual: 'Current password',
+      planos_area_senha_ok: 'Area plans password updated.',
+      planos_area_senha_remover: 'Remove password',
+      planos_area_mostrar_encerradas: 'Show completed and cancelled',
+      confirm_excluir_acao: 'Delete this action?',
+      erro_oque: 'Say what needs to be done.',
+      erro_senha_confirma: 'Passwords do not match.',
+      erro_senha_atual: 'Current password is incorrect.',
       filtrar_tema: 'Filter by theme',
       todos: 'All',
       busca_ph: 'Search theme, area, what, owner…',
@@ -1754,11 +1943,41 @@ var I18n = (function () {
       kpi_sem_email: 'Sin correo',
       kpi_concluidas: 'Completadas',
       hub_titulo: 'Controles clave por departamento',
-      hub_apoio: 'Arrastre para reordenar. El engranaje configura la tarjeta. Pulse la tarjeta para abrir los archivos.',
+      hub_apoio: 'Arrastre para reordenar. La lista abre los planes del área; el engranaje configura la tarjeta. Pulse la tarjeta para abrir los archivos.',
       n_controle: '{n} control',
       n_controles: '{n} controles',
       abrir: 'Abrir',
       config_card_tip: 'Configurar icono, color y archivos',
+      planos_area_tip: 'Planes de acción de esta área',
+      planos_area_tip_lock: 'Planes de acción de esta área (con contraseña)',
+      planos_area_kicker: 'Planes del área',
+      planos_area_sub: 'Solo este departamento ve estos planes en el panel. No entran en el consolidado de la planta. El follow-up y el disparador son los mismos.',
+      planos_area_senha: 'Esta área protege los planes con contraseña',
+      planos_area_senha_ph: 'Contraseña',
+      planos_area_entrar: 'Abrir planes',
+      planos_area_senha_errada: 'Contraseña incorrecta.',
+      planos_area_vazio: 'Ninguna acción pendiente en esta área.',
+      planos_area_cadastrar: 'Nueva acción del área',
+      planos_area_salvar: 'Guardar acción',
+      planos_area_atualizar: 'Actualizar acción',
+      campo_oque: '¿Qué?',
+      campo_como: 'Cómo',
+      campo_prazo: 'Plazo',
+      campo_comentarios: 'Comentarios',
+      campo_status: 'Estado',
+      campo_email: 'Correo',
+      planos_area_senha_bloco: 'Contraseña de los planes del área',
+      planos_area_senha_hint: 'Opcional. Bloquea la lista en el panel para otros gestores. Quien tenga la hoja aún puede ver la pestaña oculta.',
+      planos_area_senha_nova: 'Nueva contraseña',
+      planos_area_senha_confirma: 'Confirmar contraseña',
+      planos_area_senha_atual: 'Contraseña actual',
+      planos_area_senha_ok: 'Contraseña de los planes actualizada.',
+      planos_area_senha_remover: 'Quitar contraseña',
+      planos_area_mostrar_encerradas: 'Mostrar completadas y canceladas',
+      confirm_excluir_acao: '¿Eliminar esta acción?',
+      erro_oque: 'Indique qué hay que hacer.',
+      erro_senha_confirma: 'Las contraseñas no coinciden.',
+      erro_senha_atual: 'Contraseña actual incorrecta.',
       filtrar_tema: 'Filtrar por tema',
       todos: 'Todos',
       busca_ph: 'Buscar tema, área, qué, responsable…',
@@ -2043,6 +2262,11 @@ if (typeof module !== 'undefined' && module.exports) {
     arrastouDept: false,
     dragId: null,
     idioma: 'pt',
+    planosArea: [],
+    planosAreaKpis: null,
+    planosAreaPrecisaSenha: false,
+    planosAreaMostrarEncerradas: false,
+    formPlanoArea: {},
   };
 
   var ICONES_DEPT = [
@@ -2082,6 +2306,8 @@ if (typeof module !== 'undefined' && module.exports) {
     'pasta-aberta': '<path d="M3 7h6l2 2h10v2H4l-1 8V7z"/><path d="M3 19h16l2-8H5"/>',
     arquivo: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
     ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.8.4-1.4 1-1.4 1.9V14M12 17h.01"/>',
+    lista: '<path d="M8 6H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h4"/>',
+    cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   };
 
   function svg(nome, extra) {
@@ -2307,6 +2533,9 @@ if (typeof module !== 'undefined' && module.exports) {
           '" style="--dept-cor:' + escapar(d.cor) + '" draggable="true" tabindex="0">' +
           '<div class="card-dept-acoes">' +
           badge +
+          '<button type="button" class="card-dept-config" data-planos-area="' + escapar(d.id) +
+          '" title="' + escapar(d.tem_senha_planos ? t('planos_area_tip_lock') : t('planos_area_tip')) + '">' +
+          svg(d.tem_senha_planos ? 'cadeado' : 'lista') + '</button>' +
           '<button type="button" class="card-dept-config" data-editar-dept="' + escapar(d.id) +
           '" title="' + escapar(t('config_card_tip')) + '">' + svg('config') + '</button>' +
           '</div>' +
@@ -2682,9 +2911,131 @@ if (typeof module !== 'undefined' && module.exports) {
           }).join('') + '</div>' +
           '<label class="cor-edicao">' + t('cor_card') +
           '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
-          '</label></div>'
+          '</label>' +
+          formSenhaPlanosArea(d) +
+          '</div>'
         : '') +
       '</div>';
+  }
+
+  function formSenhaPlanosArea(d) {
+    return '<div class="senha-area-bloco">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:12px 0 6px">' + t('planos_area_senha_bloco') + '</div>' +
+      '<div class="secao-apoio" style="margin-bottom:10px">' + t('planos_area_senha_hint') + '</div>' +
+      '<form class="form-grid" data-senha-area="' + escapar(d.id) + '">' +
+      (d.tem_senha_planos ? campo('senha_atual', t('planos_area_senha_atual'), '', { tipo: 'password' }) : '') +
+      campo('senha_nova', t('planos_area_senha_nova'), '', { tipo: 'password' }) +
+      campo('senha_confirma', t('planos_area_senha_confirma'), '', { tipo: 'password' }) +
+      '<div class="acoes-form"><button class="botao primario" type="submit">' + t('salvar') + '</button>' +
+      (d.tem_senha_planos
+        ? '<button class="botao" type="button" data-remover-senha-area="' + escapar(d.id) + '">' + t('planos_area_senha_remover') + '</button>'
+        : '') +
+      '</div></form></div>';
+  }
+
+  function opcoesStatusPlano(atual) {
+    var canonicos = ['Aberto', 'Em andamento', 'Concluído', 'Cancelado'];
+    var chaves = ['status_aberto', 'status_andamento', 'status_concluido', 'status_cancelado'];
+    return canonicos.map(function (v, i) {
+      return '<option value="' + v + '"' + (atual === v ? ' selected' : '') + '>' + t(chaves[i]) + '</option>';
+    }).join('');
+  }
+
+  function formPlanoArea(dept) {
+    var f = Estado.formPlanoArea || {};
+    return '<form class="form-grid" data-plano-area="1">' +
+      (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
+      '<input type="hidden" name="departamento_id" value="' + escapar(dept.id) + '">' +
+      campo('oque', t('campo_oque'), f.oque, { span2: true }) +
+      campo('como', t('campo_como'), f.como, { span2: true, area: true }) +
+      campo('responsavel', t('th_responsavel'), f.responsavel) +
+      campo('email', t('campo_email'), f.email) +
+      campo('prazo', t('campo_prazo'), f.prazo || '', { tipo: 'date' }) +
+      campo('status', t('campo_status'), f.status, { opcoes: opcoesStatusPlano(f.status || 'Aberto') }) +
+      campo('comentarios', t('campo_comentarios'), f.comentarios, { span2: true }) +
+      '<div class="acoes-form"><button class="botao primario" type="submit">' +
+      (f.id ? t('planos_area_atualizar') : t('planos_area_salvar')) + '</button>' +
+      (f.id ? '<button class="botao" type="button" data-cancelar-plano-area="1">' + t('cancelar') + '</button>' : '') +
+      '</div></form>';
+  }
+
+  function listaPlanosArea() {
+    var todos = Estado.planosArea || [];
+    var lista = Estado.planosAreaMostrarEncerradas
+      ? todos
+      : todos.filter(function (p) { return !statusEncerradoUi(p.status); });
+    if (!lista.length) return '<div class="vazio">' + t('planos_area_vazio') + '</div>';
+    return '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
+      '<th>' + t('th_oque') + '</th><th>' + t('th_responsavel') + '</th><th>' + t('th_prazo') + '</th>' +
+      '<th>' + t('th_status') + '</th><th></th></tr></thead><tbody>' +
+      lista.map(function (p) {
+        var st = rotuloStatusUi(p.status);
+        return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
+          '<td class="principal" title="' + escapar(p.oque) + '">' + escapar(p.oque) + '</td>' +
+          '<td>' + escapar(p.responsavel) + '</td>' +
+          '<td>' + escapar(p.prazo_br) + '</td>' +
+          '<td><span class="selo ' + p.status_classe + '">' + escapar(st) + '</span></td>' +
+          '<td><button type="button" class="botao" data-edit-plano-area="' + escapar(p.id) + '">' + t('editar') + '</button> ' +
+          '<button type="button" class="botao perigo" data-del-plano-area="' + escapar(p.id) + '">' + t('excluir') + '</button></td>' +
+          '</tr>';
+      }).join('') +
+      '</tbody></table></div>';
+  }
+
+  function htmlPlanosArea(d) {
+    if (Estado.planosAreaPrecisaSenha) {
+      return '<form class="form-senha-area" data-abrir-planos-area="' + escapar(d.id) + '">' +
+        '<div class="secao-titulo">' + t('planos_area_senha') + '</div>' +
+        '<div class="secao-apoio" style="margin-bottom:12px">' + t('planos_area_sub') + '</div>' +
+        '<label>' + t('planos_area_senha_ph') +
+        '<input name="senha" type="password" autocomplete="current-password"></label>' +
+        '<div class="acoes-form"><button class="botao primario" type="submit">' + t('planos_area_entrar') + '</button></div>' +
+        '</form>';
+    }
+    return '<div class="drawer-gestao">' +
+      kpisHtml(Estado.planosAreaKpis) +
+      '<div class="secao-apoio" style="margin-bottom:12px">' + t('planos_area_sub') + '</div>' +
+      '<label class="check-encerradas"><input type="checkbox" data-mostrar-encerradas-area="1"' +
+      (Estado.planosAreaMostrarEncerradas ? ' checked' : '') + '> ' + t('planos_area_mostrar_encerradas') + '</label>' +
+      listaPlanosArea() +
+      '<div class="secao-titulo" style="margin-top:18px">' + t('planos_area_cadastrar') + '</div>' +
+      formPlanoArea(d) +
+      '</div>';
+  }
+
+  function aplicarPlanosArea(resp) {
+    if (!resp) return;
+    Estado.planosAreaPrecisaSenha = !!resp.precisaSenha;
+    Estado.planosArea = resp.planos || [];
+    Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
+    if (resp.ok) {
+      var d = Estado.deptAberto;
+      if (d) d.tem_senha_planos = !!resp.tem_senha_planos;
+    }
+    if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
+  }
+
+  function pintarDrawerPlanos(d) {
+    $('drawer').classList.add('largo');
+    $('drawer-kicker').textContent = t('planos_area_kicker');
+    $('drawer-titulo').textContent = d.nome;
+    $('drawer-sub').textContent = t('planos_area_sub');
+    $('drawer-corpo').innerHTML = htmlPlanosArea(d);
+  }
+
+  function carregarPlanosArea(id, senha) {
+    ocupar(true, t('carregando_ellipsis'));
+    var p = senha != null
+      ? chamar('apiAbrirPlanosArea', id, senha)
+      : chamar('apiPlanosArea', id);
+    return p.then(function (resp) {
+      ocupar(false);
+      if (resp && resp.senhaErrada) toast(t('planos_area_senha_errada'), true);
+      aplicarPlanosArea(resp);
+    }).catch(function (err) {
+      ocupar(false);
+      toast(err.message || err, true);
+    });
   }
 
   function abrirDept(id, modo) {
@@ -2702,7 +3053,9 @@ if (typeof module !== 'undefined' && module.exports) {
     var bandeira = d.bandeira || '';
     var solutions = bandeira === 'Solutions';
     $('drawer').classList.remove('largo', 'extra-largo');
-    if (modo === 'editar') {
+    if (modo === 'planos') {
+      pintarDrawerPlanos(d);
+    } else if (modo === 'editar') {
       $('drawer-kicker').textContent = bandeira
         ? t('drawer_configurar_bandeira', { bandeira: bandeira })
         : t('drawer_configurar');
@@ -2752,6 +3105,8 @@ if (typeof module !== 'undefined' && module.exports) {
     Estado.deptModo = 'ver';
     Estado.aparenciaAberta = false;
     Estado.formDrawer = { tipo: '', data: {} };
+    Estado.formPlanoArea = {};
+    Estado.planosAreaPrecisaSenha = false;
   }
 
   function campo(nome, rotulo, valor, extra) {
@@ -3114,6 +3469,66 @@ if (typeof module !== 'undefined' && module.exports) {
         definirIdioma(idiomaBtn.getAttribute('data-idioma'));
         return;
       }
+      var planosBtn = e.target.closest('[data-planos-area]');
+      if (planosBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var pid = planosBtn.getAttribute('data-planos-area');
+        var dPlanos = ((Estado.hub && Estado.hub.departamentos) || []).filter(function (x) {
+          return x.id === pid;
+        })[0];
+        Estado.formPlanoArea = {};
+        Estado.planosArea = [];
+        Estado.planosAreaPrecisaSenha = !!(dPlanos && dPlanos.tem_senha_planos);
+        abrirDept(pid, 'planos');
+        carregarPlanosArea(pid);
+        return;
+      }
+      if (e.target.closest('[data-cancelar-plano-area]')) {
+        Estado.formPlanoArea = {};
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
+        return;
+      }
+      var editPlano = e.target.closest('[data-edit-plano-area]');
+      if (editPlano) {
+        var idPl = editPlano.getAttribute('data-edit-plano-area');
+        Estado.formPlanoArea = (Estado.planosArea || []).filter(function (x) { return String(x.id) === String(idPl); })[0] || {};
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
+        return;
+      }
+      var delPlano = e.target.closest('[data-del-plano-area]');
+      if (delPlano) {
+        if (!confirm(t('confirm_excluir_acao'))) return;
+        ocupar(true, t('carregando_ellipsis'));
+        chamar('apiExcluirPlanoArea', delPlano.getAttribute('data-del-plano-area')).then(function (resp) {
+          ocupar(false);
+          Estado.formPlanoArea = {};
+          aplicarPlanosArea(resp);
+          toast(t('toast_removido'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
+        return;
+      }
+      var remSenha = e.target.closest('[data-remover-senha-area]');
+      if (remSenha) {
+        e.preventDefault();
+        e.stopPropagation();
+        var formSenha = remSenha.closest('form');
+        var atual = (formSenha && formSenha.elements.senha_atual && formSenha.elements.senha_atual.value) || '';
+        ocupar(true, t('carregando_ellipsis'));
+        chamar('apiDefinirSenhaPlanosArea', remSenha.getAttribute('data-remover-senha-area'), atual, '')
+          .then(function (hub) {
+            ocupar(false);
+            aplicarHubMantendoDrawer(hub);
+            toast(t('planos_area_senha_ok'));
+          }).catch(function (err) {
+            ocupar(false);
+            toast(err.message || err, true);
+          });
+        return;
+      }
       var gear = e.target.closest('[data-editar-dept]');
       if (gear) {
         e.preventDefault();
@@ -3235,6 +3650,7 @@ if (typeof module !== 'undefined' && module.exports) {
       }
       var dept = e.target.closest('[data-dept]');
       if (dept) {
+        if (e.target.closest('[data-editar-dept], [data-planos-area]')) return;
         if (Estado.arrastouDept) {
           Estado.arrastouDept = false;
           return;
@@ -3343,6 +3759,51 @@ if (typeof module !== 'undefined' && module.exports) {
     });
 
     document.addEventListener('submit', function (e) {
+      var senhaAbre = e.target.closest('form[data-abrir-planos-area]');
+      if (senhaAbre) {
+        e.preventDefault();
+        var idAbre = senhaAbre.getAttribute('data-abrir-planos-area');
+        var senha = (senhaAbre.elements.senha && senhaAbre.elements.senha.value) || '';
+        carregarPlanosArea(idAbre, senha);
+        return;
+      }
+      var senhaForm = e.target.closest('form[data-senha-area]');
+      if (senhaForm) {
+        e.preventDefault();
+        var dadosSenha = lerForm(senhaForm);
+        if ((dadosSenha.senha_nova || '') !== (dadosSenha.senha_confirma || '')) {
+          toast(t('erro_senha_confirma'), true);
+          return;
+        }
+        ocupar(true, t('carregando_ellipsis'));
+        chamar('apiDefinirSenhaPlanosArea', senhaForm.getAttribute('data-senha-area'), dadosSenha.senha_atual || '', dadosSenha.senha_nova || '')
+          .then(function (hub) {
+            ocupar(false);
+            aplicarHubMantendoDrawer(hub);
+            if (hub.planosArea) aplicarPlanosArea(hub.planosArea);
+            toast(t('planos_area_senha_ok'));
+          }).catch(function (err) {
+            ocupar(false);
+            toast(err.message || err, true);
+          });
+        return;
+      }
+      var planoForm = e.target.closest('form[data-plano-area]');
+      if (planoForm) {
+        e.preventDefault();
+        var dados = lerForm(planoForm);
+        ocupar(true, t('carregando_ellipsis'));
+        chamar('apiSalvarPlanoArea', dados).then(function (resp) {
+          ocupar(false);
+          Estado.formPlanoArea = {};
+          aplicarPlanosArea(resp);
+          if (resp && resp.ok) toast(t('toast_salvo'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
+        return;
+      }
       var form = e.target.closest('form[data-entidade]');
       if (!form) return;
       e.preventDefault();
@@ -3373,6 +3834,11 @@ if (typeof module !== 'undefined' && module.exports) {
       }
     });
     document.addEventListener('change', function (e) {
+      if (e.target.getAttribute && e.target.getAttribute('data-mostrar-encerradas-area')) {
+        Estado.planosAreaMostrarEncerradas = !!e.target.checked;
+        if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
+        return;
+      }
       var cor = e.target.getAttribute && e.target.getAttribute('data-cor-input');
       if (!cor) return;
       salvarDeptCampo(cor, { cor: e.target.value });
@@ -3388,7 +3854,7 @@ if (typeof module !== 'undefined' && module.exports) {
         return;
       }
       if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('card-dept')) {
-        if (e.target.closest('[data-editar-dept], .seletor-icone, .cor-edicao')) return;
+        if (e.target.closest('[data-editar-dept], [data-planos-area], .seletor-icone, .cor-edicao')) return;
         e.preventDefault();
         abrirDept(e.target.getAttribute('data-dept'), 'ver');
       }

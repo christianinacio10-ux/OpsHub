@@ -20,6 +20,11 @@
     arrastouDept: false,
     dragId: null,
     idioma: 'pt',
+    planosArea: [],
+    planosAreaKpis: null,
+    planosAreaPrecisaSenha: false,
+    planosAreaMostrarEncerradas: false,
+    formPlanoArea: {},
   };
 
   var ICONES_DEPT = [
@@ -59,6 +64,8 @@
     'pasta-aberta': '<path d="M3 7h6l2 2h10v2H4l-1 8V7z"/><path d="M3 19h16l2-8H5"/>',
     arquivo: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
     ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.8.4-1.4 1-1.4 1.9V14M12 17h.01"/>',
+    lista: '<path d="M8 6H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h4"/>',
+    cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   };
 
   function svg(nome, extra) {
@@ -284,6 +291,9 @@
           '" style="--dept-cor:' + escapar(d.cor) + '" draggable="true" tabindex="0">' +
           '<div class="card-dept-acoes">' +
           badge +
+          '<button type="button" class="card-dept-config" data-planos-area="' + escapar(d.id) +
+          '" title="' + escapar(d.tem_senha_planos ? t('planos_area_tip_lock') : t('planos_area_tip')) + '">' +
+          svg(d.tem_senha_planos ? 'cadeado' : 'lista') + '</button>' +
           '<button type="button" class="card-dept-config" data-editar-dept="' + escapar(d.id) +
           '" title="' + escapar(t('config_card_tip')) + '">' + svg('config') + '</button>' +
           '</div>' +
@@ -659,9 +669,131 @@
           }).join('') + '</div>' +
           '<label class="cor-edicao">' + t('cor_card') +
           '<input type="color" value="' + escapar(d.cor || '#E4002B') + '" data-cor-input="' + escapar(d.id) + '">' +
-          '</label></div>'
+          '</label>' +
+          formSenhaPlanosArea(d) +
+          '</div>'
         : '') +
       '</div>';
+  }
+
+  function formSenhaPlanosArea(d) {
+    return '<div class="senha-area-bloco">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:12px 0 6px">' + t('planos_area_senha_bloco') + '</div>' +
+      '<div class="secao-apoio" style="margin-bottom:10px">' + t('planos_area_senha_hint') + '</div>' +
+      '<form class="form-grid" data-senha-area="' + escapar(d.id) + '">' +
+      (d.tem_senha_planos ? campo('senha_atual', t('planos_area_senha_atual'), '', { tipo: 'password' }) : '') +
+      campo('senha_nova', t('planos_area_senha_nova'), '', { tipo: 'password' }) +
+      campo('senha_confirma', t('planos_area_senha_confirma'), '', { tipo: 'password' }) +
+      '<div class="acoes-form"><button class="botao primario" type="submit">' + t('salvar') + '</button>' +
+      (d.tem_senha_planos
+        ? '<button class="botao" type="button" data-remover-senha-area="' + escapar(d.id) + '">' + t('planos_area_senha_remover') + '</button>'
+        : '') +
+      '</div></form></div>';
+  }
+
+  function opcoesStatusPlano(atual) {
+    var canonicos = ['Aberto', 'Em andamento', 'Concluído', 'Cancelado'];
+    var chaves = ['status_aberto', 'status_andamento', 'status_concluido', 'status_cancelado'];
+    return canonicos.map(function (v, i) {
+      return '<option value="' + v + '"' + (atual === v ? ' selected' : '') + '>' + t(chaves[i]) + '</option>';
+    }).join('');
+  }
+
+  function formPlanoArea(dept) {
+    var f = Estado.formPlanoArea || {};
+    return '<form class="form-grid" data-plano-area="1">' +
+      (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
+      '<input type="hidden" name="departamento_id" value="' + escapar(dept.id) + '">' +
+      campo('oque', t('campo_oque'), f.oque, { span2: true }) +
+      campo('como', t('campo_como'), f.como, { span2: true, area: true }) +
+      campo('responsavel', t('th_responsavel'), f.responsavel) +
+      campo('email', t('campo_email'), f.email) +
+      campo('prazo', t('campo_prazo'), f.prazo || '', { tipo: 'date' }) +
+      campo('status', t('campo_status'), f.status, { opcoes: opcoesStatusPlano(f.status || 'Aberto') }) +
+      campo('comentarios', t('campo_comentarios'), f.comentarios, { span2: true }) +
+      '<div class="acoes-form"><button class="botao primario" type="submit">' +
+      (f.id ? t('planos_area_atualizar') : t('planos_area_salvar')) + '</button>' +
+      (f.id ? '<button class="botao" type="button" data-cancelar-plano-area="1">' + t('cancelar') + '</button>' : '') +
+      '</div></form>';
+  }
+
+  function listaPlanosArea() {
+    var todos = Estado.planosArea || [];
+    var lista = Estado.planosAreaMostrarEncerradas
+      ? todos
+      : todos.filter(function (p) { return !statusEncerradoUi(p.status); });
+    if (!lista.length) return '<div class="vazio">' + t('planos_area_vazio') + '</div>';
+    return '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
+      '<th>' + t('th_oque') + '</th><th>' + t('th_responsavel') + '</th><th>' + t('th_prazo') + '</th>' +
+      '<th>' + t('th_status') + '</th><th></th></tr></thead><tbody>' +
+      lista.map(function (p) {
+        var st = rotuloStatusUi(p.status);
+        return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
+          '<td class="principal" title="' + escapar(p.oque) + '">' + escapar(p.oque) + '</td>' +
+          '<td>' + escapar(p.responsavel) + '</td>' +
+          '<td>' + escapar(p.prazo_br) + '</td>' +
+          '<td><span class="selo ' + p.status_classe + '">' + escapar(st) + '</span></td>' +
+          '<td><button type="button" class="botao" data-edit-plano-area="' + escapar(p.id) + '">' + t('editar') + '</button> ' +
+          '<button type="button" class="botao perigo" data-del-plano-area="' + escapar(p.id) + '">' + t('excluir') + '</button></td>' +
+          '</tr>';
+      }).join('') +
+      '</tbody></table></div>';
+  }
+
+  function htmlPlanosArea(d) {
+    if (Estado.planosAreaPrecisaSenha) {
+      return '<form class="form-senha-area" data-abrir-planos-area="' + escapar(d.id) + '">' +
+        '<div class="secao-titulo">' + t('planos_area_senha') + '</div>' +
+        '<div class="secao-apoio" style="margin-bottom:12px">' + t('planos_area_sub') + '</div>' +
+        '<label>' + t('planos_area_senha_ph') +
+        '<input name="senha" type="password" autocomplete="current-password"></label>' +
+        '<div class="acoes-form"><button class="botao primario" type="submit">' + t('planos_area_entrar') + '</button></div>' +
+        '</form>';
+    }
+    return '<div class="drawer-gestao">' +
+      kpisHtml(Estado.planosAreaKpis) +
+      '<div class="secao-apoio" style="margin-bottom:12px">' + t('planos_area_sub') + '</div>' +
+      '<label class="check-encerradas"><input type="checkbox" data-mostrar-encerradas-area="1"' +
+      (Estado.planosAreaMostrarEncerradas ? ' checked' : '') + '> ' + t('planos_area_mostrar_encerradas') + '</label>' +
+      listaPlanosArea() +
+      '<div class="secao-titulo" style="margin-top:18px">' + t('planos_area_cadastrar') + '</div>' +
+      formPlanoArea(d) +
+      '</div>';
+  }
+
+  function aplicarPlanosArea(resp) {
+    if (!resp) return;
+    Estado.planosAreaPrecisaSenha = !!resp.precisaSenha;
+    Estado.planosArea = resp.planos || [];
+    Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
+    if (resp.ok) {
+      var d = Estado.deptAberto;
+      if (d) d.tem_senha_planos = !!resp.tem_senha_planos;
+    }
+    if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
+  }
+
+  function pintarDrawerPlanos(d) {
+    $('drawer').classList.add('largo');
+    $('drawer-kicker').textContent = t('planos_area_kicker');
+    $('drawer-titulo').textContent = d.nome;
+    $('drawer-sub').textContent = t('planos_area_sub');
+    $('drawer-corpo').innerHTML = htmlPlanosArea(d);
+  }
+
+  function carregarPlanosArea(id, senha) {
+    ocupar(true, t('carregando_ellipsis'));
+    var p = senha != null
+      ? chamar('apiAbrirPlanosArea', id, senha)
+      : chamar('apiPlanosArea', id);
+    return p.then(function (resp) {
+      ocupar(false);
+      if (resp && resp.senhaErrada) toast(t('planos_area_senha_errada'), true);
+      aplicarPlanosArea(resp);
+    }).catch(function (err) {
+      ocupar(false);
+      toast(err.message || err, true);
+    });
   }
 
   function abrirDept(id, modo) {
@@ -679,7 +811,9 @@
     var bandeira = d.bandeira || '';
     var solutions = bandeira === 'Solutions';
     $('drawer').classList.remove('largo', 'extra-largo');
-    if (modo === 'editar') {
+    if (modo === 'planos') {
+      pintarDrawerPlanos(d);
+    } else if (modo === 'editar') {
       $('drawer-kicker').textContent = bandeira
         ? t('drawer_configurar_bandeira', { bandeira: bandeira })
         : t('drawer_configurar');
@@ -729,6 +863,8 @@
     Estado.deptModo = 'ver';
     Estado.aparenciaAberta = false;
     Estado.formDrawer = { tipo: '', data: {} };
+    Estado.formPlanoArea = {};
+    Estado.planosAreaPrecisaSenha = false;
   }
 
   function campo(nome, rotulo, valor, extra) {
@@ -1091,6 +1227,66 @@
         definirIdioma(idiomaBtn.getAttribute('data-idioma'));
         return;
       }
+      var planosBtn = e.target.closest('[data-planos-area]');
+      if (planosBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var pid = planosBtn.getAttribute('data-planos-area');
+        var dPlanos = ((Estado.hub && Estado.hub.departamentos) || []).filter(function (x) {
+          return x.id === pid;
+        })[0];
+        Estado.formPlanoArea = {};
+        Estado.planosArea = [];
+        Estado.planosAreaPrecisaSenha = !!(dPlanos && dPlanos.tem_senha_planos);
+        abrirDept(pid, 'planos');
+        carregarPlanosArea(pid);
+        return;
+      }
+      if (e.target.closest('[data-cancelar-plano-area]')) {
+        Estado.formPlanoArea = {};
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
+        return;
+      }
+      var editPlano = e.target.closest('[data-edit-plano-area]');
+      if (editPlano) {
+        var idPl = editPlano.getAttribute('data-edit-plano-area');
+        Estado.formPlanoArea = (Estado.planosArea || []).filter(function (x) { return String(x.id) === String(idPl); })[0] || {};
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
+        return;
+      }
+      var delPlano = e.target.closest('[data-del-plano-area]');
+      if (delPlano) {
+        if (!confirm(t('confirm_excluir_acao'))) return;
+        ocupar(true, t('carregando_ellipsis'));
+        chamar('apiExcluirPlanoArea', delPlano.getAttribute('data-del-plano-area')).then(function (resp) {
+          ocupar(false);
+          Estado.formPlanoArea = {};
+          aplicarPlanosArea(resp);
+          toast(t('toast_removido'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
+        return;
+      }
+      var remSenha = e.target.closest('[data-remover-senha-area]');
+      if (remSenha) {
+        e.preventDefault();
+        e.stopPropagation();
+        var formSenha = remSenha.closest('form');
+        var atual = (formSenha && formSenha.elements.senha_atual && formSenha.elements.senha_atual.value) || '';
+        ocupar(true, t('carregando_ellipsis'));
+        chamar('apiDefinirSenhaPlanosArea', remSenha.getAttribute('data-remover-senha-area'), atual, '')
+          .then(function (hub) {
+            ocupar(false);
+            aplicarHubMantendoDrawer(hub);
+            toast(t('planos_area_senha_ok'));
+          }).catch(function (err) {
+            ocupar(false);
+            toast(err.message || err, true);
+          });
+        return;
+      }
       var gear = e.target.closest('[data-editar-dept]');
       if (gear) {
         e.preventDefault();
@@ -1212,6 +1408,7 @@
       }
       var dept = e.target.closest('[data-dept]');
       if (dept) {
+        if (e.target.closest('[data-editar-dept], [data-planos-area]')) return;
         if (Estado.arrastouDept) {
           Estado.arrastouDept = false;
           return;
@@ -1320,6 +1517,51 @@
     });
 
     document.addEventListener('submit', function (e) {
+      var senhaAbre = e.target.closest('form[data-abrir-planos-area]');
+      if (senhaAbre) {
+        e.preventDefault();
+        var idAbre = senhaAbre.getAttribute('data-abrir-planos-area');
+        var senha = (senhaAbre.elements.senha && senhaAbre.elements.senha.value) || '';
+        carregarPlanosArea(idAbre, senha);
+        return;
+      }
+      var senhaForm = e.target.closest('form[data-senha-area]');
+      if (senhaForm) {
+        e.preventDefault();
+        var dadosSenha = lerForm(senhaForm);
+        if ((dadosSenha.senha_nova || '') !== (dadosSenha.senha_confirma || '')) {
+          toast(t('erro_senha_confirma'), true);
+          return;
+        }
+        ocupar(true, t('carregando_ellipsis'));
+        chamar('apiDefinirSenhaPlanosArea', senhaForm.getAttribute('data-senha-area'), dadosSenha.senha_atual || '', dadosSenha.senha_nova || '')
+          .then(function (hub) {
+            ocupar(false);
+            aplicarHubMantendoDrawer(hub);
+            if (hub.planosArea) aplicarPlanosArea(hub.planosArea);
+            toast(t('planos_area_senha_ok'));
+          }).catch(function (err) {
+            ocupar(false);
+            toast(err.message || err, true);
+          });
+        return;
+      }
+      var planoForm = e.target.closest('form[data-plano-area]');
+      if (planoForm) {
+        e.preventDefault();
+        var dados = lerForm(planoForm);
+        ocupar(true, t('carregando_ellipsis'));
+        chamar('apiSalvarPlanoArea', dados).then(function (resp) {
+          ocupar(false);
+          Estado.formPlanoArea = {};
+          aplicarPlanosArea(resp);
+          if (resp && resp.ok) toast(t('toast_salvo'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
+        return;
+      }
       var form = e.target.closest('form[data-entidade]');
       if (!form) return;
       e.preventDefault();
@@ -1350,6 +1592,11 @@
       }
     });
     document.addEventListener('change', function (e) {
+      if (e.target.getAttribute && e.target.getAttribute('data-mostrar-encerradas-area')) {
+        Estado.planosAreaMostrarEncerradas = !!e.target.checked;
+        if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
+        return;
+      }
       var cor = e.target.getAttribute && e.target.getAttribute('data-cor-input');
       if (!cor) return;
       salvarDeptCampo(cor, { cor: e.target.value });
@@ -1365,7 +1612,7 @@
         return;
       }
       if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('card-dept')) {
-        if (e.target.closest('[data-editar-dept], .seletor-icone, .cor-edicao')) return;
+        if (e.target.closest('[data-editar-dept], [data-planos-area], .seletor-icone, .cor-edicao')) return;
         e.preventDefault();
         abrirDept(e.target.getAttribute('data-dept'), 'ver');
       }

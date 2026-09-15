@@ -159,4 +159,17 @@ var Cadastros = {
   planos: function () {
     return Repo.ler(ABAS.planos);
   },
+
+  planosArea: function () {
+    return Repo.ler(ABAS.planosArea);
+  },
+
+  planosFollowUp: function () {
+    return this.planos().concat(this.planosArea().map(function (p) {
+      var copia = {};
+      Object.keys(p).forEach(function (k) { copia[k] = p[k]; });
+      copia._folha = 'area';
+      return copia;
+    }));
+  },
 };
