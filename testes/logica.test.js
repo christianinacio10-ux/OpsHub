@@ -39,6 +39,38 @@ assert.strictEqual(Logica.elegivelFollowUp(acao, d(2026, 8, 24)).ok, false, 'no 
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { email: '' }), hoje).motivo, 'sem_email');
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { status: 'Concluído' }), hoje).ok, false);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { prazo: d(2026, 9, 1) }), hoje).motivo, 'ainda_no_prazo');
+assert.strictEqual(Logica.followUpAcaoLigada({}), true);
+assert.strictEqual(Logica.followUpAcaoLigada({ followup: '' }), true);
+assert.strictEqual(Logica.followUpAcaoLigada({ followup: 'SIM' }), true);
+assert.strictEqual(Logica.followUpAcaoLigada({ followup: 'NAO' }), false);
+assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { followup: 'NAO' }), hoje).motivo, 'acao_desligada');
+var mesclado = Logica.mesclarImportacao(
+  [{ chave_origem: 'k1', ultimo_email_em: hoje, emails_enviados: 2, followup: 'NAO' }],
+  [{ chave_origem: 'k1', oque: 'novo' }]
+);
+assert.strictEqual(mesclado[0].followup, 'NAO');
+assert.strictEqual(mesclado[0].emails_enviados, 2);
+
+var temasChip = ['TIER_3', 'UEE/Scrap_Apparel', 'UEE/SCRAP_APPAREL'];
+assert.deepStrictEqual(
+  Logica.proximoFiltroTema(temasChip, temasChip, true, 'UEE/Scrap_Apparel'),
+  { todosTemas: false, temas: ['UEE/Scrap_Apparel'] },
+  'clicar um tema com Todos ligado isola só aquele tema'
+);
+assert.deepStrictEqual(
+  Logica.proximoFiltroTema(temasChip, ['UEE/Scrap_Apparel'], false, 'UEE/Scrap_Apparel'),
+  { todosTemas: true, temas: temasChip },
+  'clicar de novo o tema isolado volta para Todos'
+);
+assert.deepStrictEqual(
+  Logica.proximoFiltroTema(temasChip, ['UEE/Scrap_Apparel'], false, 'TIER_3'),
+  { todosTemas: false, temas: ['UEE/Scrap_Apparel', 'TIER_3'] },
+  'clicar outro tema soma ao filtro'
+);
+assert.deepStrictEqual(
+  Logica.proximoFiltroTema(temasChip, ['UEE/Scrap_Apparel', 'TIER_3'], false, 'TIER_3'),
+  { todosTemas: false, temas: ['UEE/Scrap_Apparel'] }
+);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { ultimo_email_em: hoje }), hoje).motivo,
   'ja_enviado_hoje'
 );

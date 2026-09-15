@@ -4,7 +4,7 @@
  */
 var APP = {
   nome: 'OpsHub',
-  versao: '1.6.0',
+  versao: '1.6.1',
 };
 
 var ABAS = {
@@ -44,7 +44,7 @@ ESQUEMA[ABAS.planosArea] = [
   'id', 'departamento_id', 'fonte_id', 'fonte_nome', 'chave_origem',
   'tema', 'divisao', 'area', 'oque', 'como',
   'responsavel', 'email', 'prazo', 'status', 'comentarios',
-  'ultimo_email_em', 'emails_enviados', 'atualizado_em',
+  'ultimo_email_em', 'emails_enviados', 'atualizado_em', 'followup',
 ];
 ESQUEMA[ABAS.emails] = [
   'quando', 'acao_id', 'email', 'assunto', 'status', 'detalhe',
