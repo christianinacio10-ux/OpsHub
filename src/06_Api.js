@@ -288,7 +288,7 @@ function deptPorId_(id) {
 
 function payloadAreaTrancada_(dept, extra) {
   extra = extra || {};
-  return {
+  return payloadCliente_({
     ok: false,
     precisaSenha: true,
     senhaErrada: !!extra.senhaErrada,
@@ -297,7 +297,7 @@ function payloadAreaTrancada_(dept, extra) {
     planos: [],
     fontes: [],
     kpis: Logica.kpis([], hojeLocal_()),
-  };
+  });
 }
 
 function fontesAreaDoDept_(deptId) {
@@ -305,18 +305,26 @@ function fontesAreaDoDept_(deptId) {
     return Logica.texto(f.departamento_id) === Logica.texto(deptId);
   }).map(function (f) {
     return {
-      id: f.id,
-      departamento_id: f.departamento_id,
-      nome: f.nome,
-      referencia: f.referencia,
-      aba: f.aba,
-      linha_cabecalho: f.linha_cabecalho,
-      ativo: f.ativo,
-      ultima_execucao: f.ultima_execucao,
-      ultimo_status: f.ultimo_status,
-      ultimo_detalhe: f.ultimo_detalhe,
+      id: Logica.texto(f.id),
+      departamento_id: Logica.texto(f.departamento_id),
+      nome: Logica.texto(f.nome),
+      referencia: Logica.texto(f.referencia),
+      aba: Logica.texto(f.aba),
+      linha_cabecalho: Number(f.linha_cabecalho || 1) || 1,
+      ativo: Logica.fonteAtiva(f) ? 'SIM' : 'NAO',
+      ultima_execucao: f.ultima_execucao ? String(f.ultima_execucao) : '',
+      ultimo_status: Logica.texto(f.ultimo_status),
+      ultimo_detalhe: Logica.texto(f.ultimo_detalhe),
     };
   });
+}
+
+function payloadCliente_(obj) {
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch (e) {
+    return obj;
+  }
 }
 
 function payloadPlanosArea_(dept) {
@@ -325,7 +333,7 @@ function payloadPlanosArea_(dept) {
   var lista = brutos.map(function (p) {
     return Logica.prepararAcaoParaUi(p, hoje);
   });
-  return {
+  return payloadCliente_({
     ok: true,
     precisaSenha: false,
     departamento_id: dept.id,
@@ -333,7 +341,7 @@ function payloadPlanosArea_(dept) {
     planos: lista,
     fontes: fontesAreaDoDept_(dept.id),
     kpis: Logica.kpis(brutos, hoje),
-  };
+  });
 }
 
 function exigirAreaAberta_(deptId) {
@@ -393,10 +401,7 @@ function apiSalvarFonteArea(reg) {
     Repo.acrescentar(ABAS.fontesArea, [registro]);
   }
   Repo.limparMemoria();
-  var imp = importarFontesArea_(gate.dept.id);
-  var payload = payloadPlanosArea_(deptPorId_(gate.dept.id));
-  payload.importacao = imp;
-  return payload;
+  return payloadPlanosArea_(deptPorId_(gate.dept.id));
 }
 
 function apiExcluirFonteArea(id) {
@@ -421,10 +426,15 @@ function apiExcluirFonteArea(id) {
 function apiImportarPlanosArea(deptId) {
   var gate = exigirAreaAberta_(deptId);
   if (gate.bloqueado) return gate.bloqueado;
-  var imp = importarFontesArea_(gate.dept.id);
+  var imp;
+  try {
+    imp = importarFontesArea_(gate.dept.id);
+  } catch (e) {
+    imp = { fontes: 0, linhas: 0, avisos: [e && e.message ? e.message : String(e)] };
+  }
   var payload = payloadPlanosArea_(deptPorId_(gate.dept.id));
   payload.importacao = imp;
-  return payload;
+  return payloadCliente_(payload);
 }
 
 function apiDefinirSenhaPlanosArea(deptId, senhaAtual, senhaNova) {

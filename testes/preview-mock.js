@@ -183,7 +183,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.5.1' },
+        app: { nome: 'OpsHub', versao: '1.5.2' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -324,11 +324,6 @@
         fontesArea.push(registro);
       }
       var payload = payloadArea(reg.departamento_id, false);
-      payload.importacao = {
-        fontes: 1,
-        linhas: payload.planos.filter(function (p) { return String(p.fonte_id || '') === String(id) || !p.fonte_id; }).length || payload.planos.length,
-        avisos: [],
-      };
       return payload;
     },
     apiExcluirFonteArea: function (id) {

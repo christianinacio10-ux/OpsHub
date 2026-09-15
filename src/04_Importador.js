@@ -103,22 +103,17 @@ function abrirPlanilhaOrigem_(ref) {
   if (/\/spreadsheets\/d\/e\//.test(s)) {
     throw new Error(I18n.t(I18n.atual(), 'erro_link_publicacao'));
   }
+  var id = Logica.extrairIdPlanilha(s);
+  if (id) {
+    try { return SpreadsheetApp.openById(id); } catch (eId) {}
+  }
   if (/^https?:\/\//i.test(s)) {
     try { return SpreadsheetApp.openByUrl(s); } catch (e1) {
-      var idUrl = Logica.extrairIdPlanilha(s);
-      if (idUrl) {
-        try { return SpreadsheetApp.openById(idUrl); } catch (e2) {}
-      }
       throw new Error(I18n.t(I18n.atual(), 'erro_sem_acesso'));
     }
   }
-  var id = Logica.extrairIdPlanilha(s);
   if (!id) throw new Error(I18n.t(I18n.atual(), 'erro_ref_invalida'));
-  try {
-    return SpreadsheetApp.openById(id);
-  } catch (e) {
-    throw new Error(I18n.t(I18n.atual(), 'erro_sem_acesso_curto'));
-  }
+  throw new Error(I18n.t(I18n.atual(), 'erro_sem_acesso_curto'));
 }
 
 function abaOrigem_(ss, fonte) {
