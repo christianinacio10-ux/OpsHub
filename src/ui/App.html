@@ -26,6 +26,9 @@
     planosAreaMostrarEncerradas: false,
     fontesArea: [],
     formFonteArea: {},
+    filtrosArea: filtrosVazios(),
+    ordemArea: { campo: 'prazo', dir: 'asc' },
+    planosAreaFollowUp: { temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '' },
   };
 
   var ICONES_DEPT = [
@@ -44,6 +47,70 @@
       responsaveis: null,
       omitirEncerradas: true,
     };
+  }
+
+  function alvoFiltrosArea() {
+    if (Estado._forcarPlanta) return false;
+    return !!(Estado.deptAberto && Estado.deptModo === 'planos');
+  }
+
+  function filtrosAtivos() {
+    return alvoFiltrosArea() ? Estado.filtrosArea : Estado.filtros;
+  }
+
+  function ordemAtiva() {
+    return alvoFiltrosArea() ? Estado.ordemArea : Estado.ordem;
+  }
+
+  function listaPlanosFiltro() {
+    return alvoFiltrosArea() ? (Estado.planosArea || []) : ((Estado.hub && Estado.hub.planos) || []);
+  }
+
+  function chaveCacheFiltrosArea(deptId) {
+    return 'opshub_filtros_area_' + String(deptId || '');
+  }
+
+  function carregarFiltrosArea(deptId) {
+    var base = filtrosVazios();
+    var ordem = { campo: 'prazo', dir: 'asc' };
+    try {
+      var raw = localStorage.getItem(chaveCacheFiltrosArea(deptId));
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          Object.keys(base).forEach(function (k) {
+            if (parsed[k] !== undefined) base[k] = parsed[k];
+          });
+          if (parsed.ordem && parsed.ordem.campo) {
+            ordem.campo = parsed.ordem.campo;
+            ordem.dir = parsed.ordem.dir === 'desc' ? 'desc' : 'asc';
+          }
+        }
+      }
+    } catch (e) {}
+    Estado.filtrosArea = base;
+    Estado.ordemArea = ordem;
+  }
+
+  function salvarFiltrosArea() {
+    var id = Estado.deptAberto && Estado.deptAberto.id;
+    if (!id) return;
+    try {
+      var payload = {};
+      var f = Estado.filtrosArea || filtrosVazios();
+      Object.keys(filtrosVazios()).forEach(function (k) { payload[k] = f[k]; });
+      payload.ordem = Estado.ordemArea || { campo: 'prazo', dir: 'asc' };
+      localStorage.setItem(chaveCacheFiltrosArea(id), JSON.stringify(payload));
+    } catch (e) {}
+  }
+
+  function recarregarFiltrosUi() {
+    if (alvoFiltrosArea()) {
+      salvarFiltrosArea();
+      if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true });
+    } else {
+      render();
+    }
   }
 
     /* Glifos Lucide (ISC) embutidos — Apps Script nao pode puxar CDN. */
@@ -351,14 +418,14 @@
   }
 
   function statusMarcado(valor) {
-    var f = Estado.filtros;
+    var f = filtrosAtivos();
     if (f.statuses != null) return f.statuses.indexOf(valor) !== -1;
     if (f.omitirEncerradas) return !statusEncerradoUi(valor);
     return true;
   }
 
   function rotuloFiltroStatus(valores) {
-    var f = Estado.filtros;
+    var f = filtrosAtivos();
     var marcados = (valores || []).filter(statusMarcado);
     if (!valores.length) return t('filtro_status');
     if (f.statuses == null && f.omitirEncerradas) return t('status_ativas');
@@ -369,7 +436,7 @@
   }
 
   function temasAtivos(todosTemasUnicos) {
-    var f = Estado.filtros;
+    var f = filtrosAtivos();
     if (f.todosTemas) return todosTemasUnicos.slice();
     return f.temas || [];
   }
@@ -380,7 +447,7 @@
   }
 
   function aplicaFiltros(lista) {
-    var f = Estado.filtros;
+    var f = filtrosAtivos();
     var temasPossiveis = unicos(lista, 'tema');
     var temas = temasAtivos(temasPossiveis);
     if (!temas.length) return [];
@@ -415,7 +482,7 @@
 
   function painelExcel(eixo, label, valores) {
     var chave = chaveFiltro(eixo);
-    var sel = Estado.filtros[chave];
+    var sel = filtrosAtivos()[chave];
     var aberto = Estado.filtroAberto === eixo;
     var todosOn;
     var rotulo;
@@ -469,8 +536,8 @@
   }
 
   function aplicaOrdem(lista) {
-    var campo = Estado.ordem.campo;
-    var dir = Estado.ordem.dir === 'desc' ? -1 : 1;
+    var campo = ordemAtiva().campo;
+    var dir = ordemAtiva().dir === 'desc' ? -1 : 1;
     return lista.slice().sort(function (a, b) {
       var va = a[campo] || '';
       var vb = b[campo] || '';
@@ -487,37 +554,29 @@
   }
 
   function th(campo, rotulo) {
-    var ativo = Estado.ordem.campo === campo;
+    var ativo = ordemAtiva().campo === campo;
     return '<th data-ord="' + campo + '">' + rotulo +
-      (ativo ? '<span class="ord">' + (Estado.ordem.dir === 'asc' ? '↑' : '↓') + '</span>' : '') +
+      (ativo ? '<span class="ord">' + (ordemAtiva().dir === 'asc' ? '↑' : '↓') + '</span>' : '') +
       '</th>';
   }
 
-  function tabelaPlanos() {
-    var todos = Estado.hub.planos || [];
-    var temasPossiveis = unicos(todos, 'tema');
-    var semTema = !temasAtivos(temasPossiveis).length;
-    var filtrados = semTema ? [] : aplicaOrdem(aplicaFiltros(todos));
-    var cab =
-      '<div class="painel-topo">' +
-      '<input class="busca" id="filtro-texto" placeholder="' + escapar(t('busca_ph')) + '" value="' +
-      escapar(Estado.filtros.texto) + '">' +
+  function barraFiltros(todos, ids) {
+    ids = ids || {};
+    var buscaId = ids.busca || 'filtro-texto';
+    var limparId = ids.limpar || 'limpar-filtros';
+    return '<div class="painel-topo">' +
+      '<input class="busca" id="' + buscaId + '" placeholder="' + escapar(t('busca_ph')) + '" value="' +
+      escapar(filtrosAtivos().texto) + '">' +
       painelExcel('divisao', t('filtro_divisao'), unicos(todos, 'divisao')) +
       painelExcel('area', t('filtro_area'), unicos(todos, 'area')) +
       painelExcel('status', t('filtro_status'), unicos(todos, 'status')) +
       painelExcel('responsavel', t('filtro_responsavel'), unicos(todos, 'responsavel')) +
-      '<button type="button" class="botao" id="limpar-filtros">' + t('limpar') + '</button>' +
+      '<button type="button" class="botao" id="' + limparId + '">' + t('limpar') + '</button>' +
       '</div>';
+  }
 
-    var vazioMsg = semTema
-      ? t('vazio_tema')
-      : t('vazio_filtros');
-
-    if (!filtrados.length) {
-      return '<div class="painel painel-planos">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
-    }
-
-    var linhas = filtrados.map(function (p) {
+  function linhasTabelaPlanos(filtrados) {
+    return filtrados.map(function (p) {
       var tipEmail = p.tem_email ? p.email : t('tooltip_sem_email');
       var emailCel = p.tem_email
         ? escapar(p.email)
@@ -537,16 +596,33 @@
         td(p.comentarios, 'comentarios') +
         '</tr>';
     }).join('');
+  }
 
+  function tabelaPlanosDe(todos, ids) {
+    ids = ids || {};
+    var temasPossiveis = unicos(todos, 'tema');
+    var semTema = !temasAtivos(temasPossiveis).length;
+    var filtrados = semTema ? [] : aplicaOrdem(aplicaFiltros(todos));
+    var cab = barraFiltros(todos, ids);
+    var vazioMsg = !todos.length && ids.vazio
+      ? t(ids.vazio)
+      : (semTema ? t('vazio_tema') : t('vazio_filtros'));
+    if (!filtrados.length) {
+      return '<div class="painel painel-planos">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
+    }
     return '<div class="painel painel-planos">' + cab +
       '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
       th('tema', t('th_tema')) + th('divisao', t('th_divisao')) + th('area', t('th_area')) +
       th('oque', t('th_oque')) + th('como', t('th_como')) + th('responsavel', t('th_responsavel')) +
       th('email', t('th_email')) + th('prazo', t('th_prazo')) + th('status', t('th_status')) +
       th('comentarios', t('th_comentarios')) +
-      '</tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+      '</tr></thead><tbody>' + linhasTabelaPlanos(filtrados) + '</tbody></table></div>' +
       '<div class="painel-topo tabela-rodape" style="border-top:1px solid var(--linha);border-bottom:0">' +
       '<div class="secao-apoio">' + t('n_acoes', { n: filtrados.length, total: todos.length }) + '</div></div></div>';
+  }
+
+  function tabelaPlanos() {
+    return tabelaPlanosDe(Estado.hub.planos || []);
   }
 
   function negocioEfetivo(c, dept) {
@@ -723,40 +799,97 @@
     }).join('') + '</div>';
   }
 
+  function pessoasFollowUpArea(lista) {
+    var set = {};
+    var out = [];
+    (lista || []).forEach(function (p) {
+      var email = String(p.email || '').trim().toLowerCase();
+      if (!email || email.indexOf('@') < 1 || set[email]) return;
+      set[email] = 1;
+      out.push({ email: email, nome: p.responsavel || email });
+    });
+    out.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome), localeUi()); });
+    return out;
+  }
+
+  function followUpAreaAtual() {
+    return Estado.planosAreaFollowUp || {
+      temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '',
+    };
+  }
+
+  function chipsFollowUpLista(temas, habilitados, attr) {
+    temas = (temas || []).filter(function (nome) { return nome && nome !== '__NONE__'; });
+    habilitados = listaTemas(habilitados);
+    var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
+    var todos = !habilitados.length && !nenhum;
+    return '<div class="temas-chips">' +
+      (temas.length
+        ? temas.map(function (temaNome) {
+            var on = !nenhum && (todos || habilitados.indexOf(temaNome) !== -1);
+            return '<button type="button" class="chip-follow ' + (on ? 'ligado' : 'desligado') +
+              '" ' + attr + '="' + escapar(temaNome) + '" aria-pressed="' + (on ? 'true' : 'false') +
+              '" title="' + (on ? t('follow_tip_on') : t('follow_tip_off')) + '">' +
+              '<span class="chip-follow-ponto" aria-hidden="true"></span>' +
+              '<span class="chip-follow-nome">' + escapar(temaNome) + '</span>' +
+              '<span class="chip-follow-estado">' + (on ? t('follow_ligado') : t('follow_desligado')) + '</span></button>';
+          }).join('')
+        : '<div class="secao-apoio">' + t('importar_para_temas') + '</div>') +
+      '</div>';
+  }
+
+  function blocoFollowUpArea() {
+    var fu = followUpAreaAtual();
+    var temas = unicos(Estado.planosArea || [], 'tema');
+    var pessoas = pessoasFollowUpArea(Estado.planosArea || []);
+    var off = {};
+    (fu.emailsOff || []).forEach(function (e) { off[String(e).toLowerCase()] = 1; });
+    var meu = String(fu.meuEmail || fu.gestorEmail || '').toLowerCase();
+    var emailHint = fu.gestorEmail || fu.meuEmail || '—';
+    var listaPessoas = pessoas.length
+      ? '<div class="lista-emails-follow">' + pessoas.map(function (p) {
+          var on = !off[p.email];
+          var eu = meu && p.email === meu;
+          var dim = fu.soEu && !eu;
+          return '<button type="button" class="filtro-excel-item' + (dim ? ' opaco' : '') +
+            '" data-followup-email="' + escapar(p.email) + '">' +
+            '<span class="caixa' + (on ? ' marcada' : '') + '" aria-hidden="true"></span>' +
+            '<span><strong>' + escapar(tituloNome(p.nome)) + '</strong>' +
+            (eu ? ' · ' + t('planos_area_follow_eu') : '') +
+            '<small>' + escapar(p.email) + '</small></span></button>';
+        }).join('') + '</div>'
+      : '<div class="secao-apoio">' + t('planos_area_follow_sem_pessoas') + '</div>';
+    return '<div class="painel follow-area" style="margin:16px 0;padding:14px 16px">' +
+      '<div class="secao-titulo">' + t('mail_regra') + '</div>' +
+      '<div class="secao-apoio" style="margin:6px 0 12px">' + t('planos_area_follow_apoio') + '</div>' +
+      '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">' + t('temas_email') + '</div>' +
+      chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area') +
+      '<label class="check-encerradas" style="margin-top:14px">' +
+      '<input type="checkbox" data-followup-so-eu="1"' + (fu.soEu ? ' checked' : '') + '> ' +
+      t('planos_area_follow_so_eu') + '</label>' +
+      '<div class="secao-apoio" style="margin:0 0 12px">' +
+      t('planos_area_follow_so_eu_hint', { email: emailHint }) + '</div>' +
+      '<div class="secao-titulo" style="font-size:13px;margin:8px 0 6px">' + t('planos_area_follow_pessoas') + '</div>' +
+      '<div class="secao-apoio" style="margin-bottom:8px">' + t('planos_area_follow_pessoas_apoio') + '</div>' +
+      listaPessoas +
+      '<div style="margin-top:12px">' +
+      '<button class="botao" type="button" data-followup-area-agora="1">' + t('enviar_followups') + '</button>' +
+      '</div></div>';
+  }
+
   function listaPlanosArea() {
-    var todos = Estado.planosArea || [];
-    var lista = Estado.planosAreaMostrarEncerradas
-      ? todos
-      : todos.filter(function (p) { return !statusEncerradoUi(p.status); });
-    if (!lista.length) return '<div class="vazio">' + t('planos_area_vazio') + '</div>';
-    return '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
-      '<th>' + t('th_tema') + '</th><th>' + t('th_oque') + '</th><th>' + t('th_responsavel') + '</th>' +
-      '<th>' + t('th_email') + '</th><th>' + t('th_prazo') + '</th><th>' + t('th_status') + '</th>' +
-      '</tr></thead><tbody>' +
-      lista.map(function (p) {
-        var st = rotuloStatusUi(p.status);
-        var tipEmail = p.tem_email ? p.email : t('tooltip_sem_email');
-        var emailCel = p.tem_email
-          ? escapar(p.email)
-          : '<span class="aviso-email" tabindex="0" data-tip="' + escapar(tipEmail) +
-            '" title="' + escapar(tipEmail) + '">' + svg('ehs') + '</span>';
-        return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
-          '<td>' + escapar(p.tema) + '</td>' +
-          '<td class="principal" title="' + escapar(p.oque) + '">' + escapar(p.oque) + '</td>' +
-          '<td>' + escapar(p.responsavel) + '</td>' +
-          '<td title="' + escapar(tipEmail) + '">' + emailCel + '</td>' +
-          '<td>' + escapar(p.prazo_br) + '</td>' +
-          '<td><span class="selo ' + p.status_classe + '">' + escapar(st) + '</span></td>' +
-          '</tr>';
-      }).join('') +
-      '</tbody></table></div>';
+    return chipsTema(Estado.planosArea || []) +
+      tabelaPlanosDe(Estado.planosArea || [], {
+        busca: 'filtro-texto-area',
+        limpar: 'limpar-filtros-area',
+        vazio: 'planos_area_vazio',
+      });
   }
 
   function htmlPlanosArea(d) {
     if (Estado.planosAreaPrecisaSenha) {
       return '<form class="form-senha-area" data-abrir-planos-area="' + escapar(d.id) + '">' +
         '<div class="secao-titulo">' + t('planos_area_senha') + '</div>' +
-        '<div class="secao-apoio" style="margin-bottom:12px">' + t('planos_area_sub') + '</div>' +
         '<label>' + t('planos_area_senha_ph') +
         '<input name="senha" type="password" autocomplete="current-password"></label>' +
         '<div class="acoes-form"><button class="botao primario" type="submit">' + t('planos_area_entrar') + '</button></div>' +
@@ -764,30 +897,31 @@
     }
     return '<div class="drawer-gestao">' +
       kpisHtml(Estado.planosAreaKpis) +
-      '<div class="secao-apoio" style="margin-bottom:12px">' + t('planos_area_sub') + '</div>' +
       '<div class="painel-topo" style="margin-bottom:10px">' +
       '<button class="botao primario" type="button" data-importar-area="' + escapar(d.id) + '">' + t('importar_agora') + '</button>' +
       '<div class="secao-apoio">' + t('fontes_apoio') + '</div></div>' +
       listaFontesArea() +
-      '<label class="check-encerradas" style="margin-top:16px"><input type="checkbox" data-mostrar-encerradas-area="1"' +
-      (Estado.planosAreaMostrarEncerradas ? ' checked' : '') + '> ' + t('planos_area_mostrar_encerradas') + '</label>' +
+      blocoFollowUpArea() +
       listaPlanosArea() +
       '<div class="secao-titulo" style="margin-top:18px">' + t('planos_area_cadastrar') + '</div>' +
       formFonteArea(d) +
       '</div>';
   }
 
-  function aplicarPlanosArea(resp) {
+  function aplicarPlanosArea(resp, opts) {
     if (!resp) return;
     Estado.planosAreaPrecisaSenha = !!resp.precisaSenha;
     Estado.planosArea = resp.planos || [];
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
+    Estado.planosAreaFollowUp = resp.followup || {
+      temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '',
+    };
     if (resp.ok) {
       var d = Estado.deptAberto;
       if (d) d.tem_senha_planos = !!resp.tem_senha_planos;
     }
-    if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
+    if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto, opts);
     if (resp.importacao) {
       ocupar(false);
       setPilula(true, t('atualizado'));
@@ -814,13 +948,30 @@
     });
   }
 
-  function pintarDrawerPlanos(d) {
+  function pintarDrawerPlanos(d, opts) {
+    opts = opts || {};
+    var corpo = $('drawer-corpo');
+    var y = opts.manterScroll && corpo ? corpo.scrollTop : 0;
+    var buscaVal = '';
+    var buscaEl = $('filtro-texto-area');
+    if (opts.manterBusca && buscaEl) buscaVal = buscaEl.value;
     $('drawer').classList.add('largo');
     $('drawer-kicker').textContent = t('planos_area_kicker');
     $('drawer-titulo').textContent = d.nome;
     $('drawer-sub').textContent = t('planos_area_sub');
     $('drawer-corpo').innerHTML = htmlPlanosArea(d);
-    $('drawer-corpo').scrollTop = 0;
+    if (opts.manterScroll && corpo) corpo.scrollTop = y;
+    else $('drawer-corpo').scrollTop = 0;
+    if (opts.manterBusca) {
+      var b = $('filtro-texto-area');
+      if (b) {
+        if (buscaVal) b.value = buscaVal;
+        b.focus();
+        var v = b.value;
+        b.value = '';
+        b.value = v;
+      }
+    }
   }
 
   function carregarPlanosArea(id, senha) {
@@ -854,6 +1005,8 @@
     var solutions = bandeira === 'Solutions';
     $('drawer').classList.remove('largo', 'extra-largo');
     if (modo === 'planos') {
+      carregarFiltrosArea(id);
+      Estado.filtroAberto = null;
       pintarDrawerPlanos(d);
     } else if (modo === 'editar') {
       $('drawer-kicker').textContent = bandeira
@@ -977,11 +1130,16 @@
   }
 
   function vistaPlanos() {
-    return '<div class="planos-cab">' +
-      kpisHtml(Estado.hub.kpis) +
-      chipsTema(Estado.hub.planos || []) +
-      '</div>' +
-      tabelaPlanos();
+    Estado._forcarPlanta = true;
+    try {
+      return '<div class="planos-cab">' +
+        kpisHtml(Estado.hub.kpis) +
+        chipsTema(Estado.hub.planos || []) +
+        '</div>' +
+        tabelaPlanos();
+    } finally {
+      Estado._forcarPlanta = false;
+    }
   }
 
   function vistaConfig() {
@@ -1035,26 +1193,11 @@
   function chipsFollowUp() {
     var temas = listaTemas(Estado.hub && Estado.hub.temasDistintos);
     if (!temas.length) temas = unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
-    temas = temas.filter(function (t) { return t && t !== '__NONE__'; });
-    var habilitados = listaTemas(Estado.hub && Estado.hub.temasFollowUp);
-    var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
-    var todos = !habilitados.length && !nenhum;
     return '<div class="temas-barra" style="margin-top:8px">' +
       '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">' + t('temas_email') + '</div>' +
       '<div class="secao-apoio" style="margin-bottom:10px">' + t('temas_email_apoio') + '</div>' +
-      '<div class="temas-chips">' +
-      (temas.length
-        ? temas.map(function (temaNome) {
-            var on = !nenhum && (todos || habilitados.indexOf(temaNome) !== -1);
-            return '<button type="button" class="chip-follow ' + (on ? 'ligado' : 'desligado') +
-              '" data-followup-tema="' + escapar(temaNome) + '" aria-pressed="' + (on ? 'true' : 'false') +
-              '" title="' + (on ? t('follow_tip_on') : t('follow_tip_off')) + '">' +
-              '<span class="chip-follow-ponto" aria-hidden="true"></span>' +
-              '<span class="chip-follow-nome">' + escapar(temaNome) + '</span>' +
-              '<span class="chip-follow-estado">' + (on ? t('follow_ligado') : t('follow_desligado')) + '</span></button>';
-          }).join('')
-        : '<div class="secao-apoio">' + t('importar_para_temas') + '</div>') +
-      '</div></div>';
+      chipsFollowUpLista(temas, Estado.hub && Estado.hub.temasFollowUp, 'data-followup-tema') +
+      '</div>';
   }
 
   function vistaMail() {
@@ -1105,7 +1248,7 @@
   }
 
   function valoresEixo(eixo) {
-    var planos = (Estado.hub && Estado.hub.planos) || [];
+    var planos = listaPlanosFiltro();
     var campo = { divisao: 'divisao', area: 'area', status: 'status', responsavel: 'responsavel' }[eixo];
     return unicos(planos, campo);
   }
@@ -1113,8 +1256,9 @@
   function toggleExcelValor(eixo, valor) {
     var chave = chaveFiltro(eixo);
     var todos = valoresEixo(eixo);
-    var atual = Estado.filtros[chave];
-    if (eixo === 'status' && atual == null && Estado.filtros.omitirEncerradas) {
+    var f = filtrosAtivos();
+    var atual = f[chave];
+    if (eixo === 'status' && atual == null && f.omitirEncerradas) {
       atual = todos.filter(function (v) { return !statusEncerradoUi(v); });
     }
     var set;
@@ -1125,43 +1269,46 @@
     } else {
       set = atual.concat([valor]);
     }
-    if (eixo === 'status') Estado.filtros.omitirEncerradas = false;
-    Estado.filtros[chave] = set.length === todos.length ? null : set;
+    if (eixo === 'status') f.omitirEncerradas = false;
+    f[chave] = set.length === todos.length ? null : set;
   }
 
   function toggleExcelTodos(eixo) {
     var chave = chaveFiltro(eixo);
     var todos = valoresEixo(eixo);
+    var f = filtrosAtivos();
     if (eixo === 'status') {
       var todosOn = !todos.length || todos.every(statusMarcado);
-      Estado.filtros.statuses = null;
-      Estado.filtros.omitirEncerradas = !!todosOn;
+      f.statuses = null;
+      f.omitirEncerradas = !!todosOn;
       return;
     }
-    var atual = Estado.filtros[chave];
+    var atual = f[chave];
     var todosOn = atual == null || (todos.length && atual.length === todos.length);
-    Estado.filtros[chave] = todosOn ? [] : null;
+    f[chave] = todosOn ? [] : null;
   }
 
   function toggleTema(nome) {
-    var todos = unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
+    var todos = unicos(listaPlanosFiltro(), 'tema');
     var ativos = temasAtivos(todos);
     var idx = ativos.indexOf(nome);
     var proximo = idx === -1
       ? ativos.concat([nome])
-      : ativos.filter(function (t) { return t !== nome; });
-    Estado.filtros.todosTemas = !!todos.length && proximo.length === todos.length;
-    Estado.filtros.temas = Estado.filtros.todosTemas ? todos.slice() : proximo;
+      : ativos.filter(function (x) { return x !== nome; });
+    var f = filtrosAtivos();
+    f.todosTemas = !!todos.length && proximo.length === todos.length;
+    f.temas = f.todosTemas ? todos.slice() : proximo;
   }
 
   function marcarTodosTemas() {
-    var todos = unicos((Estado.hub && Estado.hub.planos) || [], 'tema');
+    var todos = unicos(listaPlanosFiltro(), 'tema');
+    var f = filtrosAtivos();
     if (todosTemasMarcados(todos)) {
-      Estado.filtros.todosTemas = false;
-      Estado.filtros.temas = [];
+      f.todosTemas = false;
+      f.temas = [];
     } else {
-      Estado.filtros.todosTemas = true;
-      Estado.filtros.temas = todos.slice();
+      f.todosTemas = true;
+      f.temas = todos.slice();
     }
   }
 
@@ -1232,10 +1379,13 @@
     });
   }
 
-  function enviarFollowUpsAgoraUi() {
+  function enviarFollowUpsAgoraUi(departamentoId) {
     if (Estado.carregando) return;
     ocupar(true, t('ocupado_preparando'));
-    chamar('apiPreverFollowUps').then(function (prev) {
+    var prevP = departamentoId
+      ? chamar('apiPreverFollowUps', departamentoId)
+      : chamar('apiPreverFollowUps');
+    prevP.then(function (prev) {
       if (!prev || !prev.total) {
         ocupar(false);
         toast(t('toast_nenhum_followup'));
@@ -1247,11 +1397,27 @@
         if (!ok) return null;
       }
       ocupar(true, t('ocupado_enviando'));
-      return chamar('apiEnviarFollowUpsAgora', true);
+      return departamentoId
+        ? chamar('apiEnviarFollowUpsAgora', true, departamentoId)
+        : chamar('apiEnviarFollowUpsAgora', true);
     }).then(function (r) {
       if (!r) return;
       ocupar(false);
       toast(t('toast_followup', { enviados: r.enviados, pulados: r.pulados }));
+    }).catch(function (err) {
+      ocupar(false);
+      toast(err.message || err, true);
+    });
+  }
+
+  function toggleFollowUpTemaArea(nome) {
+    var deptId = Estado.deptAberto && Estado.deptAberto.id;
+    if (!nome || !deptId || Estado.carregando) return;
+    ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
+    chamar('apiAlternarTemaFollowUpArea', deptId, String(nome).trim()).then(function (resp) {
+      ocupar(false);
+      aplicarPlanosArea(resp, { manterScroll: true });
+      toast(t('toast_followup_temas'));
     }).catch(function (err) {
       ocupar(false);
       toast(err.message || err, true);
@@ -1282,6 +1448,7 @@
         Estado.planosArea = [];
         Estado.fontesArea = [];
         Estado.planosAreaPrecisaSenha = !!(dPlanos && dPlanos.tem_senha_planos);
+        carregarFiltrosArea(pid);
         abrirDept(pid, 'planos');
         carregarPlanosArea(pid);
         return;
@@ -1361,6 +1528,37 @@
         e.stopPropagation();
         return;
       }
+      var followTemaArea = e.target.closest('[data-followup-tema-area]');
+      if (followTemaArea) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFollowUpTemaArea(followTemaArea.getAttribute('data-followup-tema-area'));
+        return;
+      }
+      var followEmail = e.target.closest('[data-followup-email]');
+      if (followEmail) {
+        e.preventDefault();
+        e.stopPropagation();
+        var deptEmail = Estado.deptAberto && Estado.deptAberto.id;
+        if (!deptEmail || Estado.carregando) return;
+        ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
+        chamar('apiAlternarEmailFollowUpArea', deptEmail, followEmail.getAttribute('data-followup-email'))
+          .then(function (resp) {
+            ocupar(false);
+            aplicarPlanosArea(resp, { manterScroll: true });
+            toast(t('toast_followup_email'));
+          }).catch(function (err) {
+            ocupar(false);
+            toast(err.message || err, true);
+          });
+        return;
+      }
+      if (e.target.closest('[data-followup-area-agora]')) {
+        e.preventDefault();
+        var deptFu = Estado.deptAberto && Estado.deptAberto.id;
+        if (deptFu) enviarFollowUpsAgoraUi(deptFu);
+        return;
+      }
       var followTema = e.target.closest('[data-followup-tema]');
       if (followTema) {
         e.preventDefault();
@@ -1386,26 +1584,26 @@
       var temaTodos = e.target.closest('[data-tema-todos]');
       if (temaTodos) {
         marcarTodosTemas();
-        render();
+        recarregarFiltrosUi();
         return;
       }
       var chipTema = e.target.closest('[data-tema]');
       if (chipTema) {
         toggleTema(chipTema.getAttribute('data-tema'));
-        render();
+        recarregarFiltrosUi();
         return;
       }
       var abrirFiltro = e.target.closest('[data-abrir-filtro]');
       if (abrirFiltro) {
         var eixoAbrir = abrirFiltro.getAttribute('data-abrir-filtro');
         Estado.filtroAberto = Estado.filtroAberto === eixoAbrir ? null : eixoAbrir;
-        render();
+        recarregarFiltrosUi();
         return;
       }
       var filtroTodos = e.target.closest('[data-filtro-todos]');
       if (filtroTodos) {
         toggleExcelTodos(filtroTodos.getAttribute('data-filtro-todos'));
-        render();
+        recarregarFiltrosUi();
         return;
       }
       var filtroValor = e.target.closest('[data-filtro-valor]');
@@ -1414,12 +1612,12 @@
           filtroValor.getAttribute('data-filtro-eixo'),
           filtroValor.getAttribute('data-filtro-valor')
         );
-        render();
+        recarregarFiltrosUi();
         return;
       }
       if (Estado.filtroAberto && !e.target.closest('.filtro-excel')) {
         Estado.filtroAberto = null;
-        render();
+        recarregarFiltrosUi();
         return;
       }
       var pastaBtn = e.target.closest('[data-pasta-toggle]');
@@ -1473,9 +1671,17 @@
       var ord = e.target.closest('[data-ord]');
       if (ord) {
         var campoOrd = ord.getAttribute('data-ord');
-        if (Estado.ordem.campo === campoOrd) Estado.ordem.dir = Estado.ordem.dir === 'asc' ? 'desc' : 'asc';
-        else { Estado.ordem.campo = campoOrd; Estado.ordem.dir = 'asc'; }
-        render();
+        var alvoOrd = ordemAtiva();
+        if (alvoOrd.campo === campoOrd) alvoOrd.dir = alvoOrd.dir === 'asc' ? 'desc' : 'asc';
+        else { alvoOrd.campo = campoOrd; alvoOrd.dir = 'asc'; }
+        recarregarFiltrosUi();
+        return;
+      }
+      if (e.target.closest('#limpar-filtros-area')) {
+        Estado.filtrosArea = filtrosVazios();
+        Estado.ordemArea = { campo: 'prazo', dir: 'asc' };
+        Estado.filtroAberto = null;
+        recarregarFiltrosUi();
         return;
       }
       if (e.target.closest('#limpar-filtros')) {
@@ -1652,11 +1858,27 @@
         Estado.filtros.texto = e.target.value;
         renderTabelaSo();
       }
+      if (e.target.id === 'filtro-texto-area') {
+        Estado.filtrosArea.texto = e.target.value;
+        salvarFiltrosArea();
+        if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true, manterBusca: true });
+      }
     });
     document.addEventListener('change', function (e) {
-      if (e.target.getAttribute && e.target.getAttribute('data-mostrar-encerradas-area')) {
-        Estado.planosAreaMostrarEncerradas = !!e.target.checked;
-        if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
+      if (e.target.getAttribute && e.target.getAttribute('data-followup-so-eu')) {
+        var deptSo = Estado.deptAberto && Estado.deptAberto.id;
+        if (!deptSo || Estado.carregando) return;
+        ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
+        chamar('apiDefinirFollowUpAreaEscopo', deptSo, e.target.checked ? 'SIM' : 'NAO')
+          .then(function (resp) {
+            ocupar(false);
+            aplicarPlanosArea(resp, { manterScroll: true });
+            toast(t('toast_followup_escopo'));
+          }).catch(function (err) {
+            ocupar(false);
+            toast(err.message || err, true);
+            if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true });
+          });
         return;
       }
       var cor = e.target.getAttribute && e.target.getAttribute('data-cor-input');
@@ -1667,7 +1889,7 @@
       if (e.key === 'Escape') {
         if (Estado.filtroAberto) {
           Estado.filtroAberto = null;
-          render();
+          recarregarFiltrosUi();
           return;
         }
         fecharDrawer();
@@ -1729,7 +1951,9 @@
 
   function renderTabelaSo() {
     if (Estado.vista !== 'planos') return;
+    Estado._forcarPlanta = true;
     render();
+    Estado._forcarPlanta = false;
     var busca = $('filtro-texto');
     if (busca) {
       busca.focus();

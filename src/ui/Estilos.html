@@ -677,6 +677,35 @@ table.dados tr.risco td { box-shadow: none; }
   cursor: pointer; user-select: none;
 }
 .check-encerradas input { accent-color: var(--marca); }
+.lista-emails-follow {
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  max-height: 220px;
+  overflow: auto;
+  background: var(--bg);
+}
+.lista-emails-follow .filtro-excel-item { align-items: flex-start; }
+.lista-emails-follow small {
+  display: block;
+  color: var(--tinta-3);
+  font-size: 12px;
+  font-weight: 400;
+}
+.lista-emails-follow .opaco { opacity: .45; }
+.follow-area { overflow: visible; }
+.drawer-gestao .painel-planos {
+  margin-top: 4px;
+  flex: none;
+  min-height: 0;
+  overflow: visible;
+}
+.drawer-gestao .painel-planos .tabela-wrap {
+  flex: none;
+  min-height: 180px;
+  max-height: 420px;
+  overflow: auto;
+}
+.drawer-gestao .temas-barra { margin-top: 4px; }
 .senha-area-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
 .drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
 .rotulo-com-ajuda {

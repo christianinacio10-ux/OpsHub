@@ -82,8 +82,32 @@ assert.strictEqual(
 assert.strictEqual(
   Logica.elegivelFollowUp(Object.assign({}, acao, { tema: 'OEE' }), hoje, ['EHS'], { ignorarTemas: true }).ok,
   true,
-  'planos da area ignoram chips globais de tema'
+  'opcao ignorarTemas permanece disponivel'
 );
+
+var regraTodos = Logica.regraFollowUpArea({});
+assert.deepStrictEqual(regraTodos.temas, []);
+assert.strictEqual(regraTodos.soEu, false);
+assert.strictEqual(Logica.emailFollowUpPermitido('carla@avery.com', regraTodos), true);
+
+var regraSoEu = Logica.regraFollowUpArea({
+  followup_so_eu: 'SIM',
+  followup_gestor_email: 'gestor@avery.com',
+  followup_emails_off: '[]',
+});
+assert.strictEqual(Logica.emailFollowUpPermitido('gestor@avery.com', regraSoEu), true);
+assert.strictEqual(Logica.emailFollowUpPermitido('carla@avery.com', regraSoEu), false);
+
+var regraOff = Logica.regraFollowUpArea({
+  followup_emails_off: '["carla@avery.com"]',
+});
+assert.strictEqual(Logica.emailFollowUpPermitido('carla@avery.com', regraOff), false);
+assert.strictEqual(Logica.emailFollowUpPermitido('ana@avery.com', regraOff), true);
+assert.deepStrictEqual(Logica.alternarEmailOff('carla@avery.com', []), ['carla@avery.com']);
+assert.deepStrictEqual(Logica.alternarEmailOff('carla@avery.com', ['carla@avery.com']), []);
+assert.strictEqual(Logica.persistirEmailsOff(['Ana@x.com', 'ana@x.com']), '["ana@x.com"]');
+assert.deepStrictEqual(Logica.parseEmailsOff('["a@x.com"]'), ['a@x.com']);
+assert.strictEqual(Logica.temaFollowUpHabilitado('TIER_3', Logica.regraFollowUpArea({ followup_temas: 'NONE' }).temas), false);
 assert.strictEqual(Logica.temSenhaPlanos({ senha_planos: 'abc' }), true);
 assert.strictEqual(Logica.temSenhaPlanos({ senha_planos: '' }), false);
 assert.strictEqual(Logica.temSenhaPlanos({}), false);

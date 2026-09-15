@@ -4,7 +4,7 @@
  */
 var APP = {
   nome: 'OpsHub',
-  versao: '1.5.2',
+  versao: '1.6.0',
 };
 
 var ABAS = {
@@ -21,7 +21,10 @@ var ABAS = {
 
 var ESQUEMA = {};
 ESQUEMA[ABAS.config] = ['chave', 'valor', 'descricao'];
-ESQUEMA[ABAS.departamentos] = ['id', 'nome', 'descricao', 'icone', 'cor', 'ordem', 'ativo', 'bandeira', 'senha_planos'];
+ESQUEMA[ABAS.departamentos] = [
+  'id', 'nome', 'descricao', 'icone', 'cor', 'ordem', 'ativo', 'bandeira', 'senha_planos',
+  'followup_temas', 'followup_so_eu', 'followup_gestor_email', 'followup_emails_off',
+];
 ESQUEMA[ABAS.controles] = ['id', 'departamento_id', 'nome', 'descricao', 'url', 'ordem', 'ativo', 'negocio', 'pasta'];
 ESQUEMA[ABAS.fontes] = [
   'id', 'nome', 'referencia', 'aba', 'linha_cabecalho',
