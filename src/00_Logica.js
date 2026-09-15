@@ -489,6 +489,24 @@ var Logica = (function () {
     return selecionados.indexOf(texto(valor)) !== -1;
   }
 
+  function proximoFiltroTema(todos, atuais, todosOn, nome) {
+    nome = texto(nome);
+    todos = (todos || []).map(texto).filter(Boolean);
+    atuais = (atuais || []).map(texto).filter(Boolean);
+    if (!nome) return { todosTemas: !!todosOn, temas: todosOn ? todos.slice() : atuais.slice() };
+    if (todosOn || !atuais.length) {
+      return { todosTemas: false, temas: [nome] };
+    }
+    var idx = atuais.indexOf(nome);
+    var proximo = idx === -1
+      ? atuais.concat([nome])
+      : atuais.filter(function (x) { return x !== nome; });
+    if (!proximo.length || (todos.length && proximo.length === todos.length)) {
+      return { todosTemas: true, temas: todos.slice() };
+    }
+    return { todosTemas: false, temas: proximo };
+  }
+
   function filtrarPlanos(lista, filtros) {
     filtros = filtros || {};
     var q = slug(filtros.texto);
@@ -887,6 +905,7 @@ var Logica = (function () {
     mesclarImportacao: mesclarImportacao,
     eixoDe: eixoDe,
     passaEixo: passaEixo,
+    proximoFiltroTema: proximoFiltroTema,
     filtrarPlanos: filtrarPlanos,
     ordenarPlanos: ordenarPlanos,
     unicos: unicos,

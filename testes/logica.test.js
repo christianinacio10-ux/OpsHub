@@ -50,6 +50,27 @@ var mesclado = Logica.mesclarImportacao(
 );
 assert.strictEqual(mesclado[0].followup, 'NAO');
 assert.strictEqual(mesclado[0].emails_enviados, 2);
+
+var temasChip = ['TIER_3', 'UEE/Scrap_Apparel', 'UEE/SCRAP_APPAREL'];
+assert.deepStrictEqual(
+  Logica.proximoFiltroTema(temasChip, temasChip, true, 'UEE/Scrap_Apparel'),
+  { todosTemas: false, temas: ['UEE/Scrap_Apparel'] },
+  'clicar um tema com Todos ligado isola só aquele tema'
+);
+assert.deepStrictEqual(
+  Logica.proximoFiltroTema(temasChip, ['UEE/Scrap_Apparel'], false, 'UEE/Scrap_Apparel'),
+  { todosTemas: true, temas: temasChip },
+  'clicar de novo o tema isolado volta para Todos'
+);
+assert.deepStrictEqual(
+  Logica.proximoFiltroTema(temasChip, ['UEE/Scrap_Apparel'], false, 'TIER_3'),
+  { todosTemas: false, temas: ['UEE/Scrap_Apparel', 'TIER_3'] },
+  'clicar outro tema soma ao filtro'
+);
+assert.deepStrictEqual(
+  Logica.proximoFiltroTema(temasChip, ['UEE/Scrap_Apparel', 'TIER_3'], false, 'TIER_3'),
+  { todosTemas: false, temas: ['UEE/Scrap_Apparel'] }
+);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { ultimo_email_em: hoje }), hoje).motivo,
   'ja_enviado_hoje'
 );

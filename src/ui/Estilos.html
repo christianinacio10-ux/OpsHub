@@ -293,6 +293,22 @@ body { overflow: hidden; }
 .painel-planos table.dados tbody tr:nth-child(odd) td:first-child { background: var(--superficie); }
 .painel-planos table.dados tbody tr:nth-child(even) td:first-child { background: #161514; }
 .painel-planos table.dados tbody tr:hover td:first-child { background: var(--superficie-3); }
+.painel-planos table.dados.dados-cobranca th:first-child,
+.painel-planos table.dados.dados-cobranca td:first-child {
+  min-width: 132px;
+  max-width: 160px;
+}
+.painel-planos table.dados.dados-cobranca th:nth-child(2),
+.painel-planos table.dados.dados-cobranca td:nth-child(2) {
+  position: sticky;
+  left: 132px;
+  z-index: 2;
+  box-shadow: 6px 0 8px -6px rgba(0,0,0,.55);
+}
+.painel-planos table.dados.dados-cobranca th:nth-child(2) { z-index: 3; top: 0; }
+.painel-planos table.dados.dados-cobranca tbody tr:nth-child(odd) td:nth-child(2) { background: var(--superficie); }
+.painel-planos table.dados.dados-cobranca tbody tr:nth-child(even) td:nth-child(2) { background: #161514; }
+.painel-planos table.dados.dados-cobranca tbody tr:hover td:nth-child(2) { background: var(--superficie-3); }
 
 .botao {
   display: inline-flex; align-items: center; gap: 7px;
@@ -1026,27 +1042,36 @@ table.dados tr.risco td { box-shadow: none; }
   color: var(--tinta-2); font-size: 12.5px; font-weight: 450;
   cursor: pointer; font-family: var(--fonte);
   appearance: none; -webkit-appearance: none;
-  outline: none;
+  outline: none !important;
+  box-shadow: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background var(--transicao), color var(--transicao), border-color var(--transicao), box-shadow var(--transicao);
+  transition: background var(--transicao), color var(--transicao), border-color var(--transicao);
 }
+.chip-tema::-moz-focus-inner { border: 0; }
 .chip-tema:hover { background: rgba(237,232,224,.05); color: var(--tinta); border-color: var(--linha-forte); }
 .chip-tema:focus,
 .chip-tema:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--superficie), 0 0 0 4px rgba(237, 232, 224, .22);
+  outline: none !important;
+  box-shadow: none;
+  border-color: var(--linha-forte);
 }
 .chip-tema.ativo,
 .chip-tema.todos.ativo {
-  background: rgba(237, 232, 224, .12);
-  border-color: rgba(237, 232, 224, .28);
+  background: rgba(237, 232, 224, .14);
+  border-color: rgba(237, 232, 224, .42);
   color: var(--tinta);
+  box-shadow: none;
 }
 .chip-tema.ativo:hover,
-.chip-tema.todos.ativo:hover {
-  background: rgba(237, 232, 224, .16);
-  border-color: rgba(237, 232, 224, .38);
+.chip-tema.todos.ativo:hover,
+.chip-tema.ativo:focus,
+.chip-tema.ativo:focus-visible,
+.chip-tema.todos.ativo:focus,
+.chip-tema.todos.ativo:focus-visible {
+  background: rgba(237, 232, 224, .18);
+  border-color: rgba(237, 232, 224, .52);
   color: var(--tinta);
+  box-shadow: none;
 }
 .chip-follow {
   height: 34px; padding: 0 12px 0 10px; border-radius: 999px;

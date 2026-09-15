@@ -80,10 +80,15 @@
     planoArea('A3', 'D-QUAL', { fonte_id: 'FA2', tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
     planoArea('A4', 'D-PROD', { fonte_id: 'FA1', tema: 'OEE', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
     planoArea('A5', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Consultar outras plantas para problema de setup', como: 'Alinhar com Joly o padrão de SMED', responsavel: 'Joly Soares', email: 'joly.soares@example.com', prazo: add(-6), status: 'Aberto', comentarios: 'Atrasada só nesta área' }),
+    planoArea('A6', 'D-EHS', { fonte_id: 'FA3', tema: 'TIER_3', divisao: 'Smartrac', area: 'Manutenção', oque: 'Consultar outras plantas para problema no re', como: 'Antes e depois', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(-3), status: 'Aberto', comentarios: '' }),
+    planoArea('A7', 'D-EHS', { fonte_id: 'FA3', tema: 'TIER_3', divisao: 'Smartrac', area: 'Engenharia', oque: 'Apresentação detalhada das ações de redução', como: 'Antes e depois', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(4), status: 'Em andamento', comentarios: '' }),
+    planoArea('A8', 'D-EHS', { fonte_id: 'FA3', tema: 'UEE/Scrap_Apparel', divisao: 'Apparel', area: 'Supply Chain', oque: 'Controle preventivo para E&O', como: 'Suporte financeiro', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(6), status: 'Aberto', comentarios: '' }),
+    planoArea('A9', 'D-EHS', { fonte_id: 'FA3', tema: 'UEE/SCRAP_APPAREL', divisao: 'Apparel', area: 'Supply Chain', oque: 'Gestão da impressão de pedidos Blumenau', como: 'Padronização', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(-1), status: 'Aberto', comentarios: '' }),
   ];
   var fontesArea = [
     { id: 'FA1', departamento_id: 'D-PROD', nome: 'Ações internas Produção', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-prod', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '4 linhas' },
     { id: 'FA2', departamento_id: 'D-QUAL', nome: 'Ações internas Qualidade', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-qual', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '1 linha' },
+    { id: 'FA3', departamento_id: 'D-EHS', nome: 'Ações internas EHS', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-ehs', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '4 linhas' },
   ];
   var senhasArea = { 'D-QUAL': 'gestor' };
   var areaDesbloqueadas = {};
@@ -206,7 +211,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.6.0' },
+        app: { nome: 'OpsHub', versao: '1.6.1' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };

@@ -42,7 +42,7 @@
     return {
       texto: '',
       temas: [],
-      todosTemas: false,
+      todosTemas: true,
       divisoes: null,
       areas: null,
       statuses: null,
@@ -613,11 +613,12 @@
       '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">' + t('filtrar_tema') + '</div>' +
       '<div class="temas-chips">' +
       '<button type="button" class="chip-tema todos' + (todosOn ? ' ativo' : '') +
-      '" data-tema-todos="1">' + t('todos') + '</button>' +
+      '" data-tema-todos="1" aria-pressed="' + (todosOn ? 'true' : 'false') + '">' + t('todos') + '</button>' +
       temas.map(function (t) {
         var on = !todosOn && !!set[t];
         return '<button type="button" class="chip-tema' + (on ? ' ativo' : '') +
-          '" data-tema="' + escapar(t) + '">' + escapar(t) + '</button>';
+          '" data-tema="' + escapar(t) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+          escapar(t) + '</button>';
       }).join('') +
       '</div></div>';
   }
@@ -680,6 +681,7 @@
         : '';
       return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
         td(p.tema) +
+        cobrancaCel +
         td(p.divisao) +
         td(p.area) +
         td(p.oque, 'principal') +
@@ -688,7 +690,6 @@
         '<td title="' + escapar(tipEmail) + '">' + emailCel + '</td>' +
         td(p.prazo_br) +
         '<td title="' + escapar(stLabel) + '"><span class="selo ' + p.status_classe + '">' + escapar(stLabel) + '</span></td>' +
-        cobrancaCel +
         td(p.comentarios, 'comentarios') +
         '</tr>';
     }).join('');
@@ -707,11 +708,12 @@
       return '<div class="painel painel-planos">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
     }
     return '<div class="painel painel-planos">' + cab +
-      '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
-      th('tema', t('th_tema')) + th('divisao', t('th_divisao')) + th('area', t('th_area')) +
+      '<div class="tabela-wrap"><table class="dados' + (ids.cobranca ? ' dados-cobranca' : '') + '"><thead><tr>' +
+      th('tema', t('th_tema')) +
+      (ids.cobranca ? '<th>' + t('th_cobranca') + '</th>' : '') +
+      th('divisao', t('th_divisao')) + th('area', t('th_area')) +
       th('oque', t('th_oque')) + th('como', t('th_como')) + th('responsavel', t('th_responsavel')) +
       th('email', t('th_email')) + th('prazo', t('th_prazo')) + th('status', t('th_status')) +
-      (ids.cobranca ? '<th>' + t('th_cobranca') + '</th>' : '') +
       th('comentarios', t('th_comentarios')) +
       '</tr></thead><tbody>' + linhasTabelaPlanos(filtrados, ids) + '</tbody></table></div>' +
       '<div class="painel-topo tabela-rodape" style="border-top:1px solid var(--linha);border-bottom:0">' +
@@ -1432,16 +1434,33 @@
     f[chave] = todosOn ? [] : null;
   }
 
+  function proximoFiltroTemaUi(todos, atuais, todosOn, nome) {
+    if (typeof Logica !== 'undefined' && Logica.proximoFiltroTema) {
+      return Logica.proximoFiltroTema(todos, atuais, todosOn, nome);
+    }
+    nome = String(nome == null ? '' : nome);
+    todos = (todos || []).slice();
+    atuais = (atuais || []).slice();
+    if (!nome) return { todosTemas: !!todosOn, temas: todosOn ? todos.slice() : atuais.slice() };
+    if (todosOn || !atuais.length) {
+      return { todosTemas: false, temas: [nome] };
+    }
+    var idx = atuais.indexOf(nome);
+    var proximo = idx === -1
+      ? atuais.concat([nome])
+      : atuais.filter(function (x) { return x !== nome; });
+    if (!proximo.length || (todos.length && proximo.length === todos.length)) {
+      return { todosTemas: true, temas: todos.slice() };
+    }
+    return { todosTemas: false, temas: proximo };
+  }
+
   function toggleTema(nome) {
     var todos = unicos(listaPlanosFiltro(), 'tema');
-    var ativos = temasAtivos(todos);
-    var idx = ativos.indexOf(nome);
-    var proximo = idx === -1
-      ? ativos.concat([nome])
-      : ativos.filter(function (x) { return x !== nome; });
     var f = filtrosAtivos();
-    f.todosTemas = !!todos.length && proximo.length === todos.length;
-    f.temas = f.todosTemas ? todos.slice() : proximo;
+    var proximo = proximoFiltroTemaUi(todos, f.temas, todosTemasMarcados(todos), nome);
+    f.todosTemas = !!proximo.todosTemas;
+    f.temas = proximo.temas || [];
   }
 
   function marcarTodosTemas() {
@@ -1701,7 +1720,7 @@
         var deptAcao = Estado.deptAberto && Estado.deptAberto.id;
         var idAcao = followAcao.getAttribute('data-followup-acao');
         if (!deptAcao || !idAcao || Estado.carregando) return;
-        ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
+        ocupar(true, t('ocupado_followup_acao'), t('ocupado_followup_acao_sub'));
         chamar('apiAlternarFollowUpAcaoArea', deptAcao, idAcao).then(function (resp) {
           ocupar(false);
           aplicarPlanosArea(resp, { manterScroll: true });

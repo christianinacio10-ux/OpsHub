@@ -299,6 +299,22 @@ body { overflow: hidden; }
 .painel-planos table.dados tbody tr:nth-child(odd) td:first-child { background: var(--superficie); }
 .painel-planos table.dados tbody tr:nth-child(even) td:first-child { background: #161514; }
 .painel-planos table.dados tbody tr:hover td:first-child { background: var(--superficie-3); }
+.painel-planos table.dados.dados-cobranca th:first-child,
+.painel-planos table.dados.dados-cobranca td:first-child {
+  min-width: 132px;
+  max-width: 160px;
+}
+.painel-planos table.dados.dados-cobranca th:nth-child(2),
+.painel-planos table.dados.dados-cobranca td:nth-child(2) {
+  position: sticky;
+  left: 132px;
+  z-index: 2;
+  box-shadow: 6px 0 8px -6px rgba(0,0,0,.55);
+}
+.painel-planos table.dados.dados-cobranca th:nth-child(2) { z-index: 3; top: 0; }
+.painel-planos table.dados.dados-cobranca tbody tr:nth-child(odd) td:nth-child(2) { background: var(--superficie); }
+.painel-planos table.dados.dados-cobranca tbody tr:nth-child(even) td:nth-child(2) { background: #161514; }
+.painel-planos table.dados.dados-cobranca tbody tr:hover td:nth-child(2) { background: var(--superficie-3); }
 
 .botao {
   display: inline-flex; align-items: center; gap: 7px;
@@ -1032,27 +1048,36 @@ table.dados tr.risco td { box-shadow: none; }
   color: var(--tinta-2); font-size: 12.5px; font-weight: 450;
   cursor: pointer; font-family: var(--fonte);
   appearance: none; -webkit-appearance: none;
-  outline: none;
+  outline: none !important;
+  box-shadow: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background var(--transicao), color var(--transicao), border-color var(--transicao), box-shadow var(--transicao);
+  transition: background var(--transicao), color var(--transicao), border-color var(--transicao);
 }
+.chip-tema::-moz-focus-inner { border: 0; }
 .chip-tema:hover { background: rgba(237,232,224,.05); color: var(--tinta); border-color: var(--linha-forte); }
 .chip-tema:focus,
 .chip-tema:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--superficie), 0 0 0 4px rgba(237, 232, 224, .22);
+  outline: none !important;
+  box-shadow: none;
+  border-color: var(--linha-forte);
 }
 .chip-tema.ativo,
 .chip-tema.todos.ativo {
-  background: rgba(237, 232, 224, .12);
-  border-color: rgba(237, 232, 224, .28);
+  background: rgba(237, 232, 224, .14);
+  border-color: rgba(237, 232, 224, .42);
   color: var(--tinta);
+  box-shadow: none;
 }
 .chip-tema.ativo:hover,
-.chip-tema.todos.ativo:hover {
-  background: rgba(237, 232, 224, .16);
-  border-color: rgba(237, 232, 224, .38);
+.chip-tema.todos.ativo:hover,
+.chip-tema.ativo:focus,
+.chip-tema.ativo:focus-visible,
+.chip-tema.todos.ativo:focus,
+.chip-tema.todos.ativo:focus-visible {
+  background: rgba(237, 232, 224, .18);
+  border-color: rgba(237, 232, 224, .52);
   color: var(--tinta);
+  box-shadow: none;
 }
 .chip-follow {
   height: 34px; padding: 0 12px 0 10px; border-radius: 999px;
@@ -1371,10 +1396,15 @@ table.dados tr.risco td { box-shadow: none; }
     planoArea('A3', 'D-QUAL', { fonte_id: 'FA2', tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
     planoArea('A4', 'D-PROD', { fonte_id: 'FA1', tema: 'OEE', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
     planoArea('A5', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Consultar outras plantas para problema de setup', como: 'Alinhar com Joly o padrão de SMED', responsavel: 'Joly Soares', email: 'joly.soares@example.com', prazo: add(-6), status: 'Aberto', comentarios: 'Atrasada só nesta área' }),
+    planoArea('A6', 'D-EHS', { fonte_id: 'FA3', tema: 'TIER_3', divisao: 'Smartrac', area: 'Manutenção', oque: 'Consultar outras plantas para problema no re', como: 'Antes e depois', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(-3), status: 'Aberto', comentarios: '' }),
+    planoArea('A7', 'D-EHS', { fonte_id: 'FA3', tema: 'TIER_3', divisao: 'Smartrac', area: 'Engenharia', oque: 'Apresentação detalhada das ações de redução', como: 'Antes e depois', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(4), status: 'Em andamento', comentarios: '' }),
+    planoArea('A8', 'D-EHS', { fonte_id: 'FA3', tema: 'UEE/Scrap_Apparel', divisao: 'Apparel', area: 'Supply Chain', oque: 'Controle preventivo para E&O', como: 'Suporte financeiro', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(6), status: 'Aberto', comentarios: '' }),
+    planoArea('A9', 'D-EHS', { fonte_id: 'FA3', tema: 'UEE/SCRAP_APPAREL', divisao: 'Apparel', area: 'Supply Chain', oque: 'Gestão da impressão de pedidos Blumenau', como: 'Padronização', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(-1), status: 'Aberto', comentarios: '' }),
   ];
   var fontesArea = [
     { id: 'FA1', departamento_id: 'D-PROD', nome: 'Ações internas Produção', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-prod', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '4 linhas' },
     { id: 'FA2', departamento_id: 'D-QUAL', nome: 'Ações internas Qualidade', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-qual', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '1 linha' },
+    { id: 'FA3', departamento_id: 'D-EHS', nome: 'Ações internas EHS', referencia: 'https://docs.google.com/spreadsheets/d/exemplo-ehs', aba: 'Planos', linha_cabecalho: 1, ativo: 'SIM', ultima_execucao: '', ultimo_status: 'OK', ultimo_detalhe: '4 linhas' },
   ];
   var senhasArea = { 'D-QUAL': 'gestor' };
   var areaDesbloqueadas = {};
@@ -1497,7 +1527,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.6.0' },
+        app: { nome: 'OpsHub', versao: '1.6.1' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -2058,6 +2088,8 @@ var I18n = (function () {
       ocupado_importando: 'Importando planos…',
       ocupado_followup: 'Atualizando follow-up…',
       ocupado_followup_sub: 'Gravando o tema na planilha',
+      ocupado_followup_acao: 'Atualizando cobrança…',
+      ocupado_followup_acao_sub: 'Gravando esta ação na planilha',
       ocupado_preparando: 'Preparando follow-ups…',
       ocupado_enviando: 'Enviando follow-ups…',
       ocupado_gatilho: 'Ativando gatilho…',
@@ -2312,6 +2344,8 @@ var I18n = (function () {
       ocupado_importando: 'Importing plans…',
       ocupado_followup: 'Updating follow-up…',
       ocupado_followup_sub: 'Saving the theme to the sheet',
+      ocupado_followup_acao: 'Updating chase…',
+      ocupado_followup_acao_sub: 'Saving this action to the sheet',
       ocupado_preparando: 'Preparing follow-ups…',
       ocupado_enviando: 'Sending follow-ups…',
       ocupado_gatilho: 'Turning trigger on…',
@@ -2566,6 +2600,8 @@ var I18n = (function () {
       ocupado_importando: 'Importando planes…',
       ocupado_followup: 'Actualizando follow-up…',
       ocupado_followup_sub: 'Guardando el tema en la hoja',
+      ocupado_followup_acao: 'Actualizando cobro…',
+      ocupado_followup_acao_sub: 'Guardando esta acción en la hoja',
       ocupado_preparando: 'Preparando follow-ups…',
       ocupado_enviando: 'Enviando follow-ups…',
       ocupado_gatilho: 'Activando disparador…',
@@ -2753,7 +2789,7 @@ if (typeof module !== 'undefined' && module.exports) {
     return {
       texto: '',
       temas: [],
-      todosTemas: false,
+      todosTemas: true,
       divisoes: null,
       areas: null,
       statuses: null,
@@ -3324,11 +3360,12 @@ if (typeof module !== 'undefined' && module.exports) {
       '<div class="secao-titulo" style="font-size:13px;margin-bottom:8px">' + t('filtrar_tema') + '</div>' +
       '<div class="temas-chips">' +
       '<button type="button" class="chip-tema todos' + (todosOn ? ' ativo' : '') +
-      '" data-tema-todos="1">' + t('todos') + '</button>' +
+      '" data-tema-todos="1" aria-pressed="' + (todosOn ? 'true' : 'false') + '">' + t('todos') + '</button>' +
       temas.map(function (t) {
         var on = !todosOn && !!set[t];
         return '<button type="button" class="chip-tema' + (on ? ' ativo' : '') +
-          '" data-tema="' + escapar(t) + '">' + escapar(t) + '</button>';
+          '" data-tema="' + escapar(t) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+          escapar(t) + '</button>';
       }).join('') +
       '</div></div>';
   }
@@ -3391,6 +3428,7 @@ if (typeof module !== 'undefined' && module.exports) {
         : '';
       return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
         td(p.tema) +
+        cobrancaCel +
         td(p.divisao) +
         td(p.area) +
         td(p.oque, 'principal') +
@@ -3399,7 +3437,6 @@ if (typeof module !== 'undefined' && module.exports) {
         '<td title="' + escapar(tipEmail) + '">' + emailCel + '</td>' +
         td(p.prazo_br) +
         '<td title="' + escapar(stLabel) + '"><span class="selo ' + p.status_classe + '">' + escapar(stLabel) + '</span></td>' +
-        cobrancaCel +
         td(p.comentarios, 'comentarios') +
         '</tr>';
     }).join('');
@@ -3418,11 +3455,12 @@ if (typeof module !== 'undefined' && module.exports) {
       return '<div class="painel painel-planos">' + cab + '<div class="vazio">' + vazioMsg + '</div></div>';
     }
     return '<div class="painel painel-planos">' + cab +
-      '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
-      th('tema', t('th_tema')) + th('divisao', t('th_divisao')) + th('area', t('th_area')) +
+      '<div class="tabela-wrap"><table class="dados' + (ids.cobranca ? ' dados-cobranca' : '') + '"><thead><tr>' +
+      th('tema', t('th_tema')) +
+      (ids.cobranca ? '<th>' + t('th_cobranca') + '</th>' : '') +
+      th('divisao', t('th_divisao')) + th('area', t('th_area')) +
       th('oque', t('th_oque')) + th('como', t('th_como')) + th('responsavel', t('th_responsavel')) +
       th('email', t('th_email')) + th('prazo', t('th_prazo')) + th('status', t('th_status')) +
-      (ids.cobranca ? '<th>' + t('th_cobranca') + '</th>' : '') +
       th('comentarios', t('th_comentarios')) +
       '</tr></thead><tbody>' + linhasTabelaPlanos(filtrados, ids) + '</tbody></table></div>' +
       '<div class="painel-topo tabela-rodape" style="border-top:1px solid var(--linha);border-bottom:0">' +
@@ -4143,16 +4181,33 @@ if (typeof module !== 'undefined' && module.exports) {
     f[chave] = todosOn ? [] : null;
   }
 
+  function proximoFiltroTemaUi(todos, atuais, todosOn, nome) {
+    if (typeof Logica !== 'undefined' && Logica.proximoFiltroTema) {
+      return Logica.proximoFiltroTema(todos, atuais, todosOn, nome);
+    }
+    nome = String(nome == null ? '' : nome);
+    todos = (todos || []).slice();
+    atuais = (atuais || []).slice();
+    if (!nome) return { todosTemas: !!todosOn, temas: todosOn ? todos.slice() : atuais.slice() };
+    if (todosOn || !atuais.length) {
+      return { todosTemas: false, temas: [nome] };
+    }
+    var idx = atuais.indexOf(nome);
+    var proximo = idx === -1
+      ? atuais.concat([nome])
+      : atuais.filter(function (x) { return x !== nome; });
+    if (!proximo.length || (todos.length && proximo.length === todos.length)) {
+      return { todosTemas: true, temas: todos.slice() };
+    }
+    return { todosTemas: false, temas: proximo };
+  }
+
   function toggleTema(nome) {
     var todos = unicos(listaPlanosFiltro(), 'tema');
-    var ativos = temasAtivos(todos);
-    var idx = ativos.indexOf(nome);
-    var proximo = idx === -1
-      ? ativos.concat([nome])
-      : ativos.filter(function (x) { return x !== nome; });
     var f = filtrosAtivos();
-    f.todosTemas = !!todos.length && proximo.length === todos.length;
-    f.temas = f.todosTemas ? todos.slice() : proximo;
+    var proximo = proximoFiltroTemaUi(todos, f.temas, todosTemasMarcados(todos), nome);
+    f.todosTemas = !!proximo.todosTemas;
+    f.temas = proximo.temas || [];
   }
 
   function marcarTodosTemas() {
@@ -4412,7 +4467,7 @@ if (typeof module !== 'undefined' && module.exports) {
         var deptAcao = Estado.deptAberto && Estado.deptAberto.id;
         var idAcao = followAcao.getAttribute('data-followup-acao');
         if (!deptAcao || !idAcao || Estado.carregando) return;
-        ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
+        ocupar(true, t('ocupado_followup_acao'), t('ocupado_followup_acao_sub'));
         chamar('apiAlternarFollowUpAcaoArea', deptAcao, idAcao).then(function (resp) {
           ocupar(false);
           aplicarPlanosArea(resp, { manterScroll: true });
