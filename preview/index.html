@@ -3331,13 +3331,11 @@ if (typeof module !== 'undefined' && module.exports) {
     }
     return '<div class="drawer-gestao">' +
       kpisHtml(Estado.planosAreaKpis) +
-      '<div class="painel-topo" style="margin-bottom:10px">' +
-      '<button class="botao primario" type="button" data-importar-area="' + escapar(d.id) + '">' + t('importar_agora') + '</button>' +
-      '<div class="secao-apoio">' + t('fontes_apoio') + '</div></div>' +
       listaFontesArea() +
       blocoFollowUpArea() +
       listaPlanosArea() +
       '<div class="secao-titulo" style="margin-top:18px">' + t('planos_area_cadastrar') + '</div>' +
+      '<div class="secao-apoio" style="margin-bottom:10px">' + t('fontes_apoio') + '</div>' +
       formFonteArea(d) +
       '</div>';
   }
@@ -3912,11 +3910,6 @@ if (typeof module !== 'undefined' && module.exports) {
           ocupar(false);
           toast(err.message || err, true);
         });
-        return;
-      }
-      var importarArea = e.target.closest('[data-importar-area]');
-      if (importarArea) {
-        importarPlanosAreaUi(importarArea.getAttribute('data-importar-area'));
         return;
       }
       var remSenha = e.target.closest('[data-remover-senha-area]');
