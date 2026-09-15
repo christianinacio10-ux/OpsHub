@@ -779,6 +779,7 @@
     $('drawer-titulo').textContent = d.nome;
     $('drawer-sub').textContent = t('planos_area_sub');
     $('drawer-corpo').innerHTML = htmlPlanosArea(d);
+    $('drawer-corpo').scrollTop = 0;
   }
 
   function carregarPlanosArea(id, senha) {
