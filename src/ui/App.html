@@ -694,7 +694,7 @@
 
   function formFonteArea(dept) {
     var f = Estado.formFonteArea || {};
-    return '<form class="form-grid" data-fonte-area="1">' +
+    return '<form class="form-grid" data-fonte-area="1" onsubmit="return false">' +
       (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
       '<input type="hidden" name="departamento_id" value="' + escapar(dept.id) + '">' +
       campo('nome', t('nome_fonte'), f.nome) +
@@ -794,6 +794,24 @@
       var msg = mensagemImportacao(resp.importacao);
       if (msg) toast(msg, resp.importacao.linhas === 0);
     }
+  }
+
+  function importarPlanosAreaUi(deptId) {
+    ocupar(true, t('ocupado_importando'));
+    var timer = setTimeout(function () {
+      ocupar(false);
+      toast(t('aviso_import_demora'), true);
+    }, 20000);
+    return chamar('apiImportarPlanosArea', deptId).then(function (resp) {
+      clearTimeout(timer);
+      ocupar(false);
+      aplicarPlanosArea(resp);
+      return resp;
+    }).catch(function (err) {
+      clearTimeout(timer);
+      ocupar(false);
+      toast(err && err.message ? err.message : String(err), true);
+    });
   }
 
   function pintarDrawerPlanos(d) {
@@ -1297,14 +1315,7 @@
       }
       var importarArea = e.target.closest('[data-importar-area]');
       if (importarArea) {
-        ocupar(true, t('ocupado_importando'));
-        chamar('apiImportarPlanosArea', importarArea.getAttribute('data-importar-area')).then(function (resp) {
-          ocupar(false);
-          aplicarPlanosArea(resp);
-        }).catch(function (err) {
-          ocupar(false);
-          toast(err.message || err, true);
-        });
+        importarPlanosAreaUi(importarArea.getAttribute('data-importar-area'));
         return;
       }
       var remSenha = e.target.closest('[data-remover-senha-area]');
@@ -1588,14 +1599,28 @@
       if (fonteAreaForm) {
         e.preventDefault();
         var dadosFonte = lerForm(fonteAreaForm);
-        ocupar(true, t('ocupado_importando'));
-        chamar('apiSalvarFonteArea', dadosFonte).then(function (resp) {
+        if (!String(dadosFonte.referencia || '').trim()) {
+          toast(t('erro_url'), true);
+          return;
+        }
+        ocupar(true, t('carregando_ellipsis'));
+        var saveTimer = setTimeout(function () {
           ocupar(false);
+          toast(t('aviso_import_demora'), true);
+        }, 20000);
+        chamar('apiSalvarFonteArea', dadosFonte).then(function (resp) {
+          clearTimeout(saveTimer);
           Estado.formFonteArea = {};
           aplicarPlanosArea(resp);
+          if (!resp || !resp.ok || resp.precisaSenha) {
+            ocupar(false);
+            return;
+          }
+          return importarPlanosAreaUi(dadosFonte.departamento_id);
         }).catch(function (err) {
+          clearTimeout(saveTimer);
           ocupar(false);
-          toast(err.message || err, true);
+          toast(err && err.message ? err.message : String(err), true);
         });
         return;
       }
