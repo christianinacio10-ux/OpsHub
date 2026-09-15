@@ -768,12 +768,12 @@
       '<div class="painel-topo" style="margin-bottom:10px">' +
       '<button class="botao primario" type="button" data-importar-area="' + escapar(d.id) + '">' + t('importar_agora') + '</button>' +
       '<div class="secao-apoio">' + t('fontes_apoio') + '</div></div>' +
-      '<div class="secao-titulo">' + t('planos_area_cadastrar') + '</div>' +
-      formFonteArea(d) +
       listaFontesArea() +
       '<label class="check-encerradas" style="margin-top:16px"><input type="checkbox" data-mostrar-encerradas-area="1"' +
       (Estado.planosAreaMostrarEncerradas ? ' checked' : '') + '> ' + t('planos_area_mostrar_encerradas') + '</label>' +
       listaPlanosArea() +
+      '<div class="secao-titulo" style="margin-top:18px">' + t('planos_area_cadastrar') + '</div>' +
+      formFonteArea(d) +
       '</div>';
   }
 
