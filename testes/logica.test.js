@@ -94,18 +94,20 @@ assert.strictEqual(
   ).length,
   1
 );
-var montArea = Logica.montarPlanoArea(
-  { oque: 'SMED interno', email: 'A@B.COM', status: 'Aberto' },
-  { id: 'D-PROD', nome: 'Produção', bandeira: 'Solutions' },
-  'A1'
+var montArea = Logica.marcarPlanoDaArea(
+  { oque: 'SMED interno', area: '', divisao: '' },
+  { id: 'D-PROD', nome: 'Produção', bandeira: 'Solutions' }
 );
-assert.strictEqual(montArea.id, 'A1');
 assert.strictEqual(montArea.departamento_id, 'D-PROD');
-assert.strictEqual(montArea.tema, 'Produção');
 assert.strictEqual(montArea.divisao, 'Solutions');
 assert.strictEqual(montArea.area, 'Produção');
 assert.strictEqual(montArea.oque, 'SMED interno');
-assert.strictEqual(montArea.email, 'a@b.com');
+var areaJaPreenchida = Logica.marcarPlanoDaArea(
+  { area: 'Linha DDA', divisao: 'Apparel', oque: 'Setup' },
+  { id: 'D-PROD', nome: 'Produção', bandeira: 'Solutions' }
+);
+assert.strictEqual(areaJaPreenchida.area, 'Linha DDA');
+assert.strictEqual(areaJaPreenchida.divisao, 'Apparel');
 assert.strictEqual(Logica.prepararAcaoParaUi(montArea, hoje).departamento_id, 'D-PROD');
 
 assert.strictEqual(Logica.statusEfetivo({ status: 'Aberto', prazo: d(2026, 8, 20) }, hoje), 'Atrasado');

@@ -156,6 +156,10 @@ var Cadastros = {
     return Repo.ler(ABAS.fontes);
   },
 
+  fontesArea: function () {
+    return Repo.ler(ABAS.fontesArea);
+  },
+
   planos: function () {
     return Repo.ler(ABAS.planos);
   },

@@ -672,26 +672,13 @@ var Logica = (function () {
     return (lista || []).filter(function (p) { return texto(p.departamento_id) === id; });
   }
 
-  function montarPlanoArea(reg, dept, id) {
+  function marcarPlanoDaArea(plano, dept) {
+    plano = plano || {};
     dept = dept || {};
-    reg = reg || {};
-    return {
-      id: texto(id) || idNovo('A'),
-      departamento_id: texto(dept.id || reg.departamento_id),
-      tema: texto(reg.tema) || texto(dept.nome),
-      divisao: texto(reg.divisao) || texto(dept.bandeira),
-      area: texto(reg.area) || texto(dept.nome),
-      oque: texto(reg.oque),
-      como: texto(reg.como),
-      responsavel: texto(reg.responsavel),
-      email: texto(reg.email).toLowerCase(),
-      prazo: paraData(reg.prazo),
-      status: tituloStatus(reg.status) || 'Aberto',
-      comentarios: texto(reg.comentarios),
-      ultimo_email_em: reg.ultimo_email_em || '',
-      emails_enviados: Number(reg.emails_enviados || 0),
-      atualizado_em: new Date(),
-    };
+    plano.departamento_id = texto(dept.id || plano.departamento_id);
+    if (!texto(plano.area)) plano.area = texto(dept.nome);
+    if (!texto(plano.divisao)) plano.divisao = texto(dept.bandeira);
+    return plano;
   }
 
   function escaparHtml(s) {
@@ -836,7 +823,7 @@ var Logica = (function () {
     prepararAcaoParaUi: prepararAcaoParaUi,
     temSenhaPlanos: temSenhaPlanos,
     planosDoDepartamento: planosDoDepartamento,
-    montarPlanoArea: montarPlanoArea,
+    marcarPlanoDaArea: marcarPlanoDaArea,
     normalizarBandeira: normalizarBandeira,
     negocioDoControle: negocioDoControle,
     partesPasta: partesPasta,

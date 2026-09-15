@@ -24,7 +24,8 @@
     planosAreaKpis: null,
     planosAreaPrecisaSenha: false,
     planosAreaMostrarEncerradas: false,
-    formPlanoArea: {},
+    fontesArea: [],
+    formFonteArea: {},
   };
 
   var ICONES_DEPT = [
@@ -691,30 +692,35 @@
       '</div></form></div>';
   }
 
-  function opcoesStatusPlano(atual) {
-    var canonicos = ['Aberto', 'Em andamento', 'Concluído', 'Cancelado'];
-    var chaves = ['status_aberto', 'status_andamento', 'status_concluido', 'status_cancelado'];
-    return canonicos.map(function (v, i) {
-      return '<option value="' + v + '"' + (atual === v ? ' selected' : '') + '>' + t(chaves[i]) + '</option>';
-    }).join('');
-  }
-
-  function formPlanoArea(dept) {
-    var f = Estado.formPlanoArea || {};
-    return '<form class="form-grid" data-plano-area="1">' +
+  function formFonteArea(dept) {
+    var f = Estado.formFonteArea || {};
+    return '<form class="form-grid" data-fonte-area="1">' +
       (f.id ? '<input type="hidden" name="id" value="' + escapar(f.id) + '">' : '') +
       '<input type="hidden" name="departamento_id" value="' + escapar(dept.id) + '">' +
-      campo('oque', t('campo_oque'), f.oque, { span2: true }) +
-      campo('como', t('campo_como'), f.como, { span2: true, area: true }) +
-      campo('responsavel', t('th_responsavel'), f.responsavel) +
-      campo('email', t('campo_email'), f.email) +
-      campo('prazo', t('campo_prazo'), f.prazo || '', { tipo: 'date' }) +
-      campo('status', t('campo_status'), f.status, { opcoes: opcoesStatusPlano(f.status || 'Aberto') }) +
-      campo('comentarios', t('campo_comentarios'), f.comentarios, { span2: true }) +
+      campo('nome', t('nome_fonte'), f.nome) +
+      campo('aba', t('aba_opcional'), f.aba) +
+      campo('referencia', t('url_sheet'), f.referencia, { span2: true }) +
+      campo('linha_cabecalho', t('linha_cabecalho'), f.linha_cabecalho || 1, { tipo: 'number' }) +
+      campo('ativo', t('campo_ativo'), f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">' +
       (f.id ? t('planos_area_atualizar') : t('planos_area_salvar')) + '</button>' +
-      (f.id ? '<button class="botao" type="button" data-cancelar-plano-area="1">' + t('cancelar') + '</button>' : '') +
+      (f.id ? '<button class="botao" type="button" data-cancelar-fonte-area="1">' + t('limpar') + '</button>' : '') +
       '</div></form>';
+  }
+
+  function listaFontesArea() {
+    var lista = Estado.fontesArea || [];
+    if (!lista.length) return '<div class="vazio">' + t('planos_area_sem_fonte') + '</div>';
+    return '<div class="admin-lista">' + lista.map(function (f) {
+      return '<div class="linha-admin">' +
+        '<div><strong>' + escapar(f.nome || t('nome_fonte')) + '</strong><small>' +
+        escapar(f.referencia) + (f.aba ? ' · ' + t('aba_prefix') + ' ' + escapar(f.aba) : '') +
+        (f.ultimo_status ? ' · ' + escapar(f.ultimo_status) + ' ' + escapar(f.ultimo_detalhe) : '') +
+        '</small></div>' +
+        '<div><button class="botao" type="button" data-edit-fonte-area="' + escapar(f.id) + '">' + t('editar') + '</button> ' +
+        '<button class="botao perigo" type="button" data-del-fonte-area="' + escapar(f.id) + '">' + t('excluir') + '</button></div>' +
+        '</div>';
+    }).join('') + '</div>';
   }
 
   function listaPlanosArea() {
@@ -724,17 +730,23 @@
       : todos.filter(function (p) { return !statusEncerradoUi(p.status); });
     if (!lista.length) return '<div class="vazio">' + t('planos_area_vazio') + '</div>';
     return '<div class="tabela-wrap"><table class="dados"><thead><tr>' +
-      '<th>' + t('th_oque') + '</th><th>' + t('th_responsavel') + '</th><th>' + t('th_prazo') + '</th>' +
-      '<th>' + t('th_status') + '</th><th></th></tr></thead><tbody>' +
+      '<th>' + t('th_tema') + '</th><th>' + t('th_oque') + '</th><th>' + t('th_responsavel') + '</th>' +
+      '<th>' + t('th_email') + '</th><th>' + t('th_prazo') + '</th><th>' + t('th_status') + '</th>' +
+      '</tr></thead><tbody>' +
       lista.map(function (p) {
         var st = rotuloStatusUi(p.status);
+        var tipEmail = p.tem_email ? p.email : t('tooltip_sem_email');
+        var emailCel = p.tem_email
+          ? escapar(p.email)
+          : '<span class="aviso-email" tabindex="0" data-tip="' + escapar(tipEmail) +
+            '" title="' + escapar(tipEmail) + '">' + svg('ehs') + '</span>';
         return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
+          '<td>' + escapar(p.tema) + '</td>' +
           '<td class="principal" title="' + escapar(p.oque) + '">' + escapar(p.oque) + '</td>' +
           '<td>' + escapar(p.responsavel) + '</td>' +
+          '<td title="' + escapar(tipEmail) + '">' + emailCel + '</td>' +
           '<td>' + escapar(p.prazo_br) + '</td>' +
           '<td><span class="selo ' + p.status_classe + '">' + escapar(st) + '</span></td>' +
-          '<td><button type="button" class="botao" data-edit-plano-area="' + escapar(p.id) + '">' + t('editar') + '</button> ' +
-          '<button type="button" class="botao perigo" data-del-plano-area="' + escapar(p.id) + '">' + t('excluir') + '</button></td>' +
           '</tr>';
       }).join('') +
       '</tbody></table></div>';
@@ -753,11 +765,15 @@
     return '<div class="drawer-gestao">' +
       kpisHtml(Estado.planosAreaKpis) +
       '<div class="secao-apoio" style="margin-bottom:12px">' + t('planos_area_sub') + '</div>' +
-      '<label class="check-encerradas"><input type="checkbox" data-mostrar-encerradas-area="1"' +
+      '<div class="painel-topo" style="margin-bottom:10px">' +
+      '<button class="botao primario" type="button" data-importar-area="' + escapar(d.id) + '">' + t('importar_agora') + '</button>' +
+      '<div class="secao-apoio">' + t('fontes_apoio') + '</div></div>' +
+      '<div class="secao-titulo">' + t('planos_area_cadastrar') + '</div>' +
+      formFonteArea(d) +
+      listaFontesArea() +
+      '<label class="check-encerradas" style="margin-top:16px"><input type="checkbox" data-mostrar-encerradas-area="1"' +
       (Estado.planosAreaMostrarEncerradas ? ' checked' : '') + '> ' + t('planos_area_mostrar_encerradas') + '</label>' +
       listaPlanosArea() +
-      '<div class="secao-titulo" style="margin-top:18px">' + t('planos_area_cadastrar') + '</div>' +
-      formPlanoArea(d) +
       '</div>';
   }
 
@@ -765,12 +781,17 @@
     if (!resp) return;
     Estado.planosAreaPrecisaSenha = !!resp.precisaSenha;
     Estado.planosArea = resp.planos || [];
+    Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     if (resp.ok) {
       var d = Estado.deptAberto;
       if (d) d.tem_senha_planos = !!resp.tem_senha_planos;
     }
     if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
+    if (resp.importacao) {
+      var msg = mensagemImportacao(resp.importacao);
+      if (msg) toast(msg, resp.importacao.linhas === 0);
+    }
   }
 
   function pintarDrawerPlanos(d) {
@@ -864,7 +885,8 @@
     Estado.deptModo = 'ver';
     Estado.aparenciaAberta = false;
     Estado.formDrawer = { tipo: '', data: {} };
-    Estado.formPlanoArea = {};
+    Estado.formFonteArea = {};
+    Estado.fontesArea = [];
     Estado.planosAreaPrecisaSenha = false;
   }
 
@@ -1236,34 +1258,47 @@
         var dPlanos = ((Estado.hub && Estado.hub.departamentos) || []).filter(function (x) {
           return x.id === pid;
         })[0];
-        Estado.formPlanoArea = {};
+        Estado.formFonteArea = {};
         Estado.planosArea = [];
+        Estado.fontesArea = [];
         Estado.planosAreaPrecisaSenha = !!(dPlanos && dPlanos.tem_senha_planos);
         abrirDept(pid, 'planos');
         carregarPlanosArea(pid);
         return;
       }
-      if (e.target.closest('[data-cancelar-plano-area]')) {
-        Estado.formPlanoArea = {};
+      if (e.target.closest('[data-cancelar-fonte-area]')) {
+        Estado.formFonteArea = {};
         if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
         return;
       }
-      var editPlano = e.target.closest('[data-edit-plano-area]');
-      if (editPlano) {
-        var idPl = editPlano.getAttribute('data-edit-plano-area');
-        Estado.formPlanoArea = (Estado.planosArea || []).filter(function (x) { return String(x.id) === String(idPl); })[0] || {};
+      var editFonteArea = e.target.closest('[data-edit-fonte-area]');
+      if (editFonteArea) {
+        var idFa = editFonteArea.getAttribute('data-edit-fonte-area');
+        Estado.formFonteArea = (Estado.fontesArea || []).filter(function (x) { return String(x.id) === String(idFa); })[0] || {};
         if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto);
         return;
       }
-      var delPlano = e.target.closest('[data-del-plano-area]');
-      if (delPlano) {
-        if (!confirm(t('confirm_excluir_acao'))) return;
+      var delFonteArea = e.target.closest('[data-del-fonte-area]');
+      if (delFonteArea) {
+        if (!confirm(t('confirm_excluir'))) return;
         ocupar(true, t('carregando_ellipsis'));
-        chamar('apiExcluirPlanoArea', delPlano.getAttribute('data-del-plano-area')).then(function (resp) {
+        chamar('apiExcluirFonteArea', delFonteArea.getAttribute('data-del-fonte-area')).then(function (resp) {
           ocupar(false);
-          Estado.formPlanoArea = {};
+          Estado.formFonteArea = {};
           aplicarPlanosArea(resp);
           toast(t('toast_removido'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
+        return;
+      }
+      var importarArea = e.target.closest('[data-importar-area]');
+      if (importarArea) {
+        ocupar(true, t('ocupado_importando'));
+        chamar('apiImportarPlanosArea', importarArea.getAttribute('data-importar-area')).then(function (resp) {
+          ocupar(false);
+          aplicarPlanosArea(resp);
         }).catch(function (err) {
           ocupar(false);
           toast(err.message || err, true);
@@ -1547,16 +1582,15 @@
           });
         return;
       }
-      var planoForm = e.target.closest('form[data-plano-area]');
-      if (planoForm) {
+      var fonteAreaForm = e.target.closest('form[data-fonte-area]');
+      if (fonteAreaForm) {
         e.preventDefault();
-        var dados = lerForm(planoForm);
-        ocupar(true, t('carregando_ellipsis'));
-        chamar('apiSalvarPlanoArea', dados).then(function (resp) {
+        var dadosFonte = lerForm(fonteAreaForm);
+        ocupar(true, t('ocupado_importando'));
+        chamar('apiSalvarFonteArea', dadosFonte).then(function (resp) {
           ocupar(false);
-          Estado.formPlanoArea = {};
+          Estado.formFonteArea = {};
           aplicarPlanosArea(resp);
-          if (resp && resp.ok) toast(t('toast_salvo'));
         }).catch(function (err) {
           ocupar(false);
           toast(err.message || err, true);
@@ -1683,6 +1717,9 @@
     ocupar(true, t('ocupado_importando'));
     return chamar('apiAtualizar').then(function (hub) {
       aplicarHub(hub, hub.importacao);
+      if (Estado.deptAberto && Estado.deptModo === 'planos') {
+        return carregarPlanosArea(Estado.deptAberto.id);
+      }
     }).catch(function (err) {
       ocupar(false);
       setPilula(false, t('erro'));

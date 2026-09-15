@@ -286,9 +286,43 @@ function deptPorId_(id) {
   return Repo.ler(ABAS.departamentos).filter(function (d) { return String(d.id) === String(id); })[0];
 }
 
+function payloadAreaTrancada_(dept, extra) {
+  extra = extra || {};
+  return {
+    ok: false,
+    precisaSenha: true,
+    senhaErrada: !!extra.senhaErrada,
+    departamento_id: dept.id,
+    tem_senha_planos: true,
+    planos: [],
+    fontes: [],
+    kpis: Logica.kpis([], hojeLocal_()),
+  };
+}
+
+function fontesAreaDoDept_(deptId) {
+  return Cadastros.fontesArea().filter(function (f) {
+    return Logica.texto(f.departamento_id) === Logica.texto(deptId);
+  }).map(function (f) {
+    return {
+      id: f.id,
+      departamento_id: f.departamento_id,
+      nome: f.nome,
+      referencia: f.referencia,
+      aba: f.aba,
+      linha_cabecalho: f.linha_cabecalho,
+      ativo: f.ativo,
+      ultima_execucao: f.ultima_execucao,
+      ultimo_status: f.ultimo_status,
+      ultimo_detalhe: f.ultimo_detalhe,
+    };
+  });
+}
+
 function payloadPlanosArea_(dept) {
   var hoje = hojeLocal_();
-  var lista = Logica.planosDoDepartamento(Cadastros.planosArea(), dept.id).map(function (p) {
+  var brutos = Logica.planosDoDepartamento(Cadastros.planosArea(), dept.id);
+  var lista = brutos.map(function (p) {
     return Logica.prepararAcaoParaUi(p, hoje);
   });
   return {
@@ -297,18 +331,25 @@ function payloadPlanosArea_(dept) {
     departamento_id: dept.id,
     tem_senha_planos: Logica.temSenhaPlanos(dept),
     planos: lista,
-    kpis: Logica.kpis(Logica.planosDoDepartamento(Cadastros.planosArea(), dept.id), hoje),
+    fontes: fontesAreaDoDept_(dept.id),
+    kpis: Logica.kpis(brutos, hoje),
   };
 }
 
-function apiPlanosArea(deptId) {
+function exigirAreaAberta_(deptId) {
   instalarSistema();
   var dept = deptPorId_(deptId);
   if (!dept) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
   if (Logica.temSenhaPlanos(dept) && !areaDesbloqueada_(dept.id)) {
-    return { ok: false, precisaSenha: true, departamento_id: dept.id, tem_senha_planos: true, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+    return { bloqueado: payloadAreaTrancada_(dept) };
   }
-  return payloadPlanosArea_(dept);
+  return { dept: dept };
+}
+
+function apiPlanosArea(deptId) {
+  var gate = exigirAreaAberta_(deptId);
+  if (gate.bloqueado) return gate.bloqueado;
+  return payloadPlanosArea_(gate.dept);
 }
 
 function apiAbrirPlanosArea(deptId, senha) {
@@ -317,50 +358,73 @@ function apiAbrirPlanosArea(deptId, senha) {
   if (!dept) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
   if (Logica.temSenhaPlanos(dept)) {
     if (hashSenhaPlanos_(dept.id, senha) !== Logica.texto(dept.senha_planos)) {
-      return { ok: false, precisaSenha: true, senhaErrada: true, departamento_id: dept.id, tem_senha_planos: true, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+      return payloadAreaTrancada_(dept, { senhaErrada: true });
     }
   }
   desbloquearArea_(dept.id);
   return payloadPlanosArea_(dept);
 }
 
-function apiSalvarPlanoArea(reg) {
-  instalarSistema();
+function apiSalvarFonteArea(reg) {
   if (!reg || !reg.departamento_id) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
-  var dept = deptPorId_(reg.departamento_id);
-  if (!dept) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
-  if (Logica.temSenhaPlanos(dept) && !areaDesbloqueada_(dept.id)) {
-    return { ok: false, precisaSenha: true, departamento_id: dept.id, tem_senha_planos: true, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+  var gate = exigirAreaAberta_(reg.departamento_id);
+  if (gate.bloqueado) return gate.bloqueado;
+  if (!Logica.texto(reg.referencia) || (!Logica.extrairIdPlanilha(reg.referencia) && !/^https?:\/\//i.test(String(reg.referencia || '')))) {
+    throw new Error(I18n.t(I18n.atual(), 'erro_url'));
   }
-  if (!Logica.texto(reg.oque)) throw new Error(I18n.t(I18n.atual(), 'erro_oque'));
-  var id = Logica.texto(reg.id) || Logica.idNovo('A');
-  var atual = Repo.ler(ABAS.planosArea).filter(function (p) { return String(p.id) === String(id); })[0];
-  var montado = Logica.montarPlanoArea(reg, dept, id);
+  var id = Logica.texto(reg.id) || Logica.idNovo('FA');
+  var registro = {
+    id: id,
+    departamento_id: gate.dept.id,
+    nome: Logica.texto(reg.nome) || Logica.texto(gate.dept.nome),
+    referencia: Logica.texto(reg.referencia),
+    aba: Logica.texto(reg.aba),
+    linha_cabecalho: Number(reg.linha_cabecalho || 1) || 1,
+    ativo: (reg.ativo === false || reg.ativo === 'NAO' || reg.ativo === 'NÃO') ? 'NAO' : 'SIM',
+  };
+  var lista = Repo.ler(ABAS.fontesArea);
+  var atual = lista.filter(function (r) { return String(r.id) === String(id); })[0];
   if (atual) {
-    montado.ultimo_email_em = atual.ultimo_email_em;
-    montado.emails_enviados = atual.emails_enviados;
-    Repo.atualizarRegistro(ABAS.planosArea, atual._linha, montado);
+    if (Logica.texto(atual.departamento_id) !== Logica.texto(gate.dept.id)) {
+      throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
+    }
+    Repo.atualizarRegistro(ABAS.fontesArea, atual._linha, registro);
   } else {
-    Repo.acrescentar(ABAS.planosArea, [montado]);
+    Repo.acrescentar(ABAS.fontesArea, [registro]);
   }
   Repo.limparMemoria();
-  return payloadPlanosArea_(deptPorId_(dept.id));
+  var imp = importarFontesArea_(gate.dept.id);
+  var payload = payloadPlanosArea_(deptPorId_(gate.dept.id));
+  payload.importacao = imp;
+  return payload;
 }
 
-function apiExcluirPlanoArea(id) {
+function apiExcluirFonteArea(id) {
   instalarSistema();
-  var lista = Repo.ler(ABAS.planosArea);
-  var atual = lista.filter(function (p) { return String(p.id) === String(id); })[0];
+  var lista = Repo.ler(ABAS.fontesArea);
+  var atual = lista.filter(function (r) { return String(r.id) === String(id); })[0];
   if (!atual) {
-    return { ok: true, precisaSenha: false, departamento_id: '', tem_senha_planos: false, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+    return { ok: true, precisaSenha: false, departamento_id: '', tem_senha_planos: false, planos: [], fontes: [], kpis: Logica.kpis([], hojeLocal_()) };
   }
-  var dept = deptPorId_(atual.departamento_id);
-  if (dept && Logica.temSenhaPlanos(dept) && !areaDesbloqueada_(dept.id)) {
-    return { ok: false, precisaSenha: true, departamento_id: dept.id, tem_senha_planos: true, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
-  }
-  Repo.excluirLinha(ABAS.planosArea, atual._linha);
+  var gate = exigirAreaAberta_(atual.departamento_id);
+  if (gate.bloqueado) return gate.bloqueado;
+  Repo.excluirLinha(ABAS.fontesArea, atual._linha);
   Repo.limparMemoria();
-  return dept ? payloadPlanosArea_(deptPorId_(dept.id)) : { ok: true, planos: [], kpis: Logica.kpis([], hojeLocal_()) };
+  var planos = Repo.ler(ABAS.planosArea).filter(function (p) {
+    return Logica.texto(p.fonte_id) !== Logica.texto(id);
+  });
+  Repo.substituirAba(ABAS.planosArea, planos);
+  Repo.limparMemoria();
+  return payloadPlanosArea_(deptPorId_(gate.dept.id));
+}
+
+function apiImportarPlanosArea(deptId) {
+  var gate = exigirAreaAberta_(deptId);
+  if (gate.bloqueado) return gate.bloqueado;
+  var imp = importarFontesArea_(gate.dept.id);
+  var payload = payloadPlanosArea_(deptPorId_(gate.dept.id));
+  payload.importacao = imp;
+  return payload;
 }
 
 function apiDefinirSenhaPlanosArea(deptId, senhaAtual, senhaNova) {
