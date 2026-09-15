@@ -789,6 +789,8 @@
     }
     if (Estado.deptAberto && Estado.deptModo === 'planos') pintarDrawerPlanos(Estado.deptAberto);
     if (resp.importacao) {
+      ocupar(false);
+      setPilula(true, t('atualizado'));
       var msg = mensagemImportacao(resp.importacao);
       if (msg) toast(msg, resp.importacao.linhas === 0);
     }
