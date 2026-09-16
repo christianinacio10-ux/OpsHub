@@ -71,6 +71,7 @@
     var p = plano(id, o);
     p.departamento_id = deptId;
     p.fonte_id = o.fonte_id || '';
+    p.followup = o.followup === true;
     return p;
   }
 
@@ -119,7 +120,7 @@
 
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
-      followUpPorArea[deptId] = { temas: [], soEu: false, gestorEmail: '', emailsOff: [] };
+      followUpPorArea[deptId] = { temas: [], soEu: true, gestorEmail: emailSessao, emailsOff: [] };
     }
     return followUpPorArea[deptId];
   }
@@ -128,8 +129,8 @@
     var fu = followUpDept(deptId);
     return {
       temas: (fu.temas || []).slice(),
-      soEu: !!fu.soEu,
-      gestorEmail: fu.gestorEmail || '',
+      soEu: fu.soEu !== false,
+      gestorEmail: fu.gestorEmail || emailSessao,
       emailsOff: (fu.emailsOff || []).slice(),
       meuEmail: emailSessao,
     };
@@ -211,7 +212,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.6.1' },
+        app: { nome: 'OpsHub', versao: '1.6.2' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -287,21 +288,24 @@
       function candidato(p, area) {
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
-        if (!p.tem_email || p.status !== 'Atrasado') return false;
-        if (p.followup === false) return false;
+        if (p.status !== 'Atrasado') return false;
         if (!area) {
+          if (!p.tem_email) return false;
+          if (p.followup === false) return false;
           if (temasFollowUp.length === 1 && temasFollowUp[0] === '__NONE__') return false;
           if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
         } else {
+          if (p.followup !== true) return false;
           var fu = followUpDept(p.departamento_id);
           if (fu.temas.length === 1 && fu.temas[0] === '__NONE__') return false;
           if (fu.temas.length && fu.temas.indexOf(p.tema) === -1) return false;
-          var email = String(p.email || '').toLowerCase();
-          if (fu.soEu) {
-            var g = String(fu.gestorEmail || emailSessao).toLowerCase();
-            if (email !== g) return false;
+          if (fu.soEu !== false) {
+            if (!(fu.gestorEmail || emailSessao)) return false;
+          } else {
+            if (!p.tem_email) return false;
+            var email = String(p.email || '').toLowerCase();
+            if ((fu.emailsOff || []).indexOf(email) !== -1) return false;
           }
-          if ((fu.emailsOff || []).indexOf(email) !== -1) return false;
         }
         if (!forcar && followupsEnviadosHoje[p.id]) return false;
         return true;
@@ -325,21 +329,24 @@
       function candidato(p, area) {
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
-        if (!p.tem_email || p.status !== 'Atrasado') return false;
-        if (p.followup === false) return false;
+        if (p.status !== 'Atrasado') return false;
         if (!area) {
+          if (!p.tem_email) return false;
+          if (p.followup === false) return false;
           if (temasFollowUp.length === 1 && temasFollowUp[0] === '__NONE__') return false;
           if (temasFollowUp.length && temasFollowUp.indexOf(p.tema) === -1) return false;
         } else {
+          if (p.followup !== true) return false;
           var fu = followUpDept(p.departamento_id);
           if (fu.temas.length === 1 && fu.temas[0] === '__NONE__') return false;
           if (fu.temas.length && fu.temas.indexOf(p.tema) === -1) return false;
-          var email = String(p.email || '').toLowerCase();
-          if (fu.soEu) {
-            var g = String(fu.gestorEmail || emailSessao).toLowerCase();
-            if (email !== g) return false;
+          if (fu.soEu !== false) {
+            if (!(fu.gestorEmail || emailSessao)) return false;
+          } else {
+            if (!p.tem_email) return false;
+            var email = String(p.email || '').toLowerCase();
+            if ((fu.emailsOff || []).indexOf(email) !== -1) return false;
           }
-          if ((fu.emailsOff || []).indexOf(email) !== -1) return false;
         }
         return true;
       }
@@ -487,7 +494,7 @@
       var id = String(acaoId || '');
       planosArea = planosArea.map(function (p) {
         if (String(p.id) !== id || p.departamento_id !== deptId) return p;
-        return Object.assign({}, p, { followup: p.followup === false });
+        return Object.assign({}, p, { followup: !p.followup });
       });
       return payloadArea(deptId, areaTrancada(deptId));
     },

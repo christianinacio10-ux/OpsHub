@@ -39,11 +39,18 @@ assert.strictEqual(Logica.elegivelFollowUp(acao, d(2026, 8, 24)).ok, false, 'no 
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { email: '' }), hoje).motivo, 'sem_email');
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { status: 'Concluído' }), hoje).ok, false);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { prazo: d(2026, 9, 1) }), hoje).motivo, 'ainda_no_prazo');
-assert.strictEqual(Logica.followUpAcaoLigada({}), true);
+assert.strictEqual(Logica.followUpAcaoLigada({}), true, 'planta vazia continua ligada');
 assert.strictEqual(Logica.followUpAcaoLigada({ followup: '' }), true);
 assert.strictEqual(Logica.followUpAcaoLigada({ followup: 'SIM' }), true);
 assert.strictEqual(Logica.followUpAcaoLigada({ followup: 'NAO' }), false);
+assert.strictEqual(Logica.followUpAcaoLigada({ departamento_id: 'D-EHS' }), false, 'área vazia começa pausada');
+assert.strictEqual(Logica.followUpAcaoLigada({ departamento_id: 'D-EHS', followup: '' }), false);
+assert.strictEqual(Logica.followUpAcaoLigada({ departamento_id: 'D-EHS', followup: 'SIM' }), true);
 assert.strictEqual(Logica.elegivelFollowUp(Object.assign({}, acao, { followup: 'NAO' }), hoje).motivo, 'acao_desligada');
+assert.strictEqual(
+  Logica.elegivelFollowUp(Object.assign({}, acao, { departamento_id: 'D-EHS' }), hoje).motivo,
+  'acao_desligada'
+);
 var mesclado = Logica.mesclarImportacao(
   [{ chave_origem: 'k1', ultimo_email_em: hoje, emails_enviados: 2, followup: 'NAO' }],
   [{ chave_origem: 'k1', oque: 'novo' }]
@@ -119,18 +126,29 @@ assert.strictEqual(
 
 var regraTodos = Logica.regraFollowUpArea({});
 assert.deepStrictEqual(regraTodos.temas, []);
-assert.strictEqual(regraTodos.soEu, false);
-assert.strictEqual(Logica.emailFollowUpPermitido('carla@avery.com', regraTodos), true);
+assert.strictEqual(regraTodos.soEu, true, 'área começa em cobrar só meu e-mail');
+assert.strictEqual(Logica.emailDestinoFollowUp({ email: 'carla@avery.com' }, regraTodos), '');
+assert.strictEqual(
+  Logica.emailDestinoFollowUp({ email: 'carla@avery.com' }, Object.assign({}, regraTodos, { gestorEmail: 'gestor@avery.com' })),
+  'gestor@avery.com',
+  'so eu redireciona para o gestor'
+);
 
 var regraSoEu = Logica.regraFollowUpArea({
   followup_so_eu: 'SIM',
   followup_gestor_email: 'gestor@avery.com',
   followup_emails_off: '[]',
 });
+assert.strictEqual(Logica.emailDestinoFollowUp({ email: 'carla@avery.com' }, regraSoEu), 'gestor@avery.com');
 assert.strictEqual(Logica.emailFollowUpPermitido('gestor@avery.com', regraSoEu), true);
-assert.strictEqual(Logica.emailFollowUpPermitido('carla@avery.com', regraSoEu), false);
+
+var regraTodosResp = Logica.regraFollowUpArea({ followup_so_eu: 'NAO' });
+assert.strictEqual(regraTodosResp.soEu, false);
+assert.strictEqual(Logica.emailDestinoFollowUp({ email: 'carla@avery.com' }, regraTodosResp), 'carla@avery.com');
+assert.strictEqual(Logica.emailFollowUpPermitido('carla@avery.com', regraTodosResp), true);
 
 var regraOff = Logica.regraFollowUpArea({
+  followup_so_eu: 'NAO',
   followup_emails_off: '["carla@avery.com"]',
 });
 assert.strictEqual(Logica.emailFollowUpPermitido('carla@avery.com', regraOff), false);
