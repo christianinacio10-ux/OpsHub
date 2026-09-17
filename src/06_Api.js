@@ -190,37 +190,107 @@ function apiAtualizar() {
   return hub;
 }
 
-function apiPreverFollowUps(departamentoId) {
-  instalarSistema();
-  var hoje = hojeLocal_();
-  var ctx = {
+function garantirGestorArea_(dept) {
+  if (!dept) return dept;
+  var regra = Logica.regraFollowUpArea(dept);
+  if (!regra.soEu) return dept;
+  var email = regra.gestorEmail || Logica.texto(identificarEmailSessao_()).toLowerCase();
+  if (!Logica.emailValido(email)) return dept;
+  var patch = {};
+  if (!regra.gestorEmail) patch.followup_gestor_email = email;
+  if (!Logica.texto(dept.followup_so_eu)) patch.followup_so_eu = 'SIM';
+  var chaves = Object.keys(patch);
+  if (!chaves.length) return dept;
+  Repo.atualizarRegistro(ABAS.departamentos, dept._linha, patch);
+  Repo.limparMemoria();
+  return deptPorId_(dept.id) || dept;
+}
+
+function motivoZeroFollowUp_(planos, ctx, hoje) {
+  var nTema = 0;
+  var nAcao = 0;
+  var nEmail = 0;
+  var nPrazo = 0;
+  var algumOk = false;
+  (planos || []).forEach(function (plano) {
+    var dec = decisaoFollowUp_(plano, hoje, ctx);
+    if (dec.ok) {
+      algumOk = true;
+      return;
+    }
+    if (dec.motivo === 'tema_desligado') nTema++;
+    else if (dec.motivo === 'acao_desligada') nAcao++;
+    else if (dec.motivo === 'sem_email' || dec.motivo === 'email_desligado') nEmail++;
+    else if (dec.motivo === 'ainda_no_prazo') nPrazo++;
+  });
+  if (algumOk) return '';
+  if (nAcao) return 'acao_desligada';
+  if (nTema) return 'tema_desligado';
+  if (nEmail) return 'sem_email';
+  if (nPrazo) return 'ainda_no_prazo';
+  return 'nenhum';
+}
+
+function ctxFollowUpPrevia_(departamentoId) {
+  var area = !!Logica.texto(departamentoId);
+  return {
     temasPlanta: temasPlantaFollowUp_(),
     depts: mapaDepartamentos_(),
     emailSessao: identificarEmailSessao_(),
+    ignorarJaEnviadoHoje: true,
+    ignorarPrazo: area,
+    ignorarTemas: area,
   };
+}
+
+function apiPreverFollowUps(departamentoId) {
+  instalarSistema();
+  if (departamentoId) {
+    var gate = exigirAreaAberta_(departamentoId);
+    if (gate.bloqueado) return { total: 0, temasJaEnviadosHoje: [], motivoZero: 'bloqueado' };
+    garantirGestorArea_(gate.dept);
+  }
+  var hoje = hojeLocal_();
+  var ctx = ctxFollowUpPrevia_(departamentoId);
   var total = 0;
   var temasJa = [];
   var vistos = {};
-  planosFollowUpFiltrados_({ departamento_id: departamentoId }).forEach(function (plano) {
-    var forcado = decisaoFollowUp_(plano, hoje, {
-      temasPlanta: ctx.temasPlanta,
-      depts: ctx.depts,
-      ignorarJaEnviadoHoje: true,
-    });
+  var planos = planosFollowUpFiltrados_({ departamento_id: departamentoId });
+  planos.forEach(function (plano) {
+    var forcado = decisaoFollowUp_(plano, hoje, ctx);
     if (!forcado.ok) return;
     total++;
-    var normal = decisaoFollowUp_(plano, hoje, ctx);
+    var normal = decisaoFollowUp_(plano, hoje, {
+      temasPlanta: ctx.temasPlanta,
+      depts: ctx.depts,
+      emailSessao: ctx.emailSessao,
+    });
     var tema = Logica.texto(plano.tema);
     if (!normal.ok && normal.motivo === 'ja_enviado_hoje' && tema && !vistos[tema]) {
       vistos[tema] = 1;
       temasJa.push(tema);
     }
   });
-  return { total: total, temasJaEnviadosHoje: temasJa };
+  return {
+    total: total,
+    temasJaEnviadosHoje: temasJa,
+    motivoZero: total ? '' : motivoZeroFollowUp_(planos, ctx, hoje),
+  };
 }
 
 function apiEnviarFollowUpsAgora(forcar, departamentoId) {
-  return enviarFollowUps({ forcar: !!forcar, departamento_id: departamentoId || '' });
+  if (departamentoId) {
+    var gate = exigirAreaAberta_(departamentoId);
+    if (gate.bloqueado) return { enviados: 0, pulados: 0, erros: 0 };
+    garantirGestorArea_(gate.dept);
+  }
+  var areaForcada = !!(forcar && departamentoId);
+  return enviarFollowUps({
+    forcar: !!forcar,
+    departamento_id: departamentoId || '',
+    ignorarPrazo: areaForcada,
+    ignorarTemas: areaForcada,
+  });
 }
 
 function apiCriarGatilho() {
@@ -487,13 +557,25 @@ function apiAlternarTemaFollowUpArea(deptId, nome) {
   if (!nome) throw new Error(I18n.t(I18n.atual(), 'erro_tema_vazio'));
   var gate = exigirAreaAberta_(deptId);
   if (gate.bloqueado) return gate.bloqueado;
-  var dept = deptPorId_(gate.dept.id);
+  var dept = garantirGestorArea_(deptPorId_(gate.dept.id));
   var todos = Logica.unicos(Logica.planosDoDepartamento(Cadastros.planosArea(), dept.id), 'tema');
-  var atuais = Logica.parseTemasFollowUp(dept.followup_temas);
+  var atuais = Logica.regraFollowUpArea(dept).temas;
   var proximo = Logica.alternarTemaFollowUp(nome, atuais, todos);
+  var ligado = Logica.temaFollowUpHabilitado(nome, proximo);
   Repo.atualizarRegistro(ABAS.departamentos, dept._linha, {
-    followup_temas: Logica.persistirTemasFollowUp(proximo, todos),
+    followup_temas: Logica.persistirTemasFollowUpArea(proximo),
   });
+  var planos = Repo.ler(ABAS.planosArea);
+  var mudou = false;
+  var patchados = planos.map(function (p) {
+    if (Logica.texto(p.departamento_id) !== Logica.texto(dept.id)) return p;
+    if (Logica.texto(p.tema) !== nome) return p;
+    var quer = ligado ? 'SIM' : 'NAO';
+    if (Logica.followUpAcaoLigada(p) === ligado) return p;
+    mudou = true;
+    return Object.assign({}, p, { followup: quer });
+  });
+  if (mudou) Repo.substituirAba(ABAS.planosArea, patchados);
   Repo.limparMemoria();
   return payloadPlanosArea_(deptPorId_(dept.id));
 }

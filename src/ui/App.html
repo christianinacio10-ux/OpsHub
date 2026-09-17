@@ -28,7 +28,7 @@
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: [], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '' },
+    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '' },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -913,14 +913,15 @@
 
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
-      temas: [], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
     };
   }
 
-  function chipsFollowUpLista(temas, habilitados, attr) {
+  function chipsFollowUpLista(temas, habilitados, attr, vazioNenhum) {
     temas = (temas || []).filter(function (nome) { return nome && nome !== '__NONE__'; });
     habilitados = listaTemas(habilitados);
     var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
+    if (vazioNenhum && !habilitados.length) nenhum = true;
     var todos = !habilitados.length && !nenhum;
     return '<div class="temas-chips">' +
       (temas.length
@@ -937,6 +938,12 @@
       '</div>';
   }
 
+  function temaFollowUpAreaLigado(nome, habilitados) {
+    var hab = listaTemas(habilitados);
+    if (!hab.length || (hab.length === 1 && hab[0] === '__NONE__')) return false;
+    return hab.indexOf(String(nome || '').trim()) !== -1;
+  }
+
   function barraCobrancaPlano() {
     var fu = followUpAreaAtual();
     var soEu = fu.soEu !== false;
@@ -948,6 +955,7 @@
     var off = {};
     (fu.emailsOff || []).forEach(function (e) { off[String(e).toLowerCase()] = 1; });
     var meu = String(fu.meuEmail || fu.gestorEmail || '').toLowerCase();
+    var temas = unicos(Estado.planosArea || [], 'tema');
     var listaPessoas = '';
     if (!soEu) {
       listaPessoas = pessoas.length
@@ -965,13 +973,16 @@
     }
     return '<div class="painel-cobranca-plano">' +
       '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_cobranca_bloco') + '</div>' +
-      '<div class="secao-apoio" style="margin:0">' + t('planos_area_gatilho_apoio') + '</div>' +
+      '<div class="secao-titulo" style="font-size:13px;margin:4px 0 0">' + t('planos_area_temas_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('planos_area_temas_apoio') + '</div>' +
+      chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area', true) +
+      '<div class="secao-apoio" style="margin:4px 0 0">' + t('planos_area_gatilho_apoio') + '</div>' +
       '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">' +
-      t('gatilho_selo', { estado: g.ativo ? t('gatilho_ativo') : t('gatilho_inativo'), hora: g.hora }) +
+      t('planos_area_relogio_selo', { estado: g.ativo ? t('gatilho_ativo') : t('gatilho_inativo'), hora: g.hora }) +
       '</div>' +
       '<div class="cobranca-acoes-linha">' +
-      '<button class="botao primario" type="button" data-gatilho-ativar="1">' + t('ativar_gatilho') + '</button>' +
-      '<button class="botao" type="button" data-gatilho-inativar="1">' + t('inativar_gatilhos') + '</button>' +
+      '<button class="botao primario" type="button" data-gatilho-ativar="1">' + t('planos_area_ativar_relogio') + '</button>' +
+      '<button class="botao" type="button" data-gatilho-inativar="1">' + t('planos_area_inativar_relogio') + '</button>' +
       '<button class="botao" type="button" data-followup-area-agora="1">' + t('enviar_followups') + '</button>' +
       '</div>' +
       '<div class="cobranca-modos" role="group">' +
@@ -1107,7 +1118,7 @@
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
-      temas: [], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
     };
     if (resp.ok) {
       var d = Estado.deptAberto;
@@ -1607,7 +1618,7 @@
     prevP.then(function (prev) {
       if (!prev || !prev.total) {
         ocupar(false);
-        toast(t('toast_nenhum_followup'));
+        toast(toastNenhumFollowUp(prev, departamentoId));
         return null;
       }
       ocupar(false);
@@ -1629,6 +1640,17 @@
     });
   }
 
+  function toastNenhumFollowUp(prev, departamentoId) {
+    var motivo = prev && prev.motivoZero;
+    if (departamentoId) {
+      if (motivo === 'tema_desligado') return t('toast_nenhum_followup_tema');
+      if (motivo === 'acao_desligada') return t('toast_nenhum_followup_acao');
+      if (motivo === 'sem_email' || motivo === 'email_desligado') return t('toast_nenhum_followup_email');
+      return t('toast_nenhum_followup_agora');
+    }
+    return t('toast_nenhum_followup');
+  }
+
   function toggleFollowUpTemaArea(nome) {
     var deptId = Estado.deptAberto && Estado.deptAberto.id;
     if (!nome || !deptId || Estado.carregando) return;
@@ -1636,7 +1658,15 @@
     chamar('apiAlternarTemaFollowUpArea', deptId, String(nome).trim()).then(function (resp) {
       ocupar(false);
       aplicarPlanosArea(resp, { manterScroll: true });
-      toast(t('toast_followup_temas'));
+      var ligado = temaFollowUpAreaLigado(nome, followUpAreaAtual().temas);
+      if (ligado) {
+        var n = (Estado.planosArea || []).filter(function (p) {
+          return p.tema === nome && p.followup;
+        }).length;
+        toast(t('toast_followup_tema_on', { tema: nome, n: n }));
+      } else {
+        toast(t('toast_followup_tema_off', { tema: nome }));
+      }
     }).catch(function (err) {
       ocupar(false);
       toast(err.message || err, true);
