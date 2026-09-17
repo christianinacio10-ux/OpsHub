@@ -28,7 +28,7 @@
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '' },
+    planosAreaFollowUp: { temas: [], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '' },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -672,7 +672,7 @@
         : '<span class="aviso-email" tabindex="0" data-tip="' + escapar(tipEmail) +
           '" title="' + escapar(tipEmail) + '">' + svg('ehs') + '</span>';
       var stLabel = rotuloStatusUi(p.status);
-      var cobrancaOn = p.followup !== false;
+      var cobrancaOn = !!p.followup;
       var cobrancaCel = ids.cobranca
         ? '<td><button type="button" class="chip-cobranca ' + (cobrancaOn ? 'ligado' : 'desligado') +
           '" data-followup-acao="' + escapar(p.id) +
@@ -680,8 +680,8 @@
           '">' + (cobrancaOn ? t('cobranca_acao_on') : t('cobranca_acao_off')) + '</button></td>'
         : '';
       return '<tr class="' + (p.status_classe === 'risco' ? 'risco' : '') + '">' +
-        td(p.tema) +
         cobrancaCel +
+        td(p.tema) +
         td(p.divisao) +
         td(p.area) +
         td(p.oque, 'principal') +
@@ -709,8 +709,8 @@
     }
     return '<div class="painel painel-planos">' + cab +
       '<div class="tabela-wrap"><table class="dados' + (ids.cobranca ? ' dados-cobranca' : '') + '"><thead><tr>' +
-      th('tema', t('th_tema')) +
       (ids.cobranca ? '<th>' + t('th_cobranca') + '</th>' : '') +
+      th('tema', t('th_tema')) +
       th('divisao', t('th_divisao')) + th('area', t('th_area')) +
       th('oque', t('th_oque')) + th('como', t('th_como')) + th('responsavel', t('th_responsavel')) +
       th('email', t('th_email')) + th('prazo', t('th_prazo')) + th('status', t('th_status')) +
@@ -898,9 +898,22 @@
     }).join('') + '</div>';
   }
 
+  function pessoasFollowUpArea(lista) {
+    var set = {};
+    var out = [];
+    (lista || []).forEach(function (p) {
+      var email = String(p.email || '').trim().toLowerCase();
+      if (!email || email.indexOf('@') < 1 || set[email]) return;
+      set[email] = 1;
+      out.push({ email: email, nome: p.responsavel || email });
+    });
+    out.sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome), localeUi()); });
+    return out;
+  }
+
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
-      temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '',
+      temas: [], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
     };
   }
 
@@ -926,17 +939,60 @@
 
   function barraCobrancaPlano() {
     var fu = followUpAreaAtual();
+    var soEu = fu.soEu !== false;
     var emailHint = fu.gestorEmail || fu.meuEmail || '—';
-    var nOn = (Estado.planosArea || []).filter(function (p) { return p.followup !== false; }).length;
+    var nOn = (Estado.planosArea || []).filter(function (p) { return !!p.followup; }).length;
     var nTot = (Estado.planosArea || []).length;
-    return '<div class="barra-cobranca-plano">' +
-      '<div class="secao-apoio" style="margin:0;flex:1 1 220px">' +
-      t('planos_area_cobranca_plano_apoio', { n: nOn, total: nTot }) + '</div>' +
-      '<label class="check-encerradas" style="margin:0" title="' +
-      escapar(t('planos_area_follow_so_eu_hint', { email: emailHint })) + '">' +
-      '<input type="checkbox" data-followup-so-eu="1"' + (fu.soEu ? ' checked' : '') + '> ' +
-      t('planos_area_follow_so_eu') + '</label>' +
+    var g = (Estado.hub && Estado.hub.gatilho) || { ativo: false, hora: 8 };
+    var pessoas = pessoasFollowUpArea(Estado.planosArea || []);
+    var off = {};
+    (fu.emailsOff || []).forEach(function (e) { off[String(e).toLowerCase()] = 1; });
+    var meu = String(fu.meuEmail || fu.gestorEmail || '').toLowerCase();
+    var listaPessoas = '';
+    if (!soEu) {
+      listaPessoas = pessoas.length
+        ? '<div class="lista-emails-follow">' + pessoas.map(function (p) {
+            var on = !off[p.email];
+            var eu = meu && p.email === meu;
+            return '<button type="button" class="filtro-excel-item" data-followup-email="' +
+              escapar(p.email) + '">' +
+              '<span class="caixa' + (on ? ' marcada' : '') + '" aria-hidden="true"></span>' +
+              '<span><strong>' + escapar(tituloNome(p.nome)) + '</strong>' +
+              (eu ? ' · ' + t('planos_area_follow_eu') : '') +
+              '<small>' + escapar(p.email) + '</small></span></button>';
+          }).join('') + '</div>'
+        : '<div class="secao-apoio">' + t('planos_area_follow_sem_pessoas') + '</div>';
+    }
+    return '<div class="painel-cobranca-plano">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_cobranca_bloco') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('planos_area_gatilho_apoio') + '</div>' +
+      '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">' +
+      t('gatilho_selo', { estado: g.ativo ? t('gatilho_ativo') : t('gatilho_inativo'), hora: g.hora }) +
+      '</div>' +
+      '<div class="cobranca-acoes-linha">' +
+      '<button class="botao primario" type="button" data-gatilho-ativar="1">' + t('ativar_gatilho') + '</button>' +
+      '<button class="botao" type="button" data-gatilho-inativar="1">' + t('inativar_gatilhos') + '</button>' +
       '<button class="botao" type="button" data-followup-area-agora="1">' + t('enviar_followups') + '</button>' +
+      '</div>' +
+      '<div class="cobranca-modos" role="group">' +
+      '<button type="button" class="cobranca-modo' + (soEu ? ' ativo' : '') +
+      '" data-followup-escopo="eu" aria-pressed="' + (soEu ? 'true' : 'false') + '">' +
+      t('planos_area_follow_so_eu') + '</button>' +
+      '<button type="button" class="cobranca-modo' + (!soEu ? ' ativo' : '') +
+      '" data-followup-escopo="todos" aria-pressed="' + (!soEu ? 'true' : 'false') + '">' +
+      t('planos_area_cobrar_todos') + '</button>' +
+      '</div>' +
+      '<div class="secao-apoio" style="margin:0">' +
+      (soEu
+        ? t('planos_area_follow_so_eu_hint', { email: emailHint })
+        : t('planos_area_cobrar_todos_hint')) +
+      '</div>' +
+      (listaPessoas
+        ? '<div class="secao-titulo" style="font-size:13px;margin:4px 0 6px">' + t('planos_area_follow_pessoas') + '</div>' +
+          listaPessoas
+        : '') +
+      '<div class="secao-apoio" style="margin:0">' + t('planos_area_cobranca_acoes_apoio') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('planos_area_cobranca_plano_apoio', { n: nOn, total: nTot }) + '</div>' +
       '</div>';
   }
 
@@ -1051,7 +1107,7 @@
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
-      temas: [], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '',
+      temas: [], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
     };
     if (resp.ok) {
       var d = Estado.deptAberto;
@@ -1731,12 +1787,33 @@
         });
         return;
       }
+      var followEscopo = e.target.closest('[data-followup-escopo]');
+      if (followEscopo) {
+        e.preventDefault();
+        e.stopPropagation();
+        var deptEscopo = Estado.deptAberto && Estado.deptAberto.id;
+        if (!deptEscopo || Estado.carregando) return;
+        var soEuEscopo = followEscopo.getAttribute('data-followup-escopo') !== 'todos';
+        ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
+        chamar('apiDefinirFollowUpAreaEscopo', deptEscopo, soEuEscopo ? 'SIM' : 'NAO')
+          .then(function (resp) {
+            ocupar(false);
+            aplicarPlanosArea(resp, { manterScroll: true });
+            toast(t('toast_followup_escopo'));
+          }).catch(function (err) {
+            ocupar(false);
+            toast(err.message || err, true);
+            if (Estado.deptAberto) pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true });
+          });
+        return;
+      }
       var followEmail = e.target.closest('[data-followup-email]');
       if (followEmail) {
         e.preventDefault();
         e.stopPropagation();
         var deptEmail = Estado.deptAberto && Estado.deptAberto.id;
         if (!deptEmail || Estado.carregando) return;
+        if (followUpAreaAtual().soEu !== false) return;
         ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
         chamar('apiAlternarEmailFollowUpArea', deptEmail, followEmail.getAttribute('data-followup-email'))
           .then(function (resp) {
@@ -1912,28 +1989,36 @@
         enviarFollowUpsAgoraUi();
         return;
       }
-      if (e.target.closest('#btn-gatilho')) {
+      if (e.target.closest('#btn-gatilho') || e.target.closest('[data-gatilho-ativar]')) {
         if (Estado.carregando) return;
         ocupar(true, t('ocupado_gatilho'), t('ocupado_gatilho_sub'));
         chamar('apiCriarGatilho').then(function (r) {
           ocupar(false);
           toast(t('toast_gatilho', { hora: (r.gatilho && r.gatilho.hora) || 8 }));
           if (Estado.hub) Estado.hub.gatilho = r.gatilho;
-          render();
+          if (Estado.deptAberto && Estado.deptModo === 'planos') {
+            pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true });
+          } else {
+            render();
+          }
         }).catch(function (err) {
           ocupar(false);
           toast(err.message || err, true);
         });
         return;
       }
-      if (e.target.closest('#btn-remover-gatilho')) {
+      if (e.target.closest('#btn-remover-gatilho') || e.target.closest('[data-gatilho-inativar]')) {
         if (Estado.carregando) return;
         ocupar(true, t('ocupado_inativar'), t('ocupado_inativar_sub'));
         chamar('apiRemoverGatilhos').then(function (r) {
           ocupar(false);
           toast(t('toast_gatilhos_removidos'));
           if (Estado.hub) Estado.hub.gatilho = r.gatilho;
-          render();
+          if (Estado.deptAberto && Estado.deptModo === 'planos') {
+            pintarDrawerPlanos(Estado.deptAberto, { manterScroll: true });
+          } else {
+            render();
+          }
         }).catch(function (err) {
           ocupar(false);
           toast(err.message || err, true);

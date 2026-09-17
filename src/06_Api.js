@@ -196,6 +196,7 @@ function apiPreverFollowUps(departamentoId) {
   var ctx = {
     temasPlanta: temasPlantaFollowUp_(),
     depts: mapaDepartamentos_(),
+    emailSessao: identificarEmailSessao_(),
   };
   var total = 0;
   var temasJa = [];
@@ -307,12 +308,13 @@ function payloadAreaTrancada_(dept, extra) {
 function payloadFollowUpArea_(dept) {
   var regra = Logica.regraFollowUpArea(dept);
   var u = identificarUsuario_();
+  var meu = Logica.texto(u && u.email).toLowerCase();
   return {
     temas: regra.temas,
     soEu: regra.soEu,
-    gestorEmail: regra.gestorEmail,
+    gestorEmail: regra.gestorEmail || meu,
     emailsOff: regra.emailsOff,
-    meuEmail: Logica.texto(u && u.email).toLowerCase(),
+    meuEmail: meu,
   };
 }
 

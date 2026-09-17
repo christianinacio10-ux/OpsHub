@@ -51,9 +51,14 @@ var Logica = (function () {
     return s === 'sim' || s === 's' || s === 'yes' || s === 'true' || s === '1' || s === 'ativo';
   }
 
+  function ehPlanoArea(acao) {
+    if (!acao || typeof acao !== 'object') return false;
+    return texto(acao._folha) === 'area' || !!texto(acao.departamento_id);
+  }
+
   function followUpAcaoLigada(acao) {
     var s = texto(acao && (typeof acao === 'object' ? acao.followup : acao)).toLowerCase();
-    if (!s) return true;
+    if (!s) return !ehPlanoArea(acao);
     return !(s === 'nao' || s === 'não' || s === 'no' || s === 'false' || s === '0' || s === 'off' || s === 'n');
   }
 
@@ -391,7 +396,7 @@ var Logica = (function () {
     hoje = paraData(hoje) || paraData(new Date());
     opcoes = opcoes || {};
     var email = texto(acao && acao.email).toLowerCase();
-    if (!emailValido(email)) {
+    if (!opcoes.emailOpcional && !emailValido(email)) {
       return { ok: false, motivo: 'sem_email', mensagem: 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.' };
     }
     if (encerrada(acao && acao.status)) {
@@ -726,27 +731,32 @@ var Logica = (function () {
 
   function regraFollowUpArea(dept) {
     dept = dept || {};
+    var bruto = texto(dept.followup_so_eu);
     return {
       temas: parseTemasFollowUp(dept.followup_temas),
-      soEu: sim(dept.followup_so_eu),
+      soEu: !bruto ? true : sim(dept.followup_so_eu),
       gestorEmail: texto(dept.followup_gestor_email).toLowerCase(),
       emailsOff: parseEmailsOff(dept.followup_emails_off),
     };
   }
 
-  function emailFollowUpPermitido(email, regra) {
+  function emailDestinoFollowUp(acao, regra) {
     regra = regra || {};
-    var e = texto(email).toLowerCase();
-    if (!emailValido(e)) return false;
     if (regra.soEu) {
       var g = texto(regra.gestorEmail).toLowerCase();
-      if (!g || e !== g) return false;
+      return emailValido(g) ? g : '';
     }
+    var e = texto(acao && acao.email).toLowerCase();
+    if (!emailValido(e)) return '';
     var off = regra.emailsOff || [];
     for (var i = 0; i < off.length; i++) {
-      if (texto(off[i]).toLowerCase() === e) return false;
+      if (texto(off[i]).toLowerCase() === e) return '';
     }
-    return true;
+    return e;
+  }
+
+  function emailFollowUpPermitido(email, regra) {
+    return !!emailDestinoFollowUp({ email: email }, regra);
   }
 
   function temSenhaPlanos(dept) {
@@ -899,6 +909,7 @@ var Logica = (function () {
     persistirEmailsOff: persistirEmailsOff,
     alternarEmailOff: alternarEmailOff,
     regraFollowUpArea: regraFollowUpArea,
+    emailDestinoFollowUp: emailDestinoFollowUp,
     emailFollowUpPermitido: emailFollowUpPermitido,
     elegivelFollowUp: elegivelFollowUp,
     linhaFonteParaPlano: linhaFonteParaPlano,

@@ -30,6 +30,15 @@ function planosFollowUpFiltrados_(opcoes) {
   });
 }
 
+function identificarEmailSessao_() {
+  try {
+    var u = identificarUsuario_();
+    return Logica.texto(u && u.email).toLowerCase();
+  } catch (e) {
+    return '';
+  }
+}
+
 function decisaoFollowUp_(plano, hoje, ctx) {
   ctx = ctx || {};
   var extra = { ignorarJaEnviadoHoje: !!ctx.ignorarJaEnviadoHoje };
@@ -37,12 +46,16 @@ function decisaoFollowUp_(plano, hoje, ctx) {
   var regra = null;
   if (plano._folha === 'area') {
     regra = Logica.regraFollowUpArea(ctx.depts && ctx.depts[String(plano.departamento_id)]);
+    if (regra.soEu && !regra.gestorEmail) regra.gestorEmail = Logica.texto(ctx.emailSessao);
     temas = regra.temas;
+    if (regra.soEu) extra.emailOpcional = true;
   }
   var dec = Logica.elegivelFollowUp(plano, hoje, temas, extra);
   if (!dec.ok) return dec;
-  if (regra && !Logica.emailFollowUpPermitido(dec.email, regra)) {
-    return { ok: false, motivo: 'email_desligado' };
+  if (regra) {
+    var destino = Logica.emailDestinoFollowUp(plano, regra);
+    if (!destino) return { ok: false, motivo: regra.soEu ? 'sem_email' : 'email_desligado' };
+    dec.email = destino;
   }
   return dec;
 }
@@ -57,6 +70,7 @@ function enviarFollowUps(opcoes) {
     temasPlanta: temasPlantaFollowUp_(),
     depts: mapaDepartamentos_(),
     ignorarJaEnviadoHoje: forcar,
+    emailSessao: identificarEmailSessao_(),
   };
   var enviados = 0;
   var pulados = 0;
