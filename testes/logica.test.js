@@ -125,7 +125,8 @@ assert.strictEqual(
 );
 
 var regraTodos = Logica.regraFollowUpArea({});
-assert.deepStrictEqual(regraTodos.temas, []);
+assert.deepStrictEqual(regraTodos.temas, ['__NONE__'], 'área sem temas começa com nenhum ligado');
+assert.strictEqual(Logica.temaFollowUpHabilitado('TIER_3', regraTodos.temas), false);
 assert.strictEqual(regraTodos.soEu, true, 'área começa em cobrar só meu e-mail');
 assert.strictEqual(Logica.emailDestinoFollowUp({ email: 'carla@avery.com' }, regraTodos), '');
 assert.strictEqual(
@@ -158,6 +159,43 @@ assert.deepStrictEqual(Logica.alternarEmailOff('carla@avery.com', ['carla@avery.
 assert.strictEqual(Logica.persistirEmailsOff(['Ana@x.com', 'ana@x.com']), '["ana@x.com"]');
 assert.deepStrictEqual(Logica.parseEmailsOff('["a@x.com"]'), ['a@x.com']);
 assert.strictEqual(Logica.temaFollowUpHabilitado('TIER_3', Logica.regraFollowUpArea({ followup_temas: 'NONE' }).temas), false);
+assert.strictEqual(Logica.persistirTemasFollowUpArea(['__NONE__']), 'NONE');
+assert.strictEqual(Logica.persistirTemasFollowUpArea([]), 'NONE');
+assert.strictEqual(Logica.persistirTemasFollowUpArea(['TIER_3', 'OEE']), '["TIER_3","OEE"]');
+assert.strictEqual(
+  Logica.persistirTemasFollowUpArea(['TIER_3']),
+  '["TIER_3"]',
+  'área não colapsa um tema ligado para vazio'
+);
+assert.deepStrictEqual(Logica.temasFollowUpArea(''), ['__NONE__']);
+assert.deepStrictEqual(Logica.temasFollowUpArea('["TIER_3"]'), ['TIER_3']);
+assert.deepStrictEqual(
+  Logica.alternarTemaFollowUp('TIER_3', ['__NONE__'], ['TIER_3', 'OEE']),
+  ['TIER_3'],
+  'clicar um tema com nenhum ligado liga só ele'
+);
+assert.deepStrictEqual(
+  Logica.alternarTemaFollowUp('TIER_3', ['TIER_3'], ['TIER_3', 'OEE']),
+  ['__NONE__'],
+  'clicar de novo o único tema ligado volta para nenhum'
+);
+var futuraArea = Object.assign({}, acao, {
+  departamento_id: 'D-EHS',
+  followup: 'SIM',
+  prazo: d(2026, 9, 21),
+  tema: 'TIER_3',
+});
+assert.strictEqual(Logica.elegivelFollowUp(futuraArea, hoje, ['TIER_3']).motivo, 'ainda_no_prazo');
+assert.strictEqual(
+  Logica.elegivelFollowUp(futuraArea, hoje, ['TIER_3'], { ignorarPrazo: true }).ok,
+  true,
+  'envio manual da área ignora prazo'
+);
+assert.strictEqual(
+  Logica.elegivelFollowUp(futuraArea, hoje, ['__NONE__'], { ignorarPrazo: true, ignorarTemas: true }).ok,
+  true,
+  'envio manual da área com Cobrar na linha ignora tema desligado'
+);
 assert.strictEqual(Logica.temSenhaPlanos({ senha_planos: 'abc' }), true);
 assert.strictEqual(Logica.temSenhaPlanos({ senha_planos: '' }), false);
 assert.strictEqual(Logica.temSenhaPlanos({}), false);

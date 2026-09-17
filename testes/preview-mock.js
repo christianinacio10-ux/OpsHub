@@ -120,15 +120,17 @@
 
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
-      followUpPorArea[deptId] = { temas: [], soEu: true, gestorEmail: emailSessao, emailsOff: [] };
+      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [] };
     }
     return followUpPorArea[deptId];
   }
 
   function payloadFollowArea(deptId) {
     var fu = followUpDept(deptId);
+    var temas = (fu.temas || []).slice();
+    if (!temas.length) temas = ['__NONE__'];
     return {
-      temas: (fu.temas || []).slice(),
+      temas: temas,
       soEu: fu.soEu !== false,
       gestorEmail: fu.gestorEmail || emailSessao,
       emailsOff: (fu.emailsOff || []).slice(),
@@ -212,7 +214,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.6.2' },
+        app: { nome: 'OpsHub', versao: '1.6.3' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -288,7 +290,8 @@
       function candidato(p, area) {
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
-        if (p.status !== 'Atrasado') return false;
+        var agoraArea = !!(forcar && area && departamentoId);
+        if (!agoraArea && p.status !== 'Atrasado') return false;
         if (!area) {
           if (!p.tem_email) return false;
           if (p.followup === false) return false;
@@ -297,8 +300,10 @@
         } else {
           if (p.followup !== true) return false;
           var fu = followUpDept(p.departamento_id);
-          if (fu.temas.length === 1 && fu.temas[0] === '__NONE__') return false;
-          if (fu.temas.length && fu.temas.indexOf(p.tema) === -1) return false;
+          if (!agoraArea) {
+            if (!fu.temas.length || (fu.temas.length === 1 && fu.temas[0] === '__NONE__')) return false;
+            if (fu.temas.indexOf(p.tema) === -1) return false;
+          }
           if (fu.soEu !== false) {
             if (!(fu.gestorEmail || emailSessao)) return false;
           } else {
@@ -329,7 +334,8 @@
       function candidato(p, area) {
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
-        if (p.status !== 'Atrasado') return false;
+        var agoraArea = !!(area && departamentoId);
+        if (!agoraArea && p.status !== 'Atrasado') return false;
         if (!area) {
           if (!p.tem_email) return false;
           if (p.followup === false) return false;
@@ -338,8 +344,10 @@
         } else {
           if (p.followup !== true) return false;
           var fu = followUpDept(p.departamento_id);
-          if (fu.temas.length === 1 && fu.temas[0] === '__NONE__') return false;
-          if (fu.temas.length && fu.temas.indexOf(p.tema) === -1) return false;
+          if (!agoraArea) {
+            if (!fu.temas.length || (fu.temas.length === 1 && fu.temas[0] === '__NONE__')) return false;
+            if (fu.temas.indexOf(p.tema) === -1) return false;
+          }
           if (fu.soEu !== false) {
             if (!(fu.gestorEmail || emailSessao)) return false;
           } else {
@@ -367,7 +375,17 @@
           temasJa.push(p.tema);
         }
       });
-      return { total: cand.length, temasJaEnviadosHoje: temasJa };
+      var motivoZero = '';
+      if (!cand.length && departamentoId) {
+        var lista = planosArea.filter(function (p) {
+          if (p.departamento_id !== departamentoId) return false;
+          var s = String(p.status || '').toLowerCase();
+          return s.indexOf('conclu') !== 0 && s.indexOf('cancel') !== 0;
+        });
+        var algumCobrar = lista.some(function (p) { return p.followup === true; });
+        motivoZero = algumCobrar ? 'nenhum' : 'acao_desligada';
+      }
+      return { total: cand.length, temasJaEnviadosHoje: temasJa, motivoZero: motivoZero };
     },
     apiPlanosArea: function (deptId) {
       if (areaTrancada(deptId)) return payloadArea(deptId, true);
@@ -455,24 +473,19 @@
     },
     apiAlternarTemaFollowUpArea: function (deptId, nome) {
       nome = String(nome || '').trim();
-      var todos = [];
-      var set = {};
-      planosArea.forEach(function (p) {
-        if (p.departamento_id !== deptId || !p.tema || set[p.tema]) return;
-        set[p.tema] = 1;
-        todos.push(p.tema);
-      });
       var fu = followUpDept(deptId);
-      var atuais = fu.temas.slice();
-      var nenhum = atuais.length === 1 && atuais[0] === '__NONE__';
-      if (!atuais.length) atuais = todos.slice();
+      var atuais = (fu.temas || []).filter(function (t) { return t && t !== '__NONE__'; });
+      var nenhum = !atuais.length;
       if (nenhum) atuais = [];
       var idx = atuais.indexOf(nome);
-      if (idx === -1) atuais.push(nome);
+      var ligando = idx === -1;
+      if (ligando) atuais.push(nome);
       else atuais = atuais.filter(function (t) { return t !== nome; });
-      if (!atuais.length) fu.temas = ['__NONE__'];
-      else if (atuais.length === todos.length) fu.temas = [];
-      else fu.temas = atuais;
+      fu.temas = atuais.length ? atuais : ['__NONE__'];
+      planosArea = planosArea.map(function (p) {
+        if (p.departamento_id !== deptId || p.tema !== nome) return p;
+        return Object.assign({}, p, { followup: ligando });
+      });
       return payloadArea(deptId, areaTrancada(deptId));
     },
     apiDefinirFollowUpAreaEscopo: function (deptId, soEu) {

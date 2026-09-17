@@ -392,6 +392,20 @@ var Logica = (function () {
     return JSON.stringify(nomes);
   }
 
+  /** Área: vazio = nenhum tema. Nunca colapsa "todos ligados" para string vazia. */
+  function persistirTemasFollowUpArea(lista) {
+    if (lista && lista.length === 1 && texto(lista[0]) === '__NONE__') return 'NONE';
+    var nomes = nomesTemas_(lista);
+    if (!nomes.length) return 'NONE';
+    return JSON.stringify(nomes);
+  }
+
+  function temasFollowUpArea(valor) {
+    var temas = parseTemasFollowUp(valor);
+    if (!temas.length) return ['__NONE__'];
+    return temas;
+  }
+
   function elegivelFollowUp(acao, hoje, temasHabilitados, opcoes) {
     hoje = paraData(hoje) || paraData(new Date());
     opcoes = opcoes || {};
@@ -413,7 +427,7 @@ var Logica = (function () {
       return { ok: false, motivo: 'sem_prazo' };
     }
     var primeiro = adicionarDias(prazo, 1);
-    if (compararDatas(hoje, primeiro) < 0) {
+    if (compararDatas(hoje, primeiro) < 0 && !opcoes.ignorarPrazo) {
       return { ok: false, motivo: 'ainda_no_prazo' };
     }
     var ultimo = paraData(acao && acao.ultimo_email_em);
@@ -733,7 +747,7 @@ var Logica = (function () {
     dept = dept || {};
     var bruto = texto(dept.followup_so_eu);
     return {
-      temas: parseTemasFollowUp(dept.followup_temas),
+      temas: temasFollowUpArea(dept.followup_temas),
       soEu: !bruto ? true : sim(dept.followup_so_eu),
       gestorEmail: texto(dept.followup_gestor_email).toLowerCase(),
       emailsOff: parseEmailsOff(dept.followup_emails_off),
@@ -905,6 +919,8 @@ var Logica = (function () {
     temaFollowUpHabilitado: temaFollowUpHabilitado,
     alternarTemaFollowUp: alternarTemaFollowUp,
     persistirTemasFollowUp: persistirTemasFollowUp,
+    persistirTemasFollowUpArea: persistirTemasFollowUpArea,
+    temasFollowUpArea: temasFollowUpArea,
     parseEmailsOff: parseEmailsOff,
     persistirEmailsOff: persistirEmailsOff,
     alternarEmailOff: alternarEmailOff,

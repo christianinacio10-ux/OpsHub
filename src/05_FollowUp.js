@@ -41,7 +41,11 @@ function identificarEmailSessao_() {
 
 function decisaoFollowUp_(plano, hoje, ctx) {
   ctx = ctx || {};
-  var extra = { ignorarJaEnviadoHoje: !!ctx.ignorarJaEnviadoHoje };
+  var extra = {
+    ignorarJaEnviadoHoje: !!ctx.ignorarJaEnviadoHoje,
+    ignorarPrazo: !!ctx.ignorarPrazo,
+    ignorarTemas: !!ctx.ignorarTemas,
+  };
   var temas = ctx.temasPlanta;
   var regra = null;
   if (plano._folha === 'area') {
@@ -71,6 +75,8 @@ function enviarFollowUps(opcoes) {
     depts: mapaDepartamentos_(),
     ignorarJaEnviadoHoje: forcar,
     emailSessao: identificarEmailSessao_(),
+    ignorarPrazo: !!opcoes.ignorarPrazo,
+    ignorarTemas: !!opcoes.ignorarTemas,
   };
   var enviados = 0;
   var pulados = 0;

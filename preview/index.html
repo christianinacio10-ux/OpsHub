@@ -908,6 +908,7 @@ table.dados tr.risco td { box-shadow: none; }
   border-radius: var(--raio);
   background: var(--superficie);
 }
+.painel-cobranca-plano .temas-chips { margin: 2px 0 4px; }
 .cobranca-acoes-linha {
   display: flex; flex-wrap: wrap; gap: 8px;
 }
@@ -1466,15 +1467,17 @@ table.dados tr.risco td { box-shadow: none; }
 
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
-      followUpPorArea[deptId] = { temas: [], soEu: true, gestorEmail: emailSessao, emailsOff: [] };
+      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [] };
     }
     return followUpPorArea[deptId];
   }
 
   function payloadFollowArea(deptId) {
     var fu = followUpDept(deptId);
+    var temas = (fu.temas || []).slice();
+    if (!temas.length) temas = ['__NONE__'];
     return {
-      temas: (fu.temas || []).slice(),
+      temas: temas,
       soEu: fu.soEu !== false,
       gestorEmail: fu.gestorEmail || emailSessao,
       emailsOff: (fu.emailsOff || []).slice(),
@@ -1558,7 +1561,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.6.2' },
+        app: { nome: 'OpsHub', versao: '1.6.3' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -1634,7 +1637,8 @@ table.dados tr.risco td { box-shadow: none; }
       function candidato(p, area) {
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
-        if (p.status !== 'Atrasado') return false;
+        var agoraArea = !!(forcar && area && departamentoId);
+        if (!agoraArea && p.status !== 'Atrasado') return false;
         if (!area) {
           if (!p.tem_email) return false;
           if (p.followup === false) return false;
@@ -1643,8 +1647,10 @@ table.dados tr.risco td { box-shadow: none; }
         } else {
           if (p.followup !== true) return false;
           var fu = followUpDept(p.departamento_id);
-          if (fu.temas.length === 1 && fu.temas[0] === '__NONE__') return false;
-          if (fu.temas.length && fu.temas.indexOf(p.tema) === -1) return false;
+          if (!agoraArea) {
+            if (!fu.temas.length || (fu.temas.length === 1 && fu.temas[0] === '__NONE__')) return false;
+            if (fu.temas.indexOf(p.tema) === -1) return false;
+          }
           if (fu.soEu !== false) {
             if (!(fu.gestorEmail || emailSessao)) return false;
           } else {
@@ -1675,7 +1681,8 @@ table.dados tr.risco td { box-shadow: none; }
       function candidato(p, area) {
         var s = String(p.status || '').toLowerCase();
         if (s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0) return false;
-        if (p.status !== 'Atrasado') return false;
+        var agoraArea = !!(area && departamentoId);
+        if (!agoraArea && p.status !== 'Atrasado') return false;
         if (!area) {
           if (!p.tem_email) return false;
           if (p.followup === false) return false;
@@ -1684,8 +1691,10 @@ table.dados tr.risco td { box-shadow: none; }
         } else {
           if (p.followup !== true) return false;
           var fu = followUpDept(p.departamento_id);
-          if (fu.temas.length === 1 && fu.temas[0] === '__NONE__') return false;
-          if (fu.temas.length && fu.temas.indexOf(p.tema) === -1) return false;
+          if (!agoraArea) {
+            if (!fu.temas.length || (fu.temas.length === 1 && fu.temas[0] === '__NONE__')) return false;
+            if (fu.temas.indexOf(p.tema) === -1) return false;
+          }
           if (fu.soEu !== false) {
             if (!(fu.gestorEmail || emailSessao)) return false;
           } else {
@@ -1713,7 +1722,17 @@ table.dados tr.risco td { box-shadow: none; }
           temasJa.push(p.tema);
         }
       });
-      return { total: cand.length, temasJaEnviadosHoje: temasJa };
+      var motivoZero = '';
+      if (!cand.length && departamentoId) {
+        var lista = planosArea.filter(function (p) {
+          if (p.departamento_id !== departamentoId) return false;
+          var s = String(p.status || '').toLowerCase();
+          return s.indexOf('conclu') !== 0 && s.indexOf('cancel') !== 0;
+        });
+        var algumCobrar = lista.some(function (p) { return p.followup === true; });
+        motivoZero = algumCobrar ? 'nenhum' : 'acao_desligada';
+      }
+      return { total: cand.length, temasJaEnviadosHoje: temasJa, motivoZero: motivoZero };
     },
     apiPlanosArea: function (deptId) {
       if (areaTrancada(deptId)) return payloadArea(deptId, true);
@@ -1801,24 +1820,19 @@ table.dados tr.risco td { box-shadow: none; }
     },
     apiAlternarTemaFollowUpArea: function (deptId, nome) {
       nome = String(nome || '').trim();
-      var todos = [];
-      var set = {};
-      planosArea.forEach(function (p) {
-        if (p.departamento_id !== deptId || !p.tema || set[p.tema]) return;
-        set[p.tema] = 1;
-        todos.push(p.tema);
-      });
       var fu = followUpDept(deptId);
-      var atuais = fu.temas.slice();
-      var nenhum = atuais.length === 1 && atuais[0] === '__NONE__';
-      if (!atuais.length) atuais = todos.slice();
+      var atuais = (fu.temas || []).filter(function (t) { return t && t !== '__NONE__'; });
+      var nenhum = !atuais.length;
       if (nenhum) atuais = [];
       var idx = atuais.indexOf(nome);
-      if (idx === -1) atuais.push(nome);
+      var ligando = idx === -1;
+      if (ligando) atuais.push(nome);
       else atuais = atuais.filter(function (t) { return t !== nome; });
-      if (!atuais.length) fu.temas = ['__NONE__'];
-      else if (atuais.length === todos.length) fu.temas = [];
-      else fu.temas = atuais;
+      fu.temas = atuais.length ? atuais : ['__NONE__'];
+      planosArea = planosArea.map(function (p) {
+        if (p.departamento_id !== deptId || p.tema !== nome) return p;
+        return Object.assign({}, p, { followup: ligando });
+      });
       return payloadArea(deptId, areaTrancada(deptId));
     },
     apiDefinirFollowUpAreaEscopo: function (deptId, soEu) {
@@ -1941,7 +1955,7 @@ var I18n = (function () {
       planos_area_tip: 'Planos de ação desta área',
       planos_area_tip_lock: 'Planos de ação desta área (com senha)',
       planos_area_kicker: 'Planos da área',
-      planos_area_sub: 'Fonte e quadro. A cobrança liga por ação; o e-mail sai pelo gatilho da planta.',
+      planos_area_sub: 'Fonte e quadro. O gatilho liga por tema; cada linha pode pausar. O relógio da planta dispara o e-mail.',
       planos_area_senha: 'Esta área protege os planos com senha',
       planos_area_senha_ph: 'Senha',
       planos_area_entrar: 'Abrir planos',
@@ -1977,10 +1991,15 @@ var I18n = (function () {
       cobranca_acao_tip_off: 'Follow-up pausado nesta ação',
       planos_area_cobranca_plano_apoio: '{n} de {total} ações deste plano entram na cobrança.',
       planos_area_cobranca_bloco: 'Cobrança deste plano',
-      planos_area_gatilho_apoio: 'O gatilho diário da planta dispara os e-mails. Ative uma vez; vale para a planta toda. Enviar agora testa só este plano.',
+      planos_area_temas_titulo: 'Gatilho por tema',
+      planos_area_temas_apoio: 'Clique no tema para ligar ou pausar o e-mail daquele grupo. Ligar coloca as ações em Cobrar; desligar pausa. Depois você ainda pode pausar linha a linha.',
+      planos_area_gatilho_apoio: 'O relógio da planta é um só — dispara às 8h os temas ligados acima. Enviar agora testa só este plano, mesmo antes do prazo.',
+      planos_area_relogio_selo: 'Relógio da planta {estado} · disparo às {hora}h',
+      planos_area_ativar_relogio: 'Ativar relógio',
+      planos_area_inativar_relogio: 'Inativar relógio',
       planos_area_cobrar_todos: 'Cobrar todos',
       planos_area_cobrar_todos_hint: 'Cada responsável das ações ligadas recebe o e-mail. Desmarque alguém para tirá-lo.',
-      planos_area_cobranca_acoes_apoio: 'Cada ação começa pausada. Ligue Cobrar só no que deve entrar no e-mail.',
+      planos_area_cobranca_acoes_apoio: 'Cada ação começa pausada. Ligue o tema (ou Cobrar na linha) só no que deve entrar no e-mail.',
       toast_followup_acao: 'Cobrança desta ação atualizada.',
       campo_oque: 'O quê?',
       campo_como: 'Como',
@@ -2120,8 +2139,14 @@ var I18n = (function () {
       toast_salvo: 'Salvo.',
       toast_removido: 'Removido.',
       toast_followup_temas: 'Temas de follow-up atualizados.',
+      toast_followup_tema_on: '{tema} ligado — {n} ação(ões) em Cobrar.',
+      toast_followup_tema_off: '{tema} pausado neste plano.',
       toast_followup: 'Follow-up: {enviados} enviado(s), {pulados} ignorado(s).',
       toast_nenhum_followup: 'Nenhuma ação atrasada para enviar com os temas ligados.',
+      toast_nenhum_followup_agora: 'Nenhuma ação deste plano pronta para enviar.',
+      toast_nenhum_followup_tema: 'Nenhum tema ligado. Clique num tema acima para ligar o gatilho.',
+      toast_nenhum_followup_acao: 'Nenhuma ação em Cobrar. Ligue um tema ou o botão Cobrar na linha.',
+      toast_nenhum_followup_email: 'Não achei e-mail de destino. Confira Cobrar só o meu e-mail ou os responsáveis.',
       confirm_followup_hoje: 'Já houve follow-up hoje para: {temas}.\n\nDeseja enviar de novo a cobrança dessas ações?',
       toast_ordem: 'Ordem dos departamentos atualizada.',
       toast_importacao: 'Planos atualizados: {linhas} linha{sLinha} de {fontes} fonte{sFonte}.',
@@ -2202,7 +2227,7 @@ var I18n = (function () {
       planos_area_tip: 'Action plans for this area',
       planos_area_tip_lock: 'Action plans for this area (password protected)',
       planos_area_kicker: 'Area action plans',
-      planos_area_sub: 'Source and board. Chase is per action; mail goes out on the plant trigger.',
+      planos_area_sub: 'Source and board. The trigger is per theme; each row can pause. The plant clock sends the mail.',
       planos_area_senha: 'This area protects its plans with a password',
       planos_area_senha_ph: 'Password',
       planos_area_entrar: 'Open plans',
@@ -2238,10 +2263,15 @@ var I18n = (function () {
       cobranca_acao_tip_off: 'Follow-up paused on this action',
       planos_area_cobranca_plano_apoio: '{n} of {total} actions in this plan are chased.',
       planos_area_cobranca_bloco: 'Chase for this plan',
-      planos_area_gatilho_apoio: 'The plant daily trigger sends the emails. Turn it on once; it covers the whole plant. Send now tests only this plan.',
+      planos_area_temas_titulo: 'Trigger by theme',
+      planos_area_temas_apoio: 'Click a theme to turn that group’s email on or off. Turning it on sets those actions to Chase; turning it off pauses them. You can still pause row by row after that.',
+      planos_area_gatilho_apoio: 'The plant clock is one shared timer — it fires the themes turned on above. Send now tests only this plan, even before the due date.',
+      planos_area_relogio_selo: 'Plant clock {estado} · fires at {hora}:00',
+      planos_area_ativar_relogio: 'Turn clock on',
+      planos_area_inativar_relogio: 'Turn clock off',
       planos_area_cobrar_todos: 'Chase everyone',
       planos_area_cobrar_todos_hint: 'Each owner of a chased action gets the email. Uncheck someone to leave them out.',
-      planos_area_cobranca_acoes_apoio: 'Every action starts paused. Turn Chase on only for what should go out.',
+      planos_area_cobranca_acoes_apoio: 'Every action starts paused. Turn a theme on (or Chase on the row) only for what should go out.',
       toast_followup_acao: 'This action’s chase was updated.',
       campo_oque: 'What?',
       campo_como: 'How',
@@ -2381,8 +2411,14 @@ var I18n = (function () {
       toast_salvo: 'Saved.',
       toast_removido: 'Removed.',
       toast_followup_temas: 'Follow-up themes updated.',
+      toast_followup_tema_on: '{tema} on — {n} action(s) set to Chase.',
+      toast_followup_tema_off: '{tema} paused on this plan.',
       toast_followup: 'Follow-up: {enviados} sent, {pulados} skipped.',
       toast_nenhum_followup: 'No overdue actions to send with the themes that are on.',
+      toast_nenhum_followup_agora: 'No actions in this plan are ready to send.',
+      toast_nenhum_followup_tema: 'No theme is on. Click a theme above to turn the trigger on.',
+      toast_nenhum_followup_acao: 'No actions set to Chase. Turn a theme on or tap Chase on the row.',
+      toast_nenhum_followup_email: 'No destination email found. Check Chase only my email or the owners.',
       confirm_followup_hoje: 'Follow-up already went out today for: {temas}.\n\nSend the reminder for those actions again?',
       toast_ordem: 'Department order updated.',
       toast_importacao: 'Plans updated: {linhas} row{sLinha} from {fontes} source{sFonte}.',
@@ -2463,7 +2499,7 @@ var I18n = (function () {
       planos_area_tip: 'Planes de acción de esta área',
       planos_area_tip_lock: 'Planes de acción de esta área (con contraseña)',
       planos_area_kicker: 'Planes del área',
-      planos_area_sub: 'Fuente y tablero. El cobro se enciende por acción; el correo sale con el disparador de la planta.',
+      planos_area_sub: 'Fuente y tablero. El disparador se enciende por tema; cada fila puede pausar. El reloj de la planta envía el correo.',
       planos_area_senha: 'Esta área protege los planes con contraseña',
       planos_area_senha_ph: 'Contraseña',
       planos_area_entrar: 'Abrir planes',
@@ -2499,10 +2535,15 @@ var I18n = (function () {
       cobranca_acao_tip_off: 'Follow-up pausado en esta acción',
       planos_area_cobranca_plano_apoio: '{n} de {total} acciones de este plan entran en el cobro.',
       planos_area_cobranca_bloco: 'Cobro de este plan',
-      planos_area_gatilho_apoio: 'El disparador diario de la planta envía los correos. Actívelo una vez; vale para toda la planta. Enviar ahora prueba solo este plan.',
+      planos_area_temas_titulo: 'Disparador por tema',
+      planos_area_temas_apoio: 'Pulse el tema para encender o pausar el correo de ese grupo. Encender pone las acciones en Cobrar; apagar las pausa. Después puede pausar fila a fila.',
+      planos_area_gatilho_apoio: 'El reloj de la planta es uno solo — dispara los temas encendidos arriba. Enviar ahora prueba solo este plan, incluso antes del plazo.',
+      planos_area_relogio_selo: 'Reloj de la planta {estado} · a las {hora}h',
+      planos_area_ativar_relogio: 'Activar reloj',
+      planos_area_inativar_relogio: 'Desactivar reloj',
       planos_area_cobrar_todos: 'Cobrar a todos',
       planos_area_cobrar_todos_hint: 'Cada responsable de las acciones ligadas recibe el correo. Desmarque a alguien para sacarlo.',
-      planos_area_cobranca_acoes_apoio: 'Cada acción empieza pausada. Encienda Cobrar solo en lo que debe salir.',
+      planos_area_cobranca_acoes_apoio: 'Cada acción empieza pausada. Encienda el tema (o Cobrar en la fila) solo en lo que debe salir.',
       toast_followup_acao: 'Cobro de esta acción actualizado.',
       campo_oque: '¿Qué?',
       campo_como: 'Cómo',
@@ -2642,8 +2683,14 @@ var I18n = (function () {
       toast_salvo: 'Guardado.',
       toast_removido: 'Eliminado.',
       toast_followup_temas: 'Temas de follow-up actualizados.',
+      toast_followup_tema_on: '{tema} activo — {n} acción(es) en Cobrar.',
+      toast_followup_tema_off: '{tema} pausado en este plan.',
       toast_followup: 'Follow-up: {enviados} enviado(s), {pulados} omitido(s).',
       toast_nenhum_followup: 'Ninguna acción vencida para enviar con los temas activos.',
+      toast_nenhum_followup_agora: 'Ninguna acción de este plan lista para enviar.',
+      toast_nenhum_followup_tema: 'Ningún tema activo. Pulse un tema arriba para encender el disparador.',
+      toast_nenhum_followup_acao: 'Ninguna acción en Cobrar. Encienda un tema o el botón Cobrar en la fila.',
+      toast_nenhum_followup_email: 'No encontré correo de destino. Revise Cobrar solo mi correo o los responsables.',
       confirm_followup_hoje: 'Ya hubo follow-up hoy para: {temas}.\n\n¿Desea enviar de nuevo el recordatorio de esas acciones?',
       toast_ordem: 'Orden de los departamentos actualizado.',
       toast_importacao: 'Planes actualizados: {linhas} fila{sLinha} de {fontes} fuente{sFonte}.',
@@ -2827,7 +2874,7 @@ if (typeof module !== 'undefined' && module.exports) {
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: [], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '' },
+    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '' },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -3712,14 +3759,15 @@ if (typeof module !== 'undefined' && module.exports) {
 
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
-      temas: [], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
     };
   }
 
-  function chipsFollowUpLista(temas, habilitados, attr) {
+  function chipsFollowUpLista(temas, habilitados, attr, vazioNenhum) {
     temas = (temas || []).filter(function (nome) { return nome && nome !== '__NONE__'; });
     habilitados = listaTemas(habilitados);
     var nenhum = habilitados.length === 1 && habilitados[0] === '__NONE__';
+    if (vazioNenhum && !habilitados.length) nenhum = true;
     var todos = !habilitados.length && !nenhum;
     return '<div class="temas-chips">' +
       (temas.length
@@ -3736,6 +3784,12 @@ if (typeof module !== 'undefined' && module.exports) {
       '</div>';
   }
 
+  function temaFollowUpAreaLigado(nome, habilitados) {
+    var hab = listaTemas(habilitados);
+    if (!hab.length || (hab.length === 1 && hab[0] === '__NONE__')) return false;
+    return hab.indexOf(String(nome || '').trim()) !== -1;
+  }
+
   function barraCobrancaPlano() {
     var fu = followUpAreaAtual();
     var soEu = fu.soEu !== false;
@@ -3747,6 +3801,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var off = {};
     (fu.emailsOff || []).forEach(function (e) { off[String(e).toLowerCase()] = 1; });
     var meu = String(fu.meuEmail || fu.gestorEmail || '').toLowerCase();
+    var temas = unicos(Estado.planosArea || [], 'tema');
     var listaPessoas = '';
     if (!soEu) {
       listaPessoas = pessoas.length
@@ -3764,13 +3819,16 @@ if (typeof module !== 'undefined' && module.exports) {
     }
     return '<div class="painel-cobranca-plano">' +
       '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_cobranca_bloco') + '</div>' +
-      '<div class="secao-apoio" style="margin:0">' + t('planos_area_gatilho_apoio') + '</div>' +
+      '<div class="secao-titulo" style="font-size:13px;margin:4px 0 0">' + t('planos_area_temas_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('planos_area_temas_apoio') + '</div>' +
+      chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area', true) +
+      '<div class="secao-apoio" style="margin:4px 0 0">' + t('planos_area_gatilho_apoio') + '</div>' +
       '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">' +
-      t('gatilho_selo', { estado: g.ativo ? t('gatilho_ativo') : t('gatilho_inativo'), hora: g.hora }) +
+      t('planos_area_relogio_selo', { estado: g.ativo ? t('gatilho_ativo') : t('gatilho_inativo'), hora: g.hora }) +
       '</div>' +
       '<div class="cobranca-acoes-linha">' +
-      '<button class="botao primario" type="button" data-gatilho-ativar="1">' + t('ativar_gatilho') + '</button>' +
-      '<button class="botao" type="button" data-gatilho-inativar="1">' + t('inativar_gatilhos') + '</button>' +
+      '<button class="botao primario" type="button" data-gatilho-ativar="1">' + t('planos_area_ativar_relogio') + '</button>' +
+      '<button class="botao" type="button" data-gatilho-inativar="1">' + t('planos_area_inativar_relogio') + '</button>' +
       '<button class="botao" type="button" data-followup-area-agora="1">' + t('enviar_followups') + '</button>' +
       '</div>' +
       '<div class="cobranca-modos" role="group">' +
@@ -3906,7 +3964,7 @@ if (typeof module !== 'undefined' && module.exports) {
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
-      temas: [], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
     };
     if (resp.ok) {
       var d = Estado.deptAberto;
@@ -4406,7 +4464,7 @@ if (typeof module !== 'undefined' && module.exports) {
     prevP.then(function (prev) {
       if (!prev || !prev.total) {
         ocupar(false);
-        toast(t('toast_nenhum_followup'));
+        toast(toastNenhumFollowUp(prev, departamentoId));
         return null;
       }
       ocupar(false);
@@ -4428,6 +4486,17 @@ if (typeof module !== 'undefined' && module.exports) {
     });
   }
 
+  function toastNenhumFollowUp(prev, departamentoId) {
+    var motivo = prev && prev.motivoZero;
+    if (departamentoId) {
+      if (motivo === 'tema_desligado') return t('toast_nenhum_followup_tema');
+      if (motivo === 'acao_desligada') return t('toast_nenhum_followup_acao');
+      if (motivo === 'sem_email' || motivo === 'email_desligado') return t('toast_nenhum_followup_email');
+      return t('toast_nenhum_followup_agora');
+    }
+    return t('toast_nenhum_followup');
+  }
+
   function toggleFollowUpTemaArea(nome) {
     var deptId = Estado.deptAberto && Estado.deptAberto.id;
     if (!nome || !deptId || Estado.carregando) return;
@@ -4435,7 +4504,15 @@ if (typeof module !== 'undefined' && module.exports) {
     chamar('apiAlternarTemaFollowUpArea', deptId, String(nome).trim()).then(function (resp) {
       ocupar(false);
       aplicarPlanosArea(resp, { manterScroll: true });
-      toast(t('toast_followup_temas'));
+      var ligado = temaFollowUpAreaLigado(nome, followUpAreaAtual().temas);
+      if (ligado) {
+        var n = (Estado.planosArea || []).filter(function (p) {
+          return p.tema === nome && p.followup;
+        }).length;
+        toast(t('toast_followup_tema_on', { tema: nome, n: n }));
+      } else {
+        toast(t('toast_followup_tema_off', { tema: nome }));
+      }
     }).catch(function (err) {
       ocupar(false);
       toast(err.message || err, true);
