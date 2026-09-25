@@ -77,6 +77,7 @@ function importarListaFontes_(fontes, abaDestino, abaCadastroFontes, preparar) {
 
   var atuais = Repo.ler(abaDestino);
   var manter = atuais.filter(function (p) {
+    // fonte_id vazio: ação criada no OpsHub, fora de qualquer fonte importada.
     return !importadosPorFonte.hasOwnProperty(p.fonte_id);
   });
   var mesclados = [];

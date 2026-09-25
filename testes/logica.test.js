@@ -57,6 +57,28 @@ var mesclado = Logica.mesclarImportacao(
 );
 assert.strictEqual(mesclado[0].followup, 'NAO');
 assert.strictEqual(mesclado[0].emails_enviados, 2);
+assert.strictEqual(mesclado[0].oque, 'novo', 'sem edição manual a importação atualiza o texto');
+var mescladoManual = Logica.mesclarImportacao(
+  [{
+    chave_origem: 'k1',
+    oque: 'texto do OpsHub',
+    como: 'como salvo',
+    tema: 'TIER_3',
+    prazo: d(2026, 9, 21),
+    status: 'Em andamento',
+    editado_manual: 'SIM',
+    followup: 'SIM',
+    emails_enviados: 4,
+  }],
+  [{ chave_origem: 'k1', oque: 'vindo da planilha', como: 'origem', tema: 'OEE', status: 'Aberto' }]
+);
+assert.strictEqual(mescladoManual[0].oque, 'texto do OpsHub');
+assert.strictEqual(mescladoManual[0].como, 'como salvo');
+assert.strictEqual(mescladoManual[0].tema, 'TIER_3');
+assert.strictEqual(mescladoManual[0].status, 'Em andamento');
+assert.strictEqual(mescladoManual[0].editado_manual, 'SIM');
+assert.strictEqual(mescladoManual[0].followup, 'SIM');
+assert.strictEqual(mescladoManual[0].emails_enviados, 4);
 
 var temasChip = ['TIER_3', 'UEE/Scrap_Apparel', 'UEE/SCRAP_APPAREL'];
 assert.deepStrictEqual(
