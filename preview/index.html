@@ -776,10 +776,21 @@ table.dados tr.risco td { box-shadow: none; }
   max-width: 280px;
   line-height: 1.35;
 }
+.drawer.painel .drawer-topo { padding: 14px 20px 10px; }
+.drawer.painel .drawer-titulo { margin: 4px 0 2px; font-size: 22px; }
 .drawer.painel .drawer-corpo {
   display: flex;
   flex-direction: column;
+  padding: 10px 12px 12px;
 }
+.drawer.painel .fluxo-progresso { margin: 0 0 8px; }
+.drawer.painel .fluxo-kicker,
+.drawer.painel .fluxo-resumo { display: none; }
+.drawer.painel .fluxo-cabeca { padding: 8px 12px; }
+.drawer.painel .fluxo-etapa { margin-bottom: 8px; }
+.drawer.painel .fluxo-corpo .kpis { margin: 0 0 8px; }
+.drawer.painel .kpi { padding: 8px 12px 6px; }
+.drawer.painel .temas-barra { margin: 0 0 8px; }
 .drawer.painel .fluxo-area {
   flex: 1 1 auto;
   min-height: 0;
@@ -799,23 +810,31 @@ table.dados tr.risco td { box-shadow: none; }
   flex-direction: column;
   overflow: hidden;
 }
+.drawer.painel [data-etapa="quadro"] .fluxo-corpo > .kpis,
+.drawer.painel [data-etapa="quadro"] .fluxo-corpo > .temas-barra {
+  flex-shrink: 0;
+}
 .drawer.painel .fluxo-corpo .painel-planos {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+.drawer.painel .painel-planos .painel-topo { padding: 8px 10px; }
 .drawer.painel .drawer-gestao .painel-planos .tabela-wrap {
-  flex: 1 1 auto;
-  min-height: 160px;
+  flex: 1 1 0;
+  min-height: 0;
   max-height: none;
 }
 .drawer.painel .painel-cobranca-plano {
-  flex-shrink: 0;
-  max-height: 34%;
-  overflow: auto;
+  flex: 0 1 132px;
   width: 100%;
+  max-height: 132px;
+  min-height: 0;
+  margin-top: 8px;
+  overflow: auto;
+  box-sizing: border-box;
 }
 .drawer-gestao .temas-barra { margin-top: 4px; }
 
