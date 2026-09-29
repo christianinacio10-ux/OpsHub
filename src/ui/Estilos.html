@@ -276,8 +276,22 @@ body { overflow: hidden; }
   text-overflow: ellipsis;
   vertical-align: middle;
 }
-.painel-planos table.dados td.principal { max-width: 260px; }
-.painel-planos table.dados td.como { max-width: 280px; }
+.painel-planos table.dados td.principal,
+.painel-planos table.dados td.como,
+.painel-planos table.dados td.comentarios {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: 280px;
+  line-height: 1.35;
+}
+.recorte-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cel-editar { width: 1%; white-space: nowrap; }
 .painel-planos table.dados td.comentarios { max-width: 240px; }
 .painel-planos table.dados th:first-child,
 .painel-planos table.dados td:first-child {
@@ -626,7 +640,36 @@ table.dados tr.risco td { box-shadow: none; }
 }
 .drawer.largo { width: min(1100px, 94vw); }
 .drawer.extra-largo { width: min(1280px, 96vw); }
+.drawer.painel {
+  width: min(1560px, calc(100vw - 48px));
+  height: min(94vh, calc(100vh - 48px));
+  max-height: min(94vh, calc(100vh - 48px));
+}
 .drawer.aberto { display: flex; }
+.modal-fundo {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(12, 11, 10, .62);
+  display: none; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.modal-fundo.aberto { display: flex; }
+.modal-acao {
+  width: min(760px, 100%);
+  max-height: min(88vh, 860px);
+  overflow: auto;
+  background: #171615;
+  border: 1px solid var(--linha-forte);
+  border-radius: 16px;
+  padding: 22px 22px 18px;
+  box-shadow: var(--sombra-3);
+}
+.modal-acao .secao-titulo { margin-bottom: 6px; }
+.modal-acao .acoes-form { margin-top: 8px; }
+@keyframes form-pulso {
+  0% { box-shadow: 0 0 0 0 rgba(228, 0, 43, .45); }
+  100% { box-shadow: 0 0 0 12px rgba(228, 0, 43, 0); }
+}
+.form-pulso { animation: form-pulso .7s ease-out; }
 .drawer-topo {
   padding: 22px 24px 16px; display: flex; justify-content: space-between;
   gap: 12px; border-bottom: 1px solid var(--linha);
@@ -719,12 +762,73 @@ table.dados tr.risco td { box-shadow: none; }
   max-width: none;
 }
 .drawer-gestao .painel-planos table.dados td.principal,
-.drawer-gestao .painel-planos table.dados td.como {
+.drawer-gestao .painel-planos table.dados td.como,
+.drawer-gestao .painel-planos table.dados td.comentarios {
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
-  max-width: 240px;
+  max-width: 280px;
   line-height: 1.35;
+}
+.drawer.painel .drawer-topo { padding: 14px 20px 10px; }
+.drawer.painel .drawer-titulo { margin: 4px 0 2px; font-size: 22px; }
+.drawer.painel .drawer-corpo {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+}
+.drawer.painel .fluxo-progresso { margin: 0 0 8px; }
+.drawer.painel .fluxo-kicker,
+.drawer.painel .fluxo-resumo { display: none; }
+.drawer.painel .fluxo-cabeca { padding: 8px 12px; }
+.drawer.painel .fluxo-etapa { margin-bottom: 8px; }
+.drawer.painel .fluxo-corpo .kpis { margin: 0 0 8px; }
+.drawer.painel .kpi { padding: 8px 12px 6px; }
+.drawer.painel .temas-barra { margin: 0 0 8px; }
+.drawer.painel .fluxo-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.drawer.painel .fluxo-etapa.aberta[data-etapa="quadro"] {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.drawer.painel .fluxo-etapa.aberta[data-etapa="quadro"] .fluxo-corpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.drawer.painel [data-etapa="quadro"] .fluxo-corpo > .kpis,
+.drawer.painel [data-etapa="quadro"] .fluxo-corpo > .temas-barra {
+  flex-shrink: 0;
+}
+.drawer.painel .fluxo-corpo .painel-planos {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.drawer.painel .painel-planos .painel-topo { padding: 8px 10px; }
+.drawer.painel .drawer-gestao .painel-planos .tabela-wrap {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
+}
+.drawer.painel .painel-cobranca-plano {
+  flex: 0 1 132px;
+  width: 100%;
+  max-height: 132px;
+  min-height: 0;
+  margin-top: 8px;
+  overflow: auto;
+  box-sizing: border-box;
 }
 .drawer-gestao .temas-barra { margin-top: 4px; }
 

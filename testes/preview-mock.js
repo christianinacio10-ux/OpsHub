@@ -211,10 +211,39 @@
 
   function nid(p) { return p + Date.now().toString(36); }
 
+  function aplicarEdicaoAcao(p, reg) {
+    ['tema', 'divisao', 'area', 'oque', 'como', 'responsavel', 'email', 'comentarios'].forEach(function (c) {
+      if (reg[c] != null) p[c] = String(reg[c]);
+    });
+    if (reg.prazo) {
+      p.prazo = String(reg.prazo).slice(0, 10);
+      var partes = p.prazo.split('-');
+      if (partes.length === 3) p.prazo_br = partes[2] + '/' + partes[1] + '/' + partes[0];
+    }
+    p.status_origem = reg.status || p.status_origem || 'Aberto';
+    var st = p.status_origem;
+    var s = String(st).toLowerCase();
+    var enc = s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0;
+    var hoje0 = new Date();
+    hoje0.setHours(0, 0, 0, 0);
+    var pr = p.prazo ? new Date(p.prazo + 'T00:00:00') : null;
+    if (!enc && pr && pr < hoje0) st = 'Atrasado';
+    p.status = st;
+    p.status_classe = st === 'Atrasado' ? 'risco'
+      : s.indexOf('conclu') === 0 ? 'ok'
+      : st === 'Em andamento' ? 'info'
+      : s.indexOf('cancel') === 0 ? 'neutro'
+      : 'aberto';
+    p.tem_email = !!(p.email && String(p.email).indexOf('@') > 0);
+    p.tooltip_email = p.tem_email ? p.email : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.';
+    p.editado_manual = true;
+    return p;
+  }
+
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.6.3' },
+        app: { nome: 'OpsHub', versao: '1.6.4' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -510,6 +539,47 @@
         return Object.assign({}, p, { followup: !p.followup });
       });
       return payloadArea(deptId, areaTrancada(deptId));
+    },
+    apiSalvarAcaoPlanta: function (reg) {
+      reg = reg || {};
+      if (!String(reg.oque || '').trim()) throw new Error('Informe o que precisa ser feito.');
+      var achou = false;
+      planos = planos.map(function (p) {
+        if (String(p.id) !== String(reg.id)) return p;
+        achou = true;
+        return aplicarEdicaoAcao(Object.assign({}, p), reg);
+      });
+      if (!achou) throw new Error('Registro vazio.');
+      return hub();
+    },
+    apiSalvarAcaoArea: function (deptId, reg) {
+      reg = reg || {};
+      if (areaTrancada(deptId)) return payloadArea(deptId, true);
+      if (!String(reg.oque || '').trim()) throw new Error('Informe o que precisa ser feito.');
+      var id = String(reg.id || '');
+      if (id) {
+        var achou = false;
+        planosArea = planosArea.map(function (p) {
+          if (String(p.id) !== id || p.departamento_id !== deptId) return p;
+          achou = true;
+          return aplicarEdicaoAcao(Object.assign({}, p), reg);
+        });
+        if (!achou) throw new Error('Registro vazio.');
+      } else {
+        var novo = aplicarEdicaoAcao({
+          id: nid('PA'),
+          departamento_id: deptId,
+          fonte_id: '',
+          fonte_nome: '',
+          followup: false,
+          tema: '', divisao: '', area: '', oque: '', como: '',
+          responsavel: '', email: '', prazo: '', prazo_br: '',
+          status: 'Aberto', status_origem: 'Aberto', status_classe: 'aberto',
+          comentarios: '', tem_email: false,
+        }, reg);
+        planosArea.push(novo);
+      }
+      return payloadArea(deptId, false);
     },
     apiCriarGatilho: function () {
       gatilho = { ativo: true, quantidade: 1, hora: 8 };

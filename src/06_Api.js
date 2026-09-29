@@ -628,3 +628,71 @@ function apiAlternarFollowUpAcaoArea(deptId, acaoId) {
   Repo.limparMemoria();
   return payloadPlanosArea_(deptPorId_(gate.dept.id));
 }
+
+function camposAcaoManual_(reg) {
+  var prazo = Logica.paraData(reg && reg.prazo);
+  return {
+    tema: Logica.texto(reg.tema),
+    divisao: Logica.texto(reg.divisao),
+    area: Logica.texto(reg.area),
+    oque: Logica.texto(reg.oque),
+    como: Logica.texto(reg.como),
+    responsavel: Logica.texto(reg.responsavel),
+    email: Logica.texto(reg.email).toLowerCase(),
+    prazo: prazo || '',
+    status: Logica.tituloStatus(reg.status) || 'Aberto',
+    comentarios: Logica.texto(reg.comentarios),
+    editado_manual: 'SIM',
+    atualizado_em: new Date(),
+  };
+}
+
+function exigirOqueAcao_(reg) {
+  if (!reg || !Logica.texto(reg.oque)) throw new Error(I18n.t(I18n.atual(), 'erro_oque'));
+}
+
+function acharPlano_(aba, id) {
+  id = Logica.texto(id);
+  if (!id) return null;
+  return Repo.ler(aba).filter(function (p) {
+    return Logica.texto(p.id) === id || Logica.texto(p.chave_origem) === id;
+  })[0] || null;
+}
+
+function apiSalvarAcaoPlanta(reg) {
+  instalarSistema();
+  exigirOqueAcao_(reg);
+  var plano = acharPlano_(ABAS.planos, reg && reg.id);
+  if (!plano) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
+  Repo.atualizarRegistro(ABAS.planos, plano._linha, camposAcaoManual_(reg));
+  Repo.limparMemoria();
+  return apiHub();
+}
+
+function apiSalvarAcaoArea(deptId, reg) {
+  var gate = exigirAreaAberta_(deptId);
+  if (gate.bloqueado) return gate.bloqueado;
+  exigirOqueAcao_(reg);
+  var id = Logica.texto(reg && reg.id);
+  var patch = camposAcaoManual_(reg);
+  if (id) {
+    var plano = acharPlano_(ABAS.planosArea, id);
+    if (!plano || Logica.texto(plano.departamento_id) !== Logica.texto(gate.dept.id)) {
+      throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
+    }
+    Repo.atualizarRegistro(ABAS.planosArea, plano._linha, patch);
+  } else {
+    var novoId = Logica.idNovo('PA');
+    patch.id = novoId;
+    patch.departamento_id = gate.dept.id;
+    patch.fonte_id = '';
+    patch.fonte_nome = '';
+    patch.chave_origem = novoId;
+    patch.ultimo_email_em = '';
+    patch.emails_enviados = 0;
+    patch.followup = 'NAO';
+    Repo.acrescentar(ABAS.planosArea, [patch]);
+  }
+  Repo.limparMemoria();
+  return payloadPlanosArea_(deptPorId_(gate.dept.id));
+}

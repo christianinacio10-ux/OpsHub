@@ -472,6 +472,11 @@ var Logica = (function () {
     };
   }
 
+  var CAMPOS_EDICAO_MANUAL = [
+    'tema', 'divisao', 'area', 'oque', 'como',
+    'responsavel', 'email', 'prazo', 'status', 'comentarios',
+  ];
+
   function mesclarImportacao(anteriores, novos) {
     var porChave = {};
     (anteriores || []).forEach(function (a) {
@@ -483,6 +488,12 @@ var Logica = (function () {
       n.ultimo_email_em = velho.ultimo_email_em || '';
       n.emails_enviados = velho.emails_enviados || 0;
       n.followup = velho.followup || n.followup || '';
+      if (sim(velho.editado_manual)) {
+        CAMPOS_EDICAO_MANUAL.forEach(function (c) {
+          if (velho[c] !== undefined) n[c] = velho[c];
+        });
+        n.editado_manual = 'SIM';
+      }
       return n;
     });
   }
@@ -708,6 +719,7 @@ var Logica = (function () {
         ? texto(p.email)
         : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.',
       departamento_id: texto(p.departamento_id),
+      editado_manual: sim(p.editado_manual),
     };
   }
 

@@ -282,8 +282,22 @@ body { overflow: hidden; }
   text-overflow: ellipsis;
   vertical-align: middle;
 }
-.painel-planos table.dados td.principal { max-width: 260px; }
-.painel-planos table.dados td.como { max-width: 280px; }
+.painel-planos table.dados td.principal,
+.painel-planos table.dados td.como,
+.painel-planos table.dados td.comentarios {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: 280px;
+  line-height: 1.35;
+}
+.recorte-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cel-editar { width: 1%; white-space: nowrap; }
 .painel-planos table.dados td.comentarios { max-width: 240px; }
 .painel-planos table.dados th:first-child,
 .painel-planos table.dados td:first-child {
@@ -632,7 +646,36 @@ table.dados tr.risco td { box-shadow: none; }
 }
 .drawer.largo { width: min(1100px, 94vw); }
 .drawer.extra-largo { width: min(1280px, 96vw); }
+.drawer.painel {
+  width: min(1560px, calc(100vw - 48px));
+  height: min(94vh, calc(100vh - 48px));
+  max-height: min(94vh, calc(100vh - 48px));
+}
 .drawer.aberto { display: flex; }
+.modal-fundo {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(12, 11, 10, .62);
+  display: none; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.modal-fundo.aberto { display: flex; }
+.modal-acao {
+  width: min(760px, 100%);
+  max-height: min(88vh, 860px);
+  overflow: auto;
+  background: #171615;
+  border: 1px solid var(--linha-forte);
+  border-radius: 16px;
+  padding: 22px 22px 18px;
+  box-shadow: var(--sombra-3);
+}
+.modal-acao .secao-titulo { margin-bottom: 6px; }
+.modal-acao .acoes-form { margin-top: 8px; }
+@keyframes form-pulso {
+  0% { box-shadow: 0 0 0 0 rgba(228, 0, 43, .45); }
+  100% { box-shadow: 0 0 0 12px rgba(228, 0, 43, 0); }
+}
+.form-pulso { animation: form-pulso .7s ease-out; }
 .drawer-topo {
   padding: 22px 24px 16px; display: flex; justify-content: space-between;
   gap: 12px; border-bottom: 1px solid var(--linha);
@@ -725,12 +768,73 @@ table.dados tr.risco td { box-shadow: none; }
   max-width: none;
 }
 .drawer-gestao .painel-planos table.dados td.principal,
-.drawer-gestao .painel-planos table.dados td.como {
+.drawer-gestao .painel-planos table.dados td.como,
+.drawer-gestao .painel-planos table.dados td.comentarios {
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
-  max-width: 240px;
+  max-width: 280px;
   line-height: 1.35;
+}
+.drawer.painel .drawer-topo { padding: 14px 20px 10px; }
+.drawer.painel .drawer-titulo { margin: 4px 0 2px; font-size: 22px; }
+.drawer.painel .drawer-corpo {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+}
+.drawer.painel .fluxo-progresso { margin: 0 0 8px; }
+.drawer.painel .fluxo-kicker,
+.drawer.painel .fluxo-resumo { display: none; }
+.drawer.painel .fluxo-cabeca { padding: 8px 12px; }
+.drawer.painel .fluxo-etapa { margin-bottom: 8px; }
+.drawer.painel .fluxo-corpo .kpis { margin: 0 0 8px; }
+.drawer.painel .kpi { padding: 8px 12px 6px; }
+.drawer.painel .temas-barra { margin: 0 0 8px; }
+.drawer.painel .fluxo-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.drawer.painel .fluxo-etapa.aberta[data-etapa="quadro"] {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.drawer.painel .fluxo-etapa.aberta[data-etapa="quadro"] .fluxo-corpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.drawer.painel [data-etapa="quadro"] .fluxo-corpo > .kpis,
+.drawer.painel [data-etapa="quadro"] .fluxo-corpo > .temas-barra {
+  flex-shrink: 0;
+}
+.drawer.painel .fluxo-corpo .painel-planos {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.drawer.painel .painel-planos .painel-topo { padding: 8px 10px; }
+.drawer.painel .drawer-gestao .painel-planos .tabela-wrap {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
+}
+.drawer.painel .painel-cobranca-plano {
+  flex: 0 1 132px;
+  width: 100%;
+  max-height: 132px;
+  min-height: 0;
+  margin-top: 8px;
+  overflow: auto;
+  box-sizing: border-box;
 }
 .drawer-gestao .temas-barra { margin-top: 4px; }
 
@@ -1328,6 +1432,10 @@ table.dados tr.risco td { box-shadow: none; }
     <div class="drawer-corpo" id="drawer-corpo"></div>
   </aside>
 
+  <div class="modal-fundo" id="modal-acao" hidden>
+    <form class="modal-acao" id="form-acao" data-form-acao="1"></form>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
   <div class="overlay-carga" id="overlay-carga" hidden>
     <div class="overlay-carga-caixa" role="status" aria-live="polite">
@@ -1558,10 +1666,39 @@ table.dados tr.risco td { box-shadow: none; }
 
   function nid(p) { return p + Date.now().toString(36); }
 
+  function aplicarEdicaoAcao(p, reg) {
+    ['tema', 'divisao', 'area', 'oque', 'como', 'responsavel', 'email', 'comentarios'].forEach(function (c) {
+      if (reg[c] != null) p[c] = String(reg[c]);
+    });
+    if (reg.prazo) {
+      p.prazo = String(reg.prazo).slice(0, 10);
+      var partes = p.prazo.split('-');
+      if (partes.length === 3) p.prazo_br = partes[2] + '/' + partes[1] + '/' + partes[0];
+    }
+    p.status_origem = reg.status || p.status_origem || 'Aberto';
+    var st = p.status_origem;
+    var s = String(st).toLowerCase();
+    var enc = s.indexOf('conclu') === 0 || s.indexOf('cancel') === 0;
+    var hoje0 = new Date();
+    hoje0.setHours(0, 0, 0, 0);
+    var pr = p.prazo ? new Date(p.prazo + 'T00:00:00') : null;
+    if (!enc && pr && pr < hoje0) st = 'Atrasado';
+    p.status = st;
+    p.status_classe = st === 'Atrasado' ? 'risco'
+      : s.indexOf('conclu') === 0 ? 'ok'
+      : st === 'Em andamento' ? 'info'
+      : s.indexOf('cancel') === 0 ? 'neutro'
+      : 'aberto';
+    p.tem_email = !!(p.email && String(p.email).indexOf('@') > 0);
+    p.tooltip_email = p.tem_email ? p.email : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.';
+    p.editado_manual = true;
+    return p;
+  }
+
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.6.3' },
+        app: { nome: 'OpsHub', versao: '1.6.4' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -1858,6 +1995,47 @@ table.dados tr.risco td { box-shadow: none; }
       });
       return payloadArea(deptId, areaTrancada(deptId));
     },
+    apiSalvarAcaoPlanta: function (reg) {
+      reg = reg || {};
+      if (!String(reg.oque || '').trim()) throw new Error('Informe o que precisa ser feito.');
+      var achou = false;
+      planos = planos.map(function (p) {
+        if (String(p.id) !== String(reg.id)) return p;
+        achou = true;
+        return aplicarEdicaoAcao(Object.assign({}, p), reg);
+      });
+      if (!achou) throw new Error('Registro vazio.');
+      return hub();
+    },
+    apiSalvarAcaoArea: function (deptId, reg) {
+      reg = reg || {};
+      if (areaTrancada(deptId)) return payloadArea(deptId, true);
+      if (!String(reg.oque || '').trim()) throw new Error('Informe o que precisa ser feito.');
+      var id = String(reg.id || '');
+      if (id) {
+        var achou = false;
+        planosArea = planosArea.map(function (p) {
+          if (String(p.id) !== id || p.departamento_id !== deptId) return p;
+          achou = true;
+          return aplicarEdicaoAcao(Object.assign({}, p), reg);
+        });
+        if (!achou) throw new Error('Registro vazio.');
+      } else {
+        var novo = aplicarEdicaoAcao({
+          id: nid('PA'),
+          departamento_id: deptId,
+          fonte_id: '',
+          fonte_nome: '',
+          followup: false,
+          tema: '', divisao: '', area: '', oque: '', como: '',
+          responsavel: '', email: '', prazo: '', prazo_br: '',
+          status: 'Aberto', status_origem: 'Aberto', status_classe: 'aberto',
+          comentarios: '', tem_email: false,
+        }, reg);
+        planosArea.push(novo);
+      }
+      return payloadArea(deptId, false);
+    },
     apiCriarGatilho: function () {
       gatilho = { ativo: true, quantidade: 1, hora: 8 };
       return { mensagem: 'Gatilho diario criado para a rotina das 8h.', gatilho: gatilho };
@@ -2087,6 +2265,11 @@ var I18n = (function () {
       atualizar_arquivo: 'Atualizar arquivo',
       cancelar: 'Cancelar',
       editar: 'Editar',
+      acao_modal_editar: 'Editar ação',
+      acao_modal_nova: 'Nova ação',
+      acao_nova: 'Nova ação',
+      acao_modal_aviso: 'O que você salvar fica no OpsHub. A próxima importação não substitui estes campos.',
+      toast_acao_salva: 'Ação salva no OpsHub.',
       excluir: 'Excluir',
       confirm_excluir_arquivo: 'Excluir este arquivo?',
       confirm_excluir: 'Excluir este registro?',
@@ -2359,6 +2542,11 @@ var I18n = (function () {
       atualizar_arquivo: 'Update file',
       cancelar: 'Cancel',
       editar: 'Edit',
+      acao_modal_editar: 'Edit action',
+      acao_modal_nova: 'New action',
+      acao_nova: 'New action',
+      acao_modal_aviso: 'What you save stays in OpsHub. The next import does not replace these fields.',
+      toast_acao_salva: 'Action saved in OpsHub.',
       excluir: 'Delete',
       confirm_excluir_arquivo: 'Delete this file?',
       confirm_excluir: 'Delete this record?',
@@ -2631,6 +2819,11 @@ var I18n = (function () {
       atualizar_arquivo: 'Actualizar archivo',
       cancelar: 'Cancelar',
       editar: 'Editar',
+      acao_modal_editar: 'Editar acción',
+      acao_modal_nova: 'Nueva acción',
+      acao_nova: 'Nueva acción',
+      acao_modal_aviso: 'Lo que guarde queda en OpsHub. La próxima importación no sustituye estos campos.',
+      toast_acao_salva: 'Acción guardada en OpsHub.',
       excluir: 'Eliminar',
       confirm_excluir_arquivo: '¿Eliminar este archivo?',
       confirm_excluir: '¿Eliminar este registro?',
@@ -3484,7 +3677,11 @@ if (typeof module !== 'undefined' && module.exports) {
 
   function td(valor, cls) {
     var t = valor == null ? '' : String(valor);
-    return '<td' + (cls ? ' class="' + cls + '"' : '') + ' title="' + escapar(t) + '">' + escapar(t) + '</td>';
+    var interno = escapar(t);
+    if (cls === 'principal' || cls === 'como' || cls === 'comentarios') {
+      interno = '<span class="recorte-2">' + interno + '</span>';
+    }
+    return '<td' + (cls ? ' class="' + cls + '"' : '') + ' title="' + escapar(t) + '">' + interno + '</td>';
   }
 
   function th(campo, rotulo) {
@@ -3506,6 +3703,9 @@ if (typeof module !== 'undefined' && module.exports) {
       painelExcel('status', t('filtro_status'), unicos(todos, 'status')) +
       painelExcel('responsavel', t('filtro_responsavel'), unicos(todos, 'responsavel')) +
       '<button type="button" class="botao" id="' + limparId + '">' + t('limpar') + '</button>' +
+      (ids.nova
+        ? '<button type="button" class="botao primario" data-nova-acao="area">' + t('acao_nova') + '</button>'
+        : '') +
       '</div>';
   }
 
@@ -3537,6 +3737,10 @@ if (typeof module !== 'undefined' && module.exports) {
         td(p.prazo_br) +
         '<td title="' + escapar(stLabel) + '"><span class="selo ' + p.status_classe + '">' + escapar(stLabel) + '</span></td>' +
         td(p.comentarios, 'comentarios') +
+        (ids.editar
+          ? '<td class="cel-editar"><button type="button" class="botao" data-editar-acao="' +
+            escapar(ids.editar) + '" data-acao-id="' + escapar(p.id) + '">' + t('editar') + '</button></td>'
+          : '') +
         '</tr>';
     }).join('');
   }
@@ -3561,13 +3765,14 @@ if (typeof module !== 'undefined' && module.exports) {
       th('oque', t('th_oque')) + th('como', t('th_como')) + th('responsavel', t('th_responsavel')) +
       th('email', t('th_email')) + th('prazo', t('th_prazo')) + th('status', t('th_status')) +
       th('comentarios', t('th_comentarios')) +
+      (ids.editar ? '<th></th>' : '') +
       '</tr></thead><tbody>' + linhasTabelaPlanos(filtrados, ids) + '</tbody></table></div>' +
       '<div class="painel-topo tabela-rodape" style="border-top:1px solid var(--linha);border-bottom:0">' +
       '<div class="secao-apoio">' + t('n_acoes', { n: filtrados.length, total: todos.length }) + '</div></div></div>';
   }
 
   function tabelaPlanos() {
-    return tabelaPlanosDe(Estado.hub.planos || []);
+    return tabelaPlanosDe(Estado.hub.planos || [], { editar: 'planta' });
   }
 
   function negocioEfetivo(c, dept) {
@@ -3860,6 +4065,8 @@ if (typeof module !== 'undefined' && module.exports) {
         limpar: 'limpar-filtros-area',
         vazio: 'planos_area_vazio',
         cobranca: true,
+        editar: 'area',
+        nova: true,
       });
   }
 
@@ -4009,7 +4216,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var buscaVal = '';
     var buscaEl = $('filtro-texto-area');
     if (opts.manterBusca && buscaEl) buscaVal = buscaEl.value;
-    $('drawer').classList.add('largo');
+    $('drawer').classList.add('painel');
     $('drawer-kicker').textContent = t('planos_area_kicker');
     $('drawer-titulo').textContent = d.nome;
     $('drawer-sub').textContent = t('planos_area_sub');
@@ -4028,7 +4235,9 @@ if (typeof module !== 'undefined' && module.exports) {
     }
     if (opts.focarEtapa) {
       var elEtapa = document.querySelector('[data-etapa="' + opts.focarEtapa + '"]');
-      if (elEtapa && elEtapa.scrollIntoView) elEtapa.scrollIntoView({ block: 'nearest' });
+      var formEtapa = elEtapa && elEtapa.querySelector('form');
+      if (formEtapa) revelarAlvo(formEtapa);
+      else if (elEtapa && elEtapa.scrollIntoView) elEtapa.scrollIntoView({ block: 'nearest' });
     }
   }
 
@@ -4061,7 +4270,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var links = (Estado.hub.controles || []).filter(function (c) { return c.departamento_id === id; });
     var bandeira = d.bandeira || '';
     var solutions = bandeira === 'Solutions';
-    $('drawer').classList.remove('largo', 'extra-largo');
+    $('drawer').classList.remove('largo', 'extra-largo', 'painel');
     if (modo === 'planos') {
       carregarFiltrosArea(id);
       carregarEtapasArea(id);
@@ -4113,6 +4322,7 @@ if (typeof module !== 'undefined' && module.exports) {
     $('drawer-fundo').classList.remove('aberto');
     $('drawer').classList.remove('largo');
     $('drawer').classList.remove('extra-largo');
+    $('drawer').classList.remove('painel');
     Estado.deptAberto = null;
     Estado.deptModo = 'ver';
     Estado.aparenciaAberta = false;
@@ -4278,6 +4488,104 @@ if (typeof module !== 'undefined' && module.exports) {
   function LogicaSim(v) {
     var s = String(v || '').toLowerCase();
     return s === 'sim' || s === 'true' || s === '1' || v === true;
+  }
+
+  function revelarAlvo(alvo) {
+    if (!alvo) return;
+    if (alvo.scrollIntoView) alvo.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    alvo.classList.remove('form-pulso');
+    void alvo.offsetWidth;
+    alvo.classList.add('form-pulso');
+    var input = alvo.querySelector('input:not([type="hidden"]), select, textarea');
+    if (input && input.focus) {
+      try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+    }
+  }
+
+  function revelarFormulario(raiz) {
+    var form = raiz && raiz.querySelector ? raiz.querySelector('form.form-grid') : null;
+    if (form) revelarAlvo(form);
+    else if (raiz) raiz.scrollTop = 0;
+  }
+
+  function rolarPaginaAoTopo() {
+    var area = $('area-conteudo');
+    if (area) area.scrollTop = 0;
+  }
+
+  function depoisDoPaint(fn) {
+    setTimeout(fn, 30);
+  }
+
+  function opcoesStatusAcao(atual) {
+    var base = [
+      ['Aberto', t('status_aberto')],
+      ['Em andamento', t('status_andamento')],
+      ['Concluído', t('status_concluido')],
+      ['Cancelado', t('status_cancelado')],
+    ];
+    var gravado = atual || 'Aberto';
+    var tem = false;
+    for (var i = 0; i < base.length; i++) {
+      if (base[i][0] === gravado) tem = true;
+    }
+    if (!tem && gravado) base.push([gravado, gravado]);
+    return base.map(function (p) {
+      return '<option value="' + escapar(p[0]) + '"' + (p[0] === gravado ? ' selected' : '') + '>' +
+        escapar(p[1]) + '</option>';
+    }).join('');
+  }
+
+  function abrirEditorAcao(escopo, plano) {
+    plano = plano || {};
+    var form = $('form-acao');
+    var modal = $('modal-acao');
+    if (!form || !modal) return;
+    var novo = !plano.id;
+    var status = plano.status_origem || 'Aberto';
+    if (status === 'Atrasado') status = 'Aberto';
+    form.setAttribute('data-escopo', escopo || 'area');
+    form.setAttribute('data-id', plano.id || '');
+    form.innerHTML =
+      '<div class="secao-titulo">' + (novo ? t('acao_modal_nova') : t('acao_modal_editar')) + '</div>' +
+      '<div class="secao-apoio" style="margin:0 0 12px">' + t('acao_modal_aviso') + '</div>' +
+      '<div class="form-grid">' +
+      campo('tema', t('th_tema'), plano.tema) +
+      campo('divisao', t('th_divisao'), plano.divisao) +
+      campo('area', t('th_area'), plano.area) +
+      campo('responsavel', t('th_responsavel'), plano.responsavel) +
+      campo('oque', t('campo_oque'), plano.oque, { span2: true, area: true }) +
+      campo('como', t('campo_como'), plano.como, { span2: true, area: true }) +
+      campo('email', t('campo_email'), plano.email) +
+      campo('prazo', t('campo_prazo'), plano.prazo, { tipo: 'date' }) +
+      campo('status', t('campo_status'), status, { opcoes: opcoesStatusAcao(status) }) +
+      campo('comentarios', t('campo_comentarios'), plano.comentarios, { span2: true, area: true }) +
+      '</div>' +
+      '<div class="acoes-form"><button class="botao primario" type="submit">' + t('salvar') + '</button>' +
+      '<button class="botao" type="button" data-fechar-acao="1">' + t('cancelar') + '</button></div>';
+    modal.hidden = false;
+    modal.classList.add('aberto');
+    depoisDoPaint(function () {
+      var alvo = form.querySelector('[name="oque"]');
+      if (alvo && alvo.focus) alvo.focus();
+    });
+  }
+
+  function fecharEditorAcao() {
+    var modal = $('modal-acao');
+    if (!modal) return;
+    modal.hidden = true;
+    modal.classList.remove('aberto');
+  }
+
+  function acharAcaoUi(escopo, id) {
+    var lista = escopo === 'area'
+      ? (Estado.planosArea || [])
+      : ((Estado.hub && Estado.hub.planos) || []);
+    for (var i = 0; i < lista.length; i++) {
+      if (String(lista[i].id) === String(id)) return lista[i];
+    }
+    return null;
   }
 
   function render() {
@@ -4702,6 +5010,27 @@ if (typeof module !== 'undefined' && module.exports) {
           });
         return;
       }
+      if (e.target.closest('[data-fechar-acao]') || e.target.id === 'modal-acao') {
+        e.preventDefault();
+        fecharEditorAcao();
+        return;
+      }
+      var novaAcao = e.target.closest('[data-nova-acao]');
+      if (novaAcao) {
+        e.preventDefault();
+        e.stopPropagation();
+        abrirEditorAcao('area', {});
+        return;
+      }
+      var editAcao = e.target.closest('[data-editar-acao]');
+      if (editAcao) {
+        e.preventDefault();
+        e.stopPropagation();
+        var escopoAcao = editAcao.getAttribute('data-editar-acao');
+        var acaoUi = acharAcaoUi(escopoAcao, editAcao.getAttribute('data-acao-id'));
+        if (acaoUi) abrirEditorAcao(escopoAcao, acaoUi);
+        return;
+      }
       if (e.target.closest('[data-followup-area-agora]')) {
         e.preventDefault();
         var deptFu = Estado.deptAberto && Estado.deptAberto.id;
@@ -4721,6 +5050,7 @@ if (typeof module !== 'undefined' && module.exports) {
         Estado.form = { tipo: '', data: {} };
         Estado.filtroAberto = null;
         render();
+        rolarPaginaAoTopo();
         return;
       }
       var ancora = e.target.closest('[data-config-aba]');
@@ -4728,6 +5058,7 @@ if (typeof module !== 'undefined' && module.exports) {
         Estado.configAba = ancora.getAttribute('data-config-aba');
         Estado.form = { tipo: '', data: {} };
         render();
+        rolarPaginaAoTopo();
         return;
       }
       var temaTodos = e.target.closest('[data-tema-todos]');
@@ -4784,6 +5115,9 @@ if (typeof module !== 'undefined' && module.exports) {
         })[0] || {};
         Estado.formDrawer = { tipo: 'ctrl', data: itemEdit };
         if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, 'editar');
+        depoisDoPaint(function () {
+          revelarAlvo(document.querySelector('#drawer-corpo form[data-entidade="ctrl"]'));
+        });
         return;
       }
       var delDrawer = e.target.closest('[data-del-ctrl-drawer]');
@@ -4800,6 +5134,9 @@ if (typeof module !== 'undefined' && module.exports) {
       if (e.target.closest('[data-form-cancelar-drawer]')) {
         Estado.formDrawer = { tipo: '', data: {} };
         if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, 'editar');
+        depoisDoPaint(function () {
+          revelarAlvo(document.querySelector('#drawer-corpo form[data-entidade="ctrl"]'));
+        });
         return;
       }
       var dept = e.target.closest('[data-dept]');
@@ -4855,6 +5192,7 @@ if (typeof module !== 'undefined' && module.exports) {
       if (e.target.closest('[data-form-cancelar]')) {
         Estado.form = { tipo: '', data: {} };
         render();
+        depoisDoPaint(function () { revelarFormulario($('area-conteudo')); });
         return;
       }
       if (e.target.closest('#btn-importar')) {
@@ -4911,6 +5249,7 @@ if (typeof module !== 'undefined' && module.exports) {
         Estado.form = { tipo: tipo, data: item };
         Estado.configAba = tipo === 'fonte' ? 'fontes' : 'dept';
         render();
+        depoisDoPaint(function () { revelarFormulario($('area-conteudo')); });
         return;
       }
       var del = e.target.closest('[data-del]');
@@ -4929,6 +5268,36 @@ if (typeof module !== 'undefined' && module.exports) {
     });
 
     document.addEventListener('submit', function (e) {
+      var formAcao = e.target.closest('#form-acao');
+      if (formAcao) {
+        e.preventDefault();
+        var dadosAcao = lerForm(formAcao);
+        dadosAcao.id = formAcao.getAttribute('data-id') || '';
+        if (!String(dadosAcao.oque || '').trim()) {
+          toast(t('erro_oque'), true);
+          return;
+        }
+        var escopoSalvar = formAcao.getAttribute('data-escopo');
+        ocupar(true, t('carregando_ellipsis'));
+        var pedidoAcao = escopoSalvar === 'planta'
+          ? chamar('apiSalvarAcaoPlanta', dadosAcao)
+          : chamar('apiSalvarAcaoArea', Estado.deptAberto && Estado.deptAberto.id, dadosAcao);
+        pedidoAcao.then(function (resp) {
+          ocupar(false);
+          fecharEditorAcao();
+          if (escopoSalvar === 'planta') {
+            Estado.hub = resp;
+            render();
+          } else {
+            aplicarPlanosArea(resp, { manterScroll: true });
+          }
+          toast(t('toast_acao_salva'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
+        return;
+      }
       var senhaAbre = e.target.closest('form[data-abrir-planos-area]');
       if (senhaAbre) {
         e.preventDefault();
