@@ -2,6 +2,7 @@ function doGet(e) {
   var parametros = (e && e.parameter) || {};
   var pagina = HtmlService.createTemplate(PACOTE_HTML.index);
   pagina.parametros = parametros;
+  pagina.appNome = APP.nome;
   return pagina.evaluate()
     .setTitle(APP.nome)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover')

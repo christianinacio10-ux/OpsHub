@@ -7,12 +7,13 @@ var I18n = (function () {
 
   var CHAVE = 'opshub_idioma';
   var IDIOMAS = ['pt', 'en', 'es'];
+  var nomeApp = 'OpsHub';
 
   var TEXTOS = {
     pt: {
       marca_sub: 'Hub operacional da planta',
       nav_navegar: 'Navegar',
-      nav_hub: 'OpsHub',
+      nav_hub: '{app}',
       nav_planos: 'Planos de ação',
       nav_config: 'Configurações',
       topo_hub_sub: 'Controles-chave por departamento',
@@ -63,7 +64,7 @@ var I18n = (function () {
       planos_area_fonte_titulo: 'De onde entram as ações',
       planos_area_quadro_titulo: 'Acompanhar e filtrar',
       planos_area_cobranca_titulo: 'Quem recebe o follow-up',
-      planos_area_fonte_apoio: 'Cole a URL da Google Sheet desta área. O OpsHub importa como no consolidado da planta; as ações ficam só aqui. O disparo diário da planta continua valendo.',
+      planos_area_fonte_apoio: 'Cole a URL da Google Sheet desta área. O {app} importa como no consolidado da planta; as ações ficam só aqui. O disparo diário da planta continua valendo.',
       planos_area_resumo_fonte_vazia: 'Cole a URL da planilha desta área',
       planos_area_resumo_fonte_pronta: 'Pronta para importar',
       planos_area_resumo_quadro_espera: 'Cadastre a fonte para ver o quadro',
@@ -182,8 +183,8 @@ var I18n = (function () {
       acao_modal_editar: 'Editar ação',
       acao_modal_nova: 'Nova ação',
       acao_nova: 'Nova ação',
-      acao_modal_aviso: 'O que você salvar fica no OpsHub. A próxima importação não substitui estes campos.',
-      toast_acao_salva: 'Ação salva no OpsHub.',
+      acao_modal_aviso: 'O que você salvar fica no {app}. A próxima importação não substitui estes campos.',
+      toast_acao_salva: 'Ação salva no {app}.',
       excluir: 'Excluir',
       confirm_excluir_arquivo: 'Excluir este arquivo?',
       confirm_excluir: 'Excluir este registro?',
@@ -199,7 +200,7 @@ var I18n = (function () {
       aba_fontes: 'Fontes de importação',
       aba_mail: 'Follow-up e gatilho',
       cfg_dept_titulo: 'Departamentos',
-      cfg_dept_sub: 'Cadastre as áreas do OpsHub e a divisão Apparel, Smartrac ou Solutions',
+      cfg_dept_sub: 'Cadastre as áreas do {app} e a divisão Apparel, Smartrac ou Solutions',
       cfg_fontes_titulo: 'Fontes de importação',
       cfg_fontes_sub: 'Google Sheets de onde os planos de ação são lidos',
       cfg_mail_titulo: 'Follow-up e gatilho',
@@ -219,7 +220,7 @@ var I18n = (function () {
       fontes_apoio: 'A origem precisa ter as colunas Tema, Divisão, Área, O quê?, Como, Responsável, E-mail, Prazo, Status, Comentários — a ordem pode variar.',
       aba_prefix: 'aba',
       mail_regra: 'Regra de follow-up',
-      mail_regra_apoio: 'Quando o prazo é atingido, o OpsHub espera 1 dia e então envia um e-mail por dia ao responsável, até a data ser reprogramada na planilha de origem. Sem e-mail cadastrado, nada é enviado — a linha mostra o aviso no tooltip.',
+      mail_regra_apoio: 'Quando o prazo é atingido, o {app} espera 1 dia e então envia um e-mail por dia ao responsável, até a data ser reprogramada na planilha de origem. Sem e-mail cadastrado, nada é enviado — a linha mostra o aviso no tooltip.',
       temas_email: 'Temas que recebem e-mail',
       temas_email_apoio: 'Ligue ou desligue quais temas entram no follow-up. Com todos ligados, o comportamento é o de sempre: qualquer tema atrasado dispara.',
       importar_para_temas: 'Importe planos para ver os temas.',
@@ -267,8 +268,8 @@ var I18n = (function () {
       erro_tema_vazio: 'Tema vazio.',
       erro_url_fonte: 'Cole a URL ou o ID da Google Sheet na fonte.',
       erro_link_publicacao: 'Esse link é o de publicação (/d/e/…), não o da planilha. Abra o arquivo em docs.google.com/spreadsheets/d/ID/edit e copie essa URL.',
-      erro_sem_acesso: 'Sem acesso à planilha. Compartilhe com a conta que autorizou o OpsHub (pelo menos leitura).',
-      erro_sem_acesso_curto: 'Sem acesso à planilha. Compartilhe com a conta que autorizou o OpsHub.',
+      erro_sem_acesso: 'Sem acesso à planilha. Compartilhe com a conta que autorizou o {app} (pelo menos leitura).',
+      erro_sem_acesso_curto: 'Sem acesso à planilha. Compartilhe com a conta que autorizou o {app}.',
       erro_ref_invalida: 'Referência inválida. Cole a URL completa da Google Sheet.',
       erro_aba: 'Aba "{nome}" não encontrada em {planilha}.',
       erro_colunas: 'Não achei as colunas Tema / O quê? na aba "{nome}". Confira o cabeçalho.',
@@ -276,8 +277,8 @@ var I18n = (function () {
       aviso_sem_fonte_ativa: 'Nenhuma fonte ativa em Fontes de importação. Cadastre a URL da Google Sheet lá.',
       aviso_import_demora: 'A fonte foi salva. A leitura da planilha está demorando — as ações aparecem quando o import terminar, ou clique em Importar agora.',
       mail_oque_vazio: 'Ação sem título',
-      mail_assunto: '[OpsHub] Ação atrasada — {oque}',
-      mail_assunto_prazo: '[OpsHub] Ação atrasada — {oque} (prazo {prazo})',
+      mail_assunto: '[{app}] Ação atrasada — {oque}',
+      mail_assunto_prazo: '[{app}] Ação atrasada — {oque} (prazo {prazo})',
       mail_titulo: 'Ação com prazo vencido',
       mail_intro: 'Este follow-up é enviado a partir de 1 dia de atraso, uma vez por dia, até o prazo ser reprogramado.',
       mail_atraso: '{n} dia(s) em {data}',
@@ -289,7 +290,7 @@ var I18n = (function () {
     en: {
       marca_sub: 'Plant operations hub',
       nav_navegar: 'Navigate',
-      nav_hub: 'OpsHub',
+      nav_hub: '{app}',
       nav_planos: 'Action plans',
       nav_config: 'Settings',
       topo_hub_sub: 'Key controls by department',
@@ -340,7 +341,7 @@ var I18n = (function () {
       planos_area_fonte_titulo: 'Where the actions come from',
       planos_area_quadro_titulo: 'Track and filter',
       planos_area_cobranca_titulo: 'Who gets the follow-up',
-      planos_area_fonte_apoio: 'Paste this area’s Google Sheet URL. OpsHub imports like the plant board; the actions stay here only. The plant’s daily trigger still runs.',
+      planos_area_fonte_apoio: 'Paste this area’s Google Sheet URL. {app} imports like the plant board; the actions stay here only. The plant’s daily trigger still runs.',
       planos_area_resumo_fonte_vazia: 'Paste this area’s spreadsheet URL',
       planos_area_resumo_fonte_pronta: 'Ready to import',
       planos_area_resumo_quadro_espera: 'Add the source to see the board',
@@ -459,8 +460,8 @@ var I18n = (function () {
       acao_modal_editar: 'Edit action',
       acao_modal_nova: 'New action',
       acao_nova: 'New action',
-      acao_modal_aviso: 'What you save stays in OpsHub. The next import does not replace these fields.',
-      toast_acao_salva: 'Action saved in OpsHub.',
+      acao_modal_aviso: 'What you save stays in {app}. The next import does not replace these fields.',
+      toast_acao_salva: 'Action saved in {app}.',
       excluir: 'Delete',
       confirm_excluir_arquivo: 'Delete this file?',
       confirm_excluir: 'Delete this record?',
@@ -476,7 +477,7 @@ var I18n = (function () {
       aba_fontes: 'Import sources',
       aba_mail: 'Follow-up and trigger',
       cfg_dept_titulo: 'Departments',
-      cfg_dept_sub: 'Register OpsHub areas and the Apparel, Smartrac or Solutions division',
+      cfg_dept_sub: 'Register {app} areas and the Apparel, Smartrac or Solutions division',
       cfg_fontes_titulo: 'Import sources',
       cfg_fontes_sub: 'Google Sheets that action plans are read from',
       cfg_mail_titulo: 'Follow-up and trigger',
@@ -496,7 +497,7 @@ var I18n = (function () {
       fontes_apoio: 'The source needs columns Theme, Division, Area, What?, How, Owner, Email, Due date, Status, Comments — order can vary.',
       aba_prefix: 'sheet',
       mail_regra: 'Follow-up rule',
-      mail_regra_apoio: 'When the due date is reached, OpsHub waits 1 day and then emails the owner once a day until the date is moved in the source sheet. With no email on file, nothing is sent — the row shows a tooltip warning.',
+      mail_regra_apoio: 'When the due date is reached, {app} waits 1 day and then emails the owner once a day until the date is moved in the source sheet. With no email on file, nothing is sent — the row shows a tooltip warning.',
       temas_email: 'Themes that receive email',
       temas_email_apoio: 'Turn themes on or off for follow-up. With all on, any overdue theme fires, as before.',
       importar_para_temas: 'Import plans to see themes.',
@@ -544,8 +545,8 @@ var I18n = (function () {
       erro_tema_vazio: 'Empty theme.',
       erro_url_fonte: 'Paste the Google Sheet URL or ID on the source.',
       erro_link_publicacao: 'That is a published link (/d/e/…), not the spreadsheet. Open the file at docs.google.com/spreadsheets/d/ID/edit and copy that URL.',
-      erro_sem_acesso: 'No access to the spreadsheet. Share it with the account that authorized OpsHub (at least view).',
-      erro_sem_acesso_curto: 'No access to the spreadsheet. Share it with the account that authorized OpsHub.',
+      erro_sem_acesso: 'No access to the spreadsheet. Share it with the account that authorized {app} (at least view).',
+      erro_sem_acesso_curto: 'No access to the spreadsheet. Share it with the account that authorized {app}.',
       erro_ref_invalida: 'Invalid reference. Paste the full Google Sheet URL.',
       erro_aba: 'Sheet "{nome}" was not found in {planilha}.',
       erro_colunas: 'Could not find Theme / What? columns on sheet "{nome}". Check the header.',
@@ -553,8 +554,8 @@ var I18n = (function () {
       aviso_sem_fonte_ativa: 'No active source in Import sources. Register the Google Sheet URL there.',
       aviso_import_demora: 'Source saved. Reading the spreadsheet is taking a while — actions appear when import finishes, or click Import now.',
       mail_oque_vazio: 'Untitled action',
-      mail_assunto: '[OpsHub] Overdue action — {oque}',
-      mail_assunto_prazo: '[OpsHub] Overdue action — {oque} (due {prazo})',
+      mail_assunto: '[{app}] Overdue action — {oque}',
+      mail_assunto_prazo: '[{app}] Overdue action — {oque} (due {prazo})',
       mail_titulo: 'Action past due',
       mail_intro: 'This follow-up is sent after 1 day overdue, once a day, until the due date is moved.',
       mail_atraso: '{n} day(s) as of {data}',
@@ -566,7 +567,7 @@ var I18n = (function () {
     es: {
       marca_sub: 'Hub operacional de la planta',
       nav_navegar: 'Navegar',
-      nav_hub: 'OpsHub',
+      nav_hub: '{app}',
       nav_planos: 'Planes de acción',
       nav_config: 'Configuración',
       topo_hub_sub: 'Controles clave por departamento',
@@ -617,7 +618,7 @@ var I18n = (function () {
       planos_area_fonte_titulo: 'De dónde entran las acciones',
       planos_area_quadro_titulo: 'Seguir y filtrar',
       planos_area_cobranca_titulo: 'Quién recibe el follow-up',
-      planos_area_fonte_apoio: 'Pegue la URL de la Google Sheet de esta área. OpsHub importa igual que el consolidado de la planta; las acciones quedan solo aquí. El disparador diario de la planta sigue valiendo.',
+      planos_area_fonte_apoio: 'Pegue la URL de la Google Sheet de esta área. {app} importa igual que el consolidado de la planta; las acciones quedan solo aquí. El disparador diario de la planta sigue valiendo.',
       planos_area_resumo_fonte_vazia: 'Pegue la URL de la hoja de esta área',
       planos_area_resumo_fonte_pronta: 'Lista para importar',
       planos_area_resumo_quadro_espera: 'Registre la fuente para ver el tablero',
@@ -736,8 +737,8 @@ var I18n = (function () {
       acao_modal_editar: 'Editar acción',
       acao_modal_nova: 'Nueva acción',
       acao_nova: 'Nueva acción',
-      acao_modal_aviso: 'Lo que guarde queda en OpsHub. La próxima importación no sustituye estos campos.',
-      toast_acao_salva: 'Acción guardada en OpsHub.',
+      acao_modal_aviso: 'Lo que guarde queda en {app}. La próxima importación no sustituye estos campos.',
+      toast_acao_salva: 'Acción guardada en {app}.',
       excluir: 'Eliminar',
       confirm_excluir_arquivo: '¿Eliminar este archivo?',
       confirm_excluir: '¿Eliminar este registro?',
@@ -753,7 +754,7 @@ var I18n = (function () {
       aba_fontes: 'Fuentes de importación',
       aba_mail: 'Follow-up y disparador',
       cfg_dept_titulo: 'Departamentos',
-      cfg_dept_sub: 'Registre las áreas del OpsHub y la división Apparel, Smartrac o Solutions',
+      cfg_dept_sub: 'Registre las áreas del {app} y la división Apparel, Smartrac o Solutions',
       cfg_fontes_titulo: 'Fuentes de importación',
       cfg_fontes_sub: 'Google Sheets de las que se leen los planes de acción',
       cfg_mail_titulo: 'Follow-up y disparador',
@@ -773,7 +774,7 @@ var I18n = (function () {
       fontes_apoio: 'El origen debe tener las columnas Tema, División, Área, ¿Qué?, Cómo, Responsable, Correo, Plazo, Estado, Comentarios — el orden puede variar.',
       aba_prefix: 'hoja',
       mail_regra: 'Regla de follow-up',
-      mail_regra_apoio: 'Cuando se cumple el plazo, OpsHub espera 1 día y luego envía un correo al día al responsable, hasta que la fecha se reprograme en la hoja de origen. Sin correo registrado, no se envía nada — la fila muestra el aviso en el tooltip.',
+      mail_regra_apoio: 'Cuando se cumple el plazo, {app} espera 1 día y luego envía un correo al día al responsable, hasta que la fecha se reprograme en la hoja de origen. Sin correo registrado, no se envía nada — la fila muestra el aviso en el tooltip.',
       temas_email: 'Temas que reciben correo',
       temas_email_apoio: 'Active o desactive qué temas entran en el follow-up. Con todos activos, cualquier tema vencido dispara, como siempre.',
       importar_para_temas: 'Importe planes para ver los temas.',
@@ -821,8 +822,8 @@ var I18n = (function () {
       erro_tema_vazio: 'Tema vacío.',
       erro_url_fonte: 'Pegue la URL o el ID de la Google Sheet en la fuente.',
       erro_link_publicacao: 'Ese enlace es el de publicación (/d/e/…), no el de la hoja. Abra el archivo en docs.google.com/spreadsheets/d/ID/edit y copie esa URL.',
-      erro_sem_acesso: 'Sin acceso a la hoja. Compártala con la cuenta que autorizó OpsHub (al menos lectura).',
-      erro_sem_acesso_curto: 'Sin acceso a la hoja. Compártala con la cuenta que autorizó OpsHub.',
+      erro_sem_acesso: 'Sin acceso a la hoja. Compártala con la cuenta que autorizó {app} (al menos lectura).',
+      erro_sem_acesso_curto: 'Sin acceso a la hoja. Compártala con la cuenta que autorizó {app}.',
       erro_ref_invalida: 'Referencia no válida. Pegue la URL completa de la Google Sheet.',
       erro_aba: 'No se encontró la hoja "{nome}" en {planilha}.',
       erro_colunas: 'No encontré las columnas Tema / ¿Qué? en la hoja "{nome}". Revise el encabezado.',
@@ -830,8 +831,8 @@ var I18n = (function () {
       aviso_sem_fonte_ativa: 'Ninguna fuente activa en Fuentes de importación. Registre allí la URL de la Google Sheet.',
       aviso_import_demora: 'La fuente se guardó. La lectura de la hoja está tardando — las acciones aparecen al terminar el import, o pulse Importar ahora.',
       mail_oque_vazio: 'Acción sin título',
-      mail_assunto: '[OpsHub] Acción atrasada — {oque}',
-      mail_assunto_prazo: '[OpsHub] Acción atrasada — {oque} (plazo {prazo})',
+      mail_assunto: '[{app}] Acción atrasada — {oque}',
+      mail_assunto_prazo: '[{app}] Acción atrasada — {oque} (plazo {prazo})',
       mail_titulo: 'Acción con plazo vencido',
       mail_intro: 'Este follow-up se envía a partir de 1 día de retraso, una vez al día, hasta que se reprograme el plazo.',
       mail_atraso: '{n} día(s) el {data}',
@@ -850,6 +851,16 @@ var I18n = (function () {
     return 'pt';
   }
 
+  function definirNome(nome) {
+    var s = String(nome == null ? '' : nome).trim();
+    if (s) nomeApp = s;
+    return nomeApp;
+  }
+
+  function nome() {
+    return nomeApp;
+  }
+
   function interpolar(texto, vars) {
     if (!vars) return texto;
     return String(texto).replace(/\{(\w+)\}/g, function (_, k) {
@@ -861,7 +872,11 @@ var I18n = (function () {
     idioma = normalizar(idioma);
     var dict = TEXTOS[idioma] || TEXTOS.pt;
     var texto = (dict && dict[chave]) || TEXTOS.pt[chave] || chave;
-    return interpolar(texto, vars);
+    var dados = { app: nomeApp };
+    if (vars) {
+      Object.keys(vars).forEach(function (k) { dados[k] = vars[k]; });
+    }
+    return interpolar(texto, dados);
   }
 
   function localeDe(idioma) {
@@ -935,6 +950,8 @@ var I18n = (function () {
     IDIOMAS: IDIOMAS,
     TEXTOS: TEXTOS,
     normalizar: normalizar,
+    definirNome: definirNome,
+    nome: nome,
     t: t,
     locale: localeDe,
     htmlLang: htmlLang,

@@ -21,7 +21,7 @@ function abrirPainel() {
     return;
   }
   var html = HtmlService.createHtmlOutput(
-    '<p style="font-family:sans-serif">Abrindo o OpsHub…</p>' +
+    '<p style="font-family:sans-serif">Abrindo o ' + APP.nome + '…</p>' +
     '<script>window.open(' + JSON.stringify(url) + ');google.script.host.close();</script>'
   ).setWidth(320).setHeight(80);
   SpreadsheetApp.getUi().showModalDialog(html, APP.nome);

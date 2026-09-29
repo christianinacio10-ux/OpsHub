@@ -388,7 +388,7 @@ var htmlMail = Logica.htmlFollowUp({
 });
 assert.ok(htmlMail.indexOf('#07080C') === -1);
 assert.ok(htmlMail.indexOf('background:#ffffff') !== -1);
-assert.ok(htmlMail.indexOf('OPSHUB') !== -1);
+assert.ok(htmlMail.indexOf('OpsHub') !== -1);
 assert.ok(htmlMail.indexOf('Ação com prazo vencido') !== -1);
 assert.ok(htmlMail.indexOf('ana@avery.com') !== -1);
 assert.ok(htmlMail.indexOf('cid:logoAvery') !== -1);
@@ -434,5 +434,25 @@ Object.keys(I18n.TEXTOS.pt).forEach(function (k) {
 Object.keys(I18n.TEXTOS.en).forEach(function (k) {
   assert.ok(I18n.TEXTOS.pt[k], 'pt missing ' + k);
 });
+
+['pt', 'en', 'es'].forEach(function (lang) {
+  Object.keys(I18n.TEXTOS[lang]).forEach(function (k) {
+    assert.strictEqual(String(I18n.TEXTOS[lang][k]).indexOf('OpsHub'), -1, lang + ' ' + k);
+  });
+});
+assert.strictEqual(I18n.t('pt', 'nav_hub'), 'OpsHub');
+I18n.definirNome('EhsHub');
+assert.strictEqual(I18n.nome(), 'EhsHub');
+assert.strictEqual(I18n.t('pt', 'nav_hub'), 'EhsHub');
+assert.strictEqual(I18n.t('pt', 'toast_acao_salva'), 'Ação salva no EhsHub.');
+assert.strictEqual(I18n.t('en', 'mail_assunto', { oque: 'LOTO' }), '[EhsHub] Overdue action — LOTO');
+assert.ok(I18n.t('es', 'acao_modal_aviso').indexOf('EhsHub') !== -1);
+var htmlMarca = Logica.htmlFollowUp({
+  nomeApp: 'EhsHub',
+  idioma: 'pt',
+  plano: { oque: 'Trocar a identidade' },
+});
+assert.ok(htmlMarca.indexOf('EhsHub') !== -1);
+assert.strictEqual(htmlMarca.indexOf('OPSHUB'), -1);
 
 console.log('ok — ' + module.filename);

@@ -144,6 +144,7 @@ function enviarEmailAcao_(plano, dec, hoje) {
     email: dec.email,
     logoSrc: blobLogo ? 'cid:logoAvery' : '',
     idioma: idioma,
+    nomeApp: APP.nome,
   });
 
   var nome = Cadastros.config().texto('remetente_nome', APP.nome);
