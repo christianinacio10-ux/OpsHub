@@ -1,10 +1,15 @@
 /**
  * Configuracao central. Nomes de abas, esquema e sementes so da primeira
  * criacao das abas. Cadastros reais (links, fontes, planos) vivem na planilha.
+ *
+ * Identidade: troque só `APP.nome` para rebatizar o produto (menu da planilha,
+ * marca, navegação, avisos e o nome no e-mail). Exemplo do time de EHS:
+ * nome: 'EhsHub'. O remetente do Gmail é a chave `remetente_nome` em _CONFIG,
+ * preenchida na primeira instalação a partir deste nome.
  */
 var APP = {
   nome: 'OpsHub',
-  versao: '1.6.4',
+  versao: '1.6.5',
 };
 
 var ABAS = {
@@ -53,12 +58,14 @@ ESQUEMA[ABAS.log] = ['quando', 'rotina', 'status', 'detalhe'];
 
 var CONFIG_PADRAO = [
   ['timezone', 'America/Sao_Paulo', 'Fuso usado no prazo e no gatilho diario'],
-  ['remetente_nome', 'OpsHub Avery Dennison', 'Nome que aparece no follow-up'],
+  ['remetente_nome', APP.nome + ' Avery Dennison', 'Nome que aparece como remetente do follow-up'],
   ['atraso_dias_followup', '1', 'Dias apos o prazo para o primeiro e-mail'],
   ['hora_gatilho', '08', 'Hora local do disparo diario (0-23)'],
   ['followup_temas', '', 'Temas que recebem e-mail de follow-up (vazio = todos)'],
   ['versao_instalada', APP.versao, 'Versao aplicada na ultima instalacao'],
 ];
+
+if (typeof I18n !== 'undefined' && I18n.definirNome) I18n.definirNome(APP.nome);
 
 var SEMENTES = {
   departamentos: [

@@ -66,6 +66,10 @@ fs.writeFileSync(
 );
 console.log('escreveu', dest, fs.statSync(dest).size, 'bytes');
 
+var configSrc = ler('src/01_Config.js');
+var nomeMatch = configSrc.match(/var APP = \{\s*nome:\s*'([^']*)'/);
+var nomeApp = nomeMatch ? nomeMatch[1] : 'OpsHub';
+
 var mock = ler('testes/preview-mock.js');
 var previewIndex = index
   .replace('<?!= include(\'ui/Estilos\'); ?>', estilos)
@@ -73,7 +77,12 @@ var previewIndex = index
   .replace(
     'var PARAMETROS = <?!= JSON.stringify(parametros || {}) ?>;',
     'var PARAMETROS = {}; var PREVIEW = true;'
-  );
+  )
+  .replace(
+    'var APP_NOME = <?!= JSON.stringify(appNome || \'OpsHub\') ?>;',
+    'var APP_NOME = ' + JSON.stringify(nomeApp) + ';'
+  )
+  .replace(/<\?= appNome \?>/g, nomeApp.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
 
 fs.writeFileSync(path.join(raiz, 'preview/index.html'), previewIndex);
 console.log('escreveu preview/index.html', previewIndex.length, 'bytes');
@@ -81,7 +90,7 @@ console.log('escreveu preview/index.html', previewIndex.length, 'bytes');
 var Logica = require(path.join(src, '00_Logica.js'));
 var emailPreview = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">' +
   '<meta name="viewport" content="width=device-width, initial-scale=1">' +
-  '<title>Follow-up OpsHub</title></head>' +
+  '<title>Follow-up ' + nomeApp + '</title></head>' +
   '<body style="margin:0;background:#ffffff">' +
   Logica.htmlFollowUp({
     plano: {
@@ -94,6 +103,7 @@ var emailPreview = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8
     hoje: new Date(),
     prazo: '24/08/2026',
     logoSrc: logoUri,
+    nomeApp: nomeApp,
   }) +
   '</body></html>';
 fs.writeFileSync(path.join(raiz, 'preview/email.html'), emailPreview);

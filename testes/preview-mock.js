@@ -243,7 +243,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: 'OpsHub', versao: '1.6.4' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.5' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };

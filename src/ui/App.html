@@ -2,6 +2,11 @@
 (function () {
   'use strict';
 
+  if (typeof APP_NOME === 'string' && APP_NOME && typeof I18n !== 'undefined' && I18n.definirNome) {
+    I18n.definirNome(APP_NOME);
+    document.title = APP_NOME;
+  }
+
   var Estado = {
     vista: 'hub',
     contexto: null,
@@ -255,6 +260,8 @@
     if (typeof I18n !== 'undefined') {
       document.documentElement.lang = I18n.htmlLang(Estado.idioma);
     }
+    var marca = $('marca-nome');
+    if (marca && typeof I18n !== 'undefined' && I18n.nome) marca.textContent = I18n.nome();
     var sub = $('marca-sub');
     if (sub) sub.textContent = t('marca_sub');
     var btnAt = $('botao-atualizar');
@@ -2493,6 +2500,12 @@
         userEl.textContent = tituloNome((ctx.usuario && ctx.usuario.nome) || '');
       }
       $('usuario-iniciais').textContent = (ctx.usuario && ctx.usuario.iniciais) || '--';
+      if (ctx.app && ctx.app.nome && typeof I18n !== 'undefined' && I18n.definirNome) {
+        I18n.definirNome(ctx.app.nome);
+        document.title = ctx.app.nome;
+        aplicarChrome();
+        titulos();
+      }
       $('rodape-versao').textContent = ctx.app.nome + ' · v' + ctx.app.versao;
     }).catch(function () {});
     carregar();

@@ -23,7 +23,7 @@
           <button type="button" class="botao botao-sidebar" id="botao-sidebar" title="Recolher menu"></button>
         </div>
         <div class="marca-textos">
-          <div class="marca-nome">OpsHub</div>
+          <div class="marca-nome" id="marca-nome"><?= appNome ?></div>
           <div class="marca-sub" id="marca-sub">Hub operacional da planta</div>
         </div>
       </div>
@@ -46,7 +46,7 @@
     <main class="principal">
       <header class="topo">
         <div>
-          <div class="topo-titulo" id="topo-titulo">OpsHub</div>
+          <div class="topo-titulo" id="topo-titulo"><?= appNome ?></div>
           <div class="topo-sub" id="topo-sub">Controles-chave por departamento</div>
         </div>
         <div class="topo-direita">
@@ -104,6 +104,7 @@
 
   <script>
     var PARAMETROS = <?!= JSON.stringify(parametros || {}) ?>;
+    var APP_NOME = <?!= JSON.stringify(appNome || 'OpsHub') ?>;
   </script>
   <?!= include('ui/App'); ?>
 </body>

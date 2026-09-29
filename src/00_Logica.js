@@ -854,8 +854,11 @@ var Logica = (function () {
       ? ('<img src="' + escaparHtml(logoSrc) + '" alt="Avery Dennison" width="120" height="28" ' +
         'style="height:28px;width:auto;border:0;vertical-align:middle;margin-right:12px">' )
       : '';
+    var nomeMarca = texto(opts.nomeApp);
+    if (!nomeMarca && typeof I18n !== 'undefined' && I18n.nome) nomeMarca = I18n.nome();
+    if (!nomeMarca) nomeMarca = 'OpsHub';
     marca += '<span style="color:#E4002B;font-size:22px;font-weight:600;letter-spacing:-0.03em;' +
-      'font-family:Segoe UI,Arial,sans-serif;vertical-align:middle">OPSHUB</span>';
+      'font-family:Segoe UI,Arial,sans-serif;vertical-align:middle">' + escaparHtml(nomeMarca) + '</span>';
 
     return [
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;margin:0;padding:0">',
