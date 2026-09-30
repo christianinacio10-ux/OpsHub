@@ -894,7 +894,6 @@
       campo('nome', t('nome_fonte'), f.nome) +
       campo('aba', t('aba_opcional'), f.aba) +
       campo('referencia', t('url_sheet'), f.referencia, { span2: true }) +
-      campo('linha_cabecalho', t('linha_cabecalho'), f.linha_cabecalho || 1, { tipo: 'number' }) +
       campo('ativo', t('campo_ativo'), f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">' +
       (f.id ? t('planos_area_atualizar') : t('planos_area_salvar')) + '</button>' +
@@ -1345,7 +1344,6 @@
       campo('nome', t('nome_fonte'), f.nome) +
       campo('aba', t('aba_opcional'), f.aba) +
       campo('referencia', t('url_sheet'), f.referencia, { span2: true }) +
-      campo('linha_cabecalho', t('linha_cabecalho'), f.linha_cabecalho || 1, { tipo: 'number' }) +
       campo('ativo', t('campo_ativo'), f.ativo, { opcoes: '<option>SIM</option><option' + (f.ativo === 'NAO' ? ' selected' : '') + '>NAO</option>' }) +
       '<div class="acoes-form"><button class="botao primario" type="submit">' + t('salvar') + '</button>' +
       '<button class="botao" type="button" data-form-cancelar>' + t('limpar') + '</button></div></form>';
