@@ -641,6 +641,7 @@ var Logica = (function () {
     var areas = eixoDe(filtros, 'areas', 'area');
     var statuses = eixoDe(filtros, 'statuses', 'status');
     var responsaveis = eixoDe(filtros, 'responsaveis', 'responsavel');
+    var reprogramacoes = eixoDe(filtros, 'reprogramacoes', 'reprogramacao');
 
     return (lista || []).filter(function (p) {
       if (!todosTemas && !passaEixo(temas, p.tema)) return false;
@@ -649,6 +650,7 @@ var Logica = (function () {
       if (!passaEixo(statuses, statusEfetivo(p, filtros.hoje))) return false;
       if (statuses == null && filtros.omitirEncerradas && encerrada(statusEfetivo(p, filtros.hoje))) return false;
       if (!passaEixo(responsaveis, p.responsavel)) return false;
+      if (!passaEixo(reprogramacoes, String(Number(p.reprogramacoes) || 0))) return false;
       if (filtros.semEmail && emailValido(p.email)) return false;
       if (!q) return true;
       var blob = slug([

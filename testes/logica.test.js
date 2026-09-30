@@ -362,6 +362,27 @@ var planos = [
 var filtrado = Logica.filtrarPlanos(planos, { texto: 'uptime', hoje: hoje });
 assert.strictEqual(filtrado.length, 1);
 
+var planosRep = [
+  { tema: 'OEE', area: 'Produção', oque: 'A', status: 'Aberto', prazo: d(2026, 8, 20), reprogramacoes: 0 },
+  { tema: 'OEE', area: 'Produção', oque: 'B', status: 'Aberto', prazo: d(2026, 8, 20), reprogramacoes: 2 },
+  { tema: 'EHS', area: 'EHS', oque: 'C', status: 'Aberto', prazo: d(2026, 8, 20), reprogramacoes: 3 },
+];
+assert.strictEqual(
+  Logica.filtrarPlanos(planosRep, { todosTemas: true, reprogramacoes: ['2'], hoje: hoje }).length,
+  1,
+  'filtra uma quantidade de reprogramações'
+);
+assert.strictEqual(
+  Logica.filtrarPlanos(planosRep, { todosTemas: true, reprogramacoes: ['0', '3'], hoje: hoje }).length,
+  2
+);
+assert.strictEqual(
+  Logica.filtrarPlanos(planosRep, { todosTemas: true, reprogramacoes: [], hoje: hoje }).length,
+  0,
+  'nenhuma reprogramação marcada esvazia a lista'
+);
+assert.strictEqual(Logica.filtrarPlanos(planosRep, { todosTemas: true, hoje: hoje }).length, 3);
+
 assert.strictEqual(Logica.filtrarPlanos(planos, { temaObrigatorio: true, hoje: hoje }).length, 0, 'sem tema selecionado a tabela fica vazia');
 assert.strictEqual(Logica.filtrarPlanos(planos, { temas: ['OEE'], temaObrigatorio: true, hoje: hoje }).length, 1);
 assert.strictEqual(Logica.filtrarPlanos(planos, { temas: ['OEE', 'EHS'], temaObrigatorio: true, hoje: hoje }).length, 2);
