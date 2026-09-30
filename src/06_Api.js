@@ -103,6 +103,7 @@ function apiHub() {
     }),
     controlesAdmin: Repo.ler(ABAS.controles),
     gatilho: estadoGatilho_(),
+    emailHierarquia: Cadastros.config().texto('email_hierarquia', ''),
   };
 }
 
@@ -131,19 +132,40 @@ function apiReordenarDepartamentos(ids) {
   return apiHub();
 }
 
-function gravarTemasFollowUp_(valor) {
+function gravarChaveConfig_(chave, valor, descricao) {
   var linhas = Repo.ler(ABAS.config);
-  var atual = linhas.filter(function (l) { return String(l.chave) === 'followup_temas'; })[0];
+  var atual = linhas.filter(function (l) { return String(l.chave) === String(chave); })[0];
   if (atual) {
     Repo.atualizarRegistro(ABAS.config, atual._linha, { valor: valor });
   } else {
-    Repo.acrescentar(ABAS.config, [{
-      chave: 'followup_temas',
-      valor: valor,
-      descricao: 'Temas que recebem e-mail de follow-up (vazio = todos, NONE = nenhum)',
-    }]);
+    Repo.acrescentar(ABAS.config, [{ chave: chave, valor: valor, descricao: descricao }]);
   }
   Repo.limparMemoria();
+}
+
+function gravarTemasFollowUp_(valor) {
+  gravarChaveConfig_(
+    'followup_temas',
+    valor,
+    'Temas que recebem e-mail de follow-up (vazio = todos, NONE = nenhum)'
+  );
+}
+
+function emailOpcional_(email) {
+  var valor = Logica.texto(email).toLowerCase();
+  if (!valor) return '';
+  if (!Logica.emailValido(valor)) throw new Error(I18n.t(I18n.atual(), 'erro_hierarquia_email'));
+  return valor;
+}
+
+function apiSalvarEmailHierarquia(email) {
+  var valor = emailOpcional_(email);
+  gravarChaveConfig_(
+    'email_hierarquia',
+    valor,
+    'E-mail opcional do proximo nivel no follow-up da planta (vazio = nao escalar)'
+  );
+  return apiHub();
 }
 
 function apiSalvarTemasFollowUp(temas) {
@@ -386,6 +408,7 @@ function payloadFollowUpArea_(dept) {
     gestorEmail: regra.gestorEmail || meu,
     emailsOff: regra.emailsOff,
     meuEmail: meu,
+    emailHierarquia: Logica.texto(dept && dept.email_hierarquia).toLowerCase(),
   };
 }
 
@@ -613,6 +636,15 @@ function apiAlternarEmailFollowUpArea(deptId, email) {
   return payloadPlanosArea_(deptPorId_(dept.id));
 }
 
+function apiSalvarEmailHierarquiaArea(deptId, email) {
+  var gate = exigirAreaAberta_(deptId);
+  if (gate.bloqueado) return gate.bloqueado;
+  var valor = emailOpcional_(email);
+  Repo.atualizarRegistro(ABAS.departamentos, gate.dept._linha, { email_hierarquia: valor });
+  Repo.limparMemoria();
+  return payloadPlanosArea_(deptPorId_(gate.dept.id));
+}
+
 function apiAlternarFollowUpAcaoArea(deptId, acaoId) {
   var gate = exigirAreaAberta_(deptId);
   if (gate.bloqueado) return gate.bloqueado;
@@ -630,6 +662,15 @@ function apiAlternarFollowUpAcaoArea(deptId, acaoId) {
   });
   Repo.limparMemoria();
   return payloadPlanosArea_(deptPorId_(gate.dept.id));
+}
+
+function aplicarContagemPrazo_(patch, anterior) {
+  patch.reprogramacoes = Logica.reprogramacoesAposPrazo(anterior, patch.prazo);
+  if (Logica.prazoMudouDeDia(anterior, patch.prazo)) {
+    patch.emails_enviados = 0;
+    patch.ultimo_email_em = '';
+  }
+  return patch;
 }
 
 function camposAcaoManual_(reg) {
@@ -667,7 +708,7 @@ function apiSalvarAcaoPlanta(reg) {
   exigirOqueAcao_(reg);
   var plano = acharPlano_(ABAS.planos, reg && reg.id);
   if (!plano) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
-  Repo.atualizarRegistro(ABAS.planos, plano._linha, camposAcaoManual_(reg));
+  Repo.atualizarRegistro(ABAS.planos, plano._linha, aplicarContagemPrazo_(camposAcaoManual_(reg), plano));
   Repo.limparMemoria();
   return apiHub();
 }
@@ -683,6 +724,7 @@ function apiSalvarAcaoArea(deptId, reg) {
     if (!plano || Logica.texto(plano.departamento_id) !== Logica.texto(gate.dept.id)) {
       throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
     }
+    aplicarContagemPrazo_(patch, plano);
     Repo.atualizarRegistro(ABAS.planosArea, plano._linha, patch);
   } else {
     var novoId = Logica.idNovo('PA');
@@ -693,6 +735,7 @@ function apiSalvarAcaoArea(deptId, reg) {
     patch.chave_origem = novoId;
     patch.ultimo_email_em = '';
     patch.emails_enviados = 0;
+    patch.reprogramacoes = 0;
     patch.followup = 'NAO';
     Repo.acrescentar(ABAS.planosArea, [patch]);
   }

@@ -79,6 +79,63 @@ assert.strictEqual(mescladoManual[0].status, 'Em andamento');
 assert.strictEqual(mescladoManual[0].editado_manual, 'SIM');
 assert.strictEqual(mescladoManual[0].followup, 'SIM');
 assert.strictEqual(mescladoManual[0].emails_enviados, 4);
+assert.strictEqual(mescladoManual[0].reprogramacoes, 0, 'edição manual sem contador anterior permanece em zero');
+
+assert.strictEqual(Logica.reprogramacoesAposPrazo({ prazo: d(2026, 9, 21), reprogramacoes: 2 }, d(2026, 9, 21)), 2, 'mesmo dia nao soma');
+assert.strictEqual(Logica.reprogramacoesAposPrazo({ prazo: d(2026, 9, 21), reprogramacoes: 2 }, d(2026, 9, 22)), 3, 'dia novo soma');
+assert.strictEqual(Logica.reprogramacoesAposPrazo({ reprogramacoes: 0 }, d(2026, 9, 21)), 0, 'primeira data nao conta');
+assert.strictEqual(Logica.reprogramacoesAposPrazo({}, '2026-09-21'), 0);
+assert.strictEqual(Logica.prazoMudouDeDia({ prazo: '21/09/2026' }, '2026-09-21'), false);
+assert.strictEqual(Logica.prazoMudouDeDia({ prazo: '21/09/2026' }, '2026-09-22'), true);
+
+var mesmoDia = Logica.mesclarImportacao(
+  [{ chave_origem: 'k1', prazo: d(2026, 9, 21), reprogramacoes: 3, emails_enviados: 2, ultimo_email_em: hoje }],
+  [{ chave_origem: 'k1', prazo: '21/09/2026', oque: 'igual' }]
+);
+assert.strictEqual(mesmoDia[0].reprogramacoes, 3, 'prazo igual nao soma');
+assert.strictEqual(mesmoDia[0].emails_enviados, 2);
+assert.strictEqual(mesmoDia[0].ultimo_email_em, hoje);
+
+var novoDia = Logica.mesclarImportacao(
+  [{ chave_origem: 'k1', prazo: '2026-09-21', reprogramacoes: 3, emails_enviados: 2, ultimo_email_em: hoje }],
+  [{ chave_origem: 'k1', prazo: '22/09/2026', oque: 'mudou' }]
+);
+assert.strictEqual(novoDia[0].reprogramacoes, 4, 'prazo novo soma');
+assert.strictEqual(novoDia[0].emails_enviados, 0, 'prazo novo zera a contagem de e-mails daquele prazo');
+assert.strictEqual(novoDia[0].ultimo_email_em, '');
+assert.strictEqual(novoDia[0].oque, 'mudou');
+
+var primeiraData = Logica.mesclarImportacao(
+  [{ chave_origem: 'k1', reprogramacoes: 1, emails_enviados: 2, ultimo_email_em: hoje }],
+  [{ chave_origem: 'k1', prazo: d(2026, 9, 21) }]
+);
+assert.strictEqual(primeiraData[0].reprogramacoes, 1, 'sem prazo anterior a importacao nao soma');
+assert.strictEqual(primeiraData[0].emails_enviados, 2);
+
+var manualMantem = Logica.mesclarImportacao(
+  [{
+    chave_origem: 'k1',
+    prazo: d(2026, 9, 21),
+    reprogramacoes: 5,
+    editado_manual: 'SIM',
+    emails_enviados: 4,
+    ultimo_email_em: hoje,
+    oque: 'texto do OpsHub',
+  }],
+  [{ chave_origem: 'k1', prazo: d(2026, 10, 1), oque: 'origem', reprogramacoes: 0 }]
+);
+assert.strictEqual(manualMantem[0].reprogramacoes, 5, 'edicao manual preserva o contador');
+assert.strictEqual(Logica.ymd(Logica.paraData(manualMantem[0].prazo)), '2026-09-21');
+assert.strictEqual(manualMantem[0].emails_enviados, 4);
+assert.strictEqual(manualMantem[0].oque, 'texto do OpsHub');
+
+assert.strictEqual(Logica.deveEscalarFollowUp(0, 'chefe@avery.com', 'ana@avery.com'), false, '1º aviso nao escala');
+assert.strictEqual(Logica.deveEscalarFollowUp(1, 'chefe@avery.com', 'ana@avery.com'), true, '2º aviso escala se houver e-mail');
+assert.strictEqual(Logica.deveEscalarFollowUp(4, 'chefe@avery.com', 'ana@avery.com'), true);
+assert.strictEqual(Logica.deveEscalarFollowUp(2, '', 'ana@avery.com'), false, 'sem cadastro nao escala');
+assert.strictEqual(Logica.deveEscalarFollowUp(2, '   ', 'ana@avery.com'), false);
+assert.strictEqual(Logica.deveEscalarFollowUp(2, 'nao-email', 'ana@avery.com'), false);
+assert.strictEqual(Logica.deveEscalarFollowUp(2, 'ana@avery.com', 'Ana@avery.com'), false, 'mesmo e-mail do destino nao escala');
 
 var temasChip = ['TIER_3', 'UEE/Scrap_Apparel', 'UEE/SCRAP_APPAREL'];
 assert.deepStrictEqual(
@@ -412,6 +469,17 @@ assert.ok(htmlMail.indexOf('#07080C') === -1);
 assert.ok(htmlMail.indexOf('background:#ffffff') !== -1);
 assert.ok(htmlMail.indexOf('OpsHub') !== -1);
 assert.ok(htmlMail.indexOf('Ação com prazo vencido') !== -1);
+assert.ok(htmlMail.indexOf('Escalação: ação ainda atrasada') === -1);
+var htmlEscala = Logica.htmlFollowUp({
+  plano: { oque: 'LOTO', tema: 'EHS' },
+  dec: { email: 'ana@avery.com', diasAtraso: 2 },
+  hoje: hoje,
+  escalacao: true,
+  email: 'chefe@avery.com',
+});
+assert.ok(htmlEscala.indexOf('Escalação: ação ainda atrasada') !== -1);
+assert.ok(htmlEscala.indexOf('chefe@avery.com') !== -1);
+assert.ok(htmlEscala.indexOf('Ação com prazo vencido') === -1);
 assert.ok(htmlMail.indexOf('ana@avery.com') !== -1);
 assert.ok(htmlMail.indexOf('cid:logoAvery') !== -1);
 assert.ok(htmlMail.indexOf('border:1px solid #C9C3BB') !== -1);

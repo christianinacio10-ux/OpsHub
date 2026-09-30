@@ -583,6 +583,7 @@ table.dados tbody tr:nth-child(even) td { background: #161514; }
 table.dados tr:last-child td { border-bottom: 0; }
 table.dados tbody tr:hover td { background: var(--superficie-3); }
 table.dados td.principal { color: var(--tinta); font-weight: 500; }
+table.dados td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.dados tr.risco td { box-shadow: none; }
 
 .selo {
@@ -828,14 +829,36 @@ table.dados tr.risco td { box-shadow: none; }
   max-height: none;
 }
 .drawer.painel .painel-cobranca-plano {
-  flex: 0 1 132px;
+  flex: 0 1 188px;
   width: 100%;
-  max-height: 132px;
+  max-height: 188px;
   min-height: 0;
   margin-top: 8px;
   overflow: auto;
   box-sizing: border-box;
 }
+.hierarquia-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+.hierarquia-linha .hierarquia-texto { flex: 1 1 220px; min-width: 0; }
+.hierarquia-linha input {
+  flex: 1 1 180px;
+  min-width: 160px;
+  height: 34px;
+  border-radius: var(--raio-p);
+  border: 1px solid var(--linha);
+  background: var(--bg);
+  color: var(--tinta);
+  padding: 0 10px;
+  font-family: var(--fonte);
+  font-size: 13px;
+}
+.hierarquia-linha input::placeholder { color: var(--tinta-3); }
+.hierarquia-linha input:focus { outline: none; border-color: rgba(228, 0, 43, .35); }
 .drawer-gestao .temas-barra { margin-top: 4px; }
 
 .fluxo-area { position: relative; }
@@ -1517,6 +1540,7 @@ table.dados tr.risco td { box-shadow: none; }
       status: st, status_origem: o.status,
       status_classe: classe,
       comentarios: o.comentarios || '',
+      reprogramacoes: Number(o.reprogramacoes) || 0,
       tem_email: tem,
       followup: o.followup !== false,
       tooltip_email: tem ? o.email : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.',
@@ -1536,7 +1560,7 @@ table.dados tr.risco td { box-shadow: none; }
     planoArea('A2', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Padronizar handover da DDA1', como: 'Checklist de 10 min no quadro da linha', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: '' }),
     planoArea('A3', 'D-QUAL', { fonte_id: 'FA2', tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
     planoArea('A4', 'D-PROD', { fonte_id: 'FA1', tema: 'OEE', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
-    planoArea('A5', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Consultar outras plantas para problema de setup', como: 'Alinhar com Joly o padrão de SMED', responsavel: 'Joly Soares', email: 'joly.soares@example.com', prazo: add(-6), status: 'Aberto', comentarios: 'Atrasada só nesta área' }),
+    planoArea('A5', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Consultar outras plantas para problema de setup', como: 'Alinhar com Joly o padrão de SMED', responsavel: 'Joly Soares', email: 'joly.soares@example.com', prazo: add(-6), status: 'Aberto', comentarios: 'Atrasada só nesta área', reprogramacoes: 3 }),
     planoArea('A6', 'D-EHS', { fonte_id: 'FA3', tema: 'TIER_3', divisao: 'Smartrac', area: 'Manutenção', oque: 'Consultar outras plantas para problema no re', como: 'Antes e depois', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(-3), status: 'Aberto', comentarios: '' }),
     planoArea('A7', 'D-EHS', { fonte_id: 'FA3', tema: 'TIER_3', divisao: 'Smartrac', area: 'Engenharia', oque: 'Apresentação detalhada das ações de redução', como: 'Antes e depois', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(4), status: 'Em andamento', comentarios: '' }),
     planoArea('A8', 'D-EHS', { fonte_id: 'FA3', tema: 'UEE/Scrap_Apparel', divisao: 'Apparel', area: 'Supply Chain', oque: 'Controle preventivo para E&O', como: 'Suporte financeiro', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(6), status: 'Aberto', comentarios: '' }),
@@ -1553,7 +1577,7 @@ table.dados tr.risco td { box-shadow: none; }
   var planos = [
     plano('1', { tema: 'Segurança', divisao: 'Operations', area: 'EHS', oque: 'Eliminar desvio de bloqueio LOTO na DDA2', como: 'Padronizar checklist de LOTO e treinar turno 1 e 2', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(5), status: 'Em andamento', comentarios: 'Treinamento agendado' }),
     plano('2', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Reduzir NC de epóxi irregular', como: 'Ajustar janela de viscosidade e inspeção visual a cada 2h', responsavel: 'Bruno Lima', email: '', prazo: add(-3), status: 'Aberto', comentarios: 'Aguardando e-mail do responsável' }),
-    plano('3', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Recuperar uptime da DDA1 abaixo da meta', como: 'A3 de paradas não justificadas + padrão de apontamento', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: '' }),
+    plano('3', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Recuperar uptime da DDA1 abaixo da meta', como: 'A3 de paradas não justificadas + padrão de apontamento', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: '', reprogramacoes: 2 }),
     plano('4', { tema: 'Entrega', divisao: 'Supply Chain', area: 'Logística', oque: 'Estabilizar FIFO do armazém de acabados', como: 'Sinalizar endereços e auditar 2x por semana', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(12), status: 'Aberto', comentarios: '' }),
     plano('5', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Zerar backlog de preventiva atrasada > 7 dias', como: 'Janela semanal congelada na sexta para PCM', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(-10), status: 'Concluída', comentarios: 'Backlog zerado na semana 32' }),
     plano('6', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Fechar CAPA de auditoria de cliente', como: 'Atualizar procedimento e treinar operadores', responsavel: 'Bruno Lima', email: '', prazo: add(-1), status: 'Aberto', comentarios: '' }),
@@ -1562,7 +1586,7 @@ table.dados tr.risco td { box-shadow: none; }
     plano('9', { tema: 'Entrega', divisao: 'Supply Chain', area: 'Logística', oque: 'Reduzir lead time de expedição de acabados', como: 'Pré-separar pedidos do dia seguinte no turno 3', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(4), status: 'Aberto', comentarios: 'Falta confirmar capacidade do armazém' }),
     plano('10', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Implantar RCM na linha Smartrac', como: 'Mapear falhas críticas e definir preventiva por modo de falha', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(18), status: 'Aberto', comentarios: '' }),
     plano('11', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Eliminar retrabalho de etiqueta ilegível', como: 'Trocar ribbon e calibrar cabeça de impressão semanalmente', responsavel: 'Bruno Lima', email: '', prazo: add(6), status: 'Em andamento', comentarios: 'Peças em trânsito' }),
-    plano('12', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Reduzir microparadas da DDA2 no setup', como: 'SMED com cronoanálise e kit pré-montado ao lado da máquina', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Aguardando foto do estado atual' }),
+    plano('12', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Reduzir microparadas da DDA2 no setup', como: 'SMED com cronoanálise e kit pré-montado ao lado da máquina', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Aguardando foto do estado atual', reprogramacoes: 1 }),
   ];
 
   var fontes = [
@@ -1570,13 +1594,14 @@ table.dados tr.risco td { box-shadow: none; }
   ];
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
   var temasFollowUp = [];
+  var emailHierarquiaPlanta = '';
   var followupsEnviadosHoje = {};
   var followUpPorArea = {};
   var emailSessao = 'christian.inacio@averydennison.com';
 
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
-      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [] };
+      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailHierarquia: '' };
     }
     return followUpPorArea[deptId];
   }
@@ -1591,6 +1616,7 @@ table.dados tr.risco td { box-shadow: none; }
       gestorEmail: fu.gestorEmail || emailSessao,
       emailsOff: (fu.emailsOff || []).slice(),
       meuEmail: emailSessao,
+      emailHierarquia: fu.emailHierarquia || '',
     };
   }
 
@@ -1662,6 +1688,7 @@ table.dados tr.risco td { box-shadow: none; }
       departamentosAdmin: departamentos,
       controlesAdmin: controles,
       gatilho: gatilho,
+      emailHierarquia: emailHierarquiaPlanta,
     };
   }
 
@@ -1671,11 +1698,17 @@ table.dados tr.risco td { box-shadow: none; }
     ['tema', 'divisao', 'area', 'oque', 'como', 'responsavel', 'email', 'comentarios'].forEach(function (c) {
       if (reg[c] != null) p[c] = String(reg[c]);
     });
+    var prazoAntes = String(p.prazo || '').slice(0, 10);
     if (reg.prazo) {
-      p.prazo = String(reg.prazo).slice(0, 10);
+      var prazoNovo = String(reg.prazo).slice(0, 10);
+      if (prazoAntes && prazoNovo && prazoAntes !== prazoNovo) {
+        p.reprogramacoes = (Number(p.reprogramacoes) || 0) + 1;
+      }
+      p.prazo = prazoNovo;
       var partes = p.prazo.split('-');
       if (partes.length === 3) p.prazo_br = partes[2] + '/' + partes[1] + '/' + partes[0];
     }
+    if (p.reprogramacoes == null) p.reprogramacoes = 0;
     p.status_origem = reg.status || p.status_origem || 'Aberto';
     var st = p.status_origem;
     var s = String(st).toLowerCase();
@@ -1699,7 +1732,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.6' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.7' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -1940,6 +1973,27 @@ table.dados tr.risco td { box-shadow: none; }
       var h = hub();
       h.planosArea = payloadArea(deptId, false);
       return h;
+    },
+    apiSalvarEmailHierarquia: function (email) {
+      email = String(email || '').trim().toLowerCase();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        var msg = 'Informe um e-mail válido ou deixe o campo em branco.';
+        if (typeof I18n !== 'undefined' && I18n.t) msg = I18n.t(I18n.atual(), 'erro_hierarquia_email');
+        throw new Error(msg);
+      }
+      emailHierarquiaPlanta = email;
+      return hub();
+    },
+    apiSalvarEmailHierarquiaArea: function (deptId, email) {
+      if (areaTrancada(deptId)) return payloadArea(deptId, true);
+      email = String(email || '').trim().toLowerCase();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        var msgArea = 'Informe um e-mail válido ou deixe o campo em branco.';
+        if (typeof I18n !== 'undefined' && I18n.t) msgArea = I18n.t(I18n.atual(), 'erro_hierarquia_email');
+        throw new Error(msgArea);
+      }
+      followUpDept(deptId).emailHierarquia = email;
+      return payloadArea(deptId, false);
     },
     apiAlternarTemaFollowUp: function (nome) {
       nome = String(nome || '').trim();
@@ -2234,6 +2288,7 @@ var I18n = (function () {
       th_responsavel: 'Responsável',
       th_email: 'E-mail',
       th_prazo: 'Prazo',
+      th_reprogramacoes: 'Reprog.',
       th_status: 'Status',
       th_comentarios: 'Comentários',
       status_aberto: 'Aberto',
@@ -2370,6 +2425,16 @@ var I18n = (function () {
       mail_atraso: '{n} dia(s) em {data}',
       mail_rodape: 'Reprograme a data na planilha de origem para interromper estes e-mails.',
       mail_texto: 'Ação atrasada: {oque}. Prazo: {prazo}.',
+      mail_assunto_hierarquia: '[{app}] Escalação — ação atrasada — {oque}',
+      mail_assunto_hierarquia_prazo: '[{app}] Escalação — ação atrasada — {oque} (prazo {prazo})',
+      mail_titulo_hierarquia: 'Escalação: ação ainda atrasada',
+      mail_intro_hierarquia: 'O responsável já foi avisado neste prazo. Este é um aviso separado para o próximo nível, porque o atraso continua.',
+      mail_texto_hierarquia: 'Escalação: {oque} segue atrasada. Prazo: {prazo}.',
+      hierarquia_titulo: 'E-mail do próximo nível',
+      hierarquia_apoio: 'A partir do 2º dia de atraso deste prazo, um e-mail separado vai para este endereço. Em branco, ninguém mais é avisado.',
+      hierarquia_ph: 'opcional',
+      toast_hierarquia: 'E-mail do próximo nível atualizado.',
+      erro_hierarquia_email: 'Informe um e-mail válido ou deixe o campo em branco.',
       mail_rotulo_email: 'E-mail',
       mail_rotulo_atraso: 'Atraso',
     },
@@ -2510,6 +2575,7 @@ var I18n = (function () {
       th_responsavel: 'Owner',
       th_email: 'Email',
       th_prazo: 'Due date',
+      th_reprogramacoes: 'Resched.',
       th_status: 'Status',
       th_comentarios: 'Comments',
       status_aberto: 'Open',
@@ -2646,6 +2712,16 @@ var I18n = (function () {
       mail_atraso: '{n} day(s) as of {data}',
       mail_rodape: 'Move the date on the source sheet to stop these emails.',
       mail_texto: 'Overdue action: {oque}. Due: {prazo}.',
+      mail_assunto_hierarquia: '[{app}] Escalation — overdue action — {oque}',
+      mail_assunto_hierarquia_prazo: '[{app}] Escalation — overdue action — {oque} (due {prazo})',
+      mail_titulo_hierarquia: 'Escalation: action still overdue',
+      mail_intro_hierarquia: 'The owner was already notified for this due date. This is a separate notice for the next level because the action is still overdue.',
+      mail_texto_hierarquia: 'Escalation: {oque} is still overdue. Due: {prazo}.',
+      hierarquia_titulo: 'Next-level email',
+      hierarquia_apoio: 'From the 2nd overdue day of this due date, a separate email goes to this address. Leave it blank and nobody else is notified.',
+      hierarquia_ph: 'optional',
+      toast_hierarquia: 'Next-level email updated.',
+      erro_hierarquia_email: 'Enter a valid email or leave the field blank.',
       mail_rotulo_email: 'Email',
       mail_rotulo_atraso: 'Overdue',
     },
@@ -2786,6 +2862,7 @@ var I18n = (function () {
       th_responsavel: 'Responsable',
       th_email: 'Correo',
       th_prazo: 'Plazo',
+      th_reprogramacoes: 'Reprog.',
       th_status: 'Estado',
       th_comentarios: 'Comentarios',
       status_aberto: 'Abierto',
@@ -2922,6 +2999,16 @@ var I18n = (function () {
       mail_atraso: '{n} día(s) el {data}',
       mail_rodape: 'Reprograme la fecha en la hoja de origen para interrumpir estos correos.',
       mail_texto: 'Acción atrasada: {oque}. Plazo: {prazo}.',
+      mail_assunto_hierarquia: '[{app}] Escalamiento — acción atrasada — {oque}',
+      mail_assunto_hierarquia_prazo: '[{app}] Escalamiento — acción atrasada — {oque} (plazo {prazo})',
+      mail_titulo_hierarquia: 'Escalamiento: acción aún atrasada',
+      mail_intro_hierarquia: 'El responsable ya fue avisado en este plazo. Este es un aviso aparte para el siguiente nivel, porque el retraso continúa.',
+      mail_texto_hierarquia: 'Escalamiento: {oque} sigue atrasada. Plazo: {prazo}.',
+      hierarquia_titulo: 'Correo del siguiente nivel',
+      hierarquia_apoio: 'A partir del 2.º día de retraso de este plazo, un correo aparte va a esta dirección. En blanco, nadie más recibe aviso.',
+      hierarquia_ph: 'opcional',
+      toast_hierarquia: 'Correo del siguiente nivel actualizado.',
+      erro_hierarquia_email: 'Indique un correo válido o deje el campo en blanco.',
       mail_rotulo_email: 'Correo',
       mail_rotulo_atraso: 'Retraso',
     },
@@ -3087,7 +3174,7 @@ if (typeof module !== 'undefined' && module.exports) {
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '' },
+    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailHierarquia: '' },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -3691,6 +3778,10 @@ if (typeof module !== 'undefined' && module.exports) {
       var va = a[campo] || '';
       var vb = b[campo] || '';
       if (campo === 'prazo') { va = a.prazo || ''; vb = b.prazo || ''; }
+      if (campo === 'reprogramacoes') {
+        va = Number(a.reprogramacoes) || 0;
+        vb = Number(b.reprogramacoes) || 0;
+      }
       if (va < vb) return -1 * dir;
       if (va > vb) return 1 * dir;
       return 0;
@@ -3757,6 +3848,7 @@ if (typeof module !== 'undefined' && module.exports) {
         td(p.responsavel) +
         '<td title="' + escapar(tipEmail) + '">' + emailCel + '</td>' +
         td(p.prazo_br) +
+        td(p.reprogramacoes == null ? 0 : p.reprogramacoes, 'num') +
         '<td title="' + escapar(stLabel) + '"><span class="selo ' + p.status_classe + '">' + escapar(stLabel) + '</span></td>' +
         td(p.comentarios, 'comentarios') +
         (ids.editar
@@ -3785,7 +3877,8 @@ if (typeof module !== 'undefined' && module.exports) {
       th('tema', t('th_tema')) +
       th('divisao', t('th_divisao')) + th('area', t('th_area')) +
       th('oque', t('th_oque')) + th('como', t('th_como')) + th('responsavel', t('th_responsavel')) +
-      th('email', t('th_email')) + th('prazo', t('th_prazo')) + th('status', t('th_status')) +
+      th('email', t('th_email')) + th('prazo', t('th_prazo')) +
+      th('reprogramacoes', t('th_reprogramacoes')) + th('status', t('th_status')) +
       th('comentarios', t('th_comentarios')) +
       (ids.editar ? '<th></th>' : '') +
       '</tr></thead><tbody>' + linhasTabelaPlanos(filtrados, ids) + '</tbody></table></div>' +
@@ -3985,7 +4078,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailHierarquia: '',
     };
   }
 
@@ -4045,6 +4138,15 @@ if (typeof module !== 'undefined' && module.exports) {
     }
     return '<div class="painel-cobranca-plano">' +
       '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_cobranca_bloco') + '</div>' +
+      '<form id="form-hierarquia-area" class="hierarquia-linha" onsubmit="return false">' +
+      '<div class="hierarquia-texto">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('hierarquia_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('hierarquia_apoio') + '</div>' +
+      '</div>' +
+      '<input name="email_hierarquia" type="email" placeholder="' + escapar(t('hierarquia_ph')) +
+      '" value="' + escapar(fu.emailHierarquia || '') + '">' +
+      '<button class="botao primario" type="submit">' + t('salvar') + '</button>' +
+      '</form>' +
       '<div class="secao-titulo" style="font-size:13px;margin:4px 0 0">' + t('planos_area_temas_titulo') + '</div>' +
       '<div class="secao-apoio" style="margin:0">' + t('planos_area_temas_apoio') + '</div>' +
       chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area', true) +
@@ -4192,7 +4294,7 @@ if (typeof module !== 'undefined' && module.exports) {
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailHierarquia: '',
     };
     if (resp.ok) {
       var d = Estado.deptAberto;
@@ -4502,7 +4604,16 @@ if (typeof module !== 'undefined' && module.exports) {
       '<button class="botao primario" id="btn-gatilho">' + t('ativar_gatilho') + '</button>' +
       '<button class="botao" id="btn-remover-gatilho">' + t('inativar_gatilhos') + '</button>' +
       '<button class="botao" id="btn-followup">' + t('enviar_followups') + '</button>' +
-      '</div></div></div>';
+      '</div>' +
+      '<form id="form-hierarquia" class="form-grid" onsubmit="return false" style="width:100%;max-width:520px;margin-top:8px;grid-template-columns:1fr">' +
+      '<div class="secao-titulo" style="font-size:13px">' + t('hierarquia_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0 0 8px">' + t('hierarquia_apoio') + '</div>' +
+      campo('email_hierarquia', t('th_email'), (Estado.hub && Estado.hub.emailHierarquia) || '', {
+        tipo: 'email',
+        placeholder: t('hierarquia_ph'),
+      }) +
+      '<div class="acoes-form"><button class="botao primario" type="submit">' + t('salvar') + '</button></div>' +
+      '</form></div></div>';
   }
 
   function LogicaSim(v) {
@@ -5316,6 +5427,38 @@ if (typeof module !== 'undefined' && module.exports) {
           ocupar(false);
           toast(err.message || err, true);
         });
+        return;
+      }
+      var formHier = e.target.closest('#form-hierarquia');
+      if (formHier) {
+        e.preventDefault();
+        var emailHier = String((lerForm(formHier).email_hierarquia) || '').trim();
+        ocupar(true, t('carregando_ellipsis'));
+        chamar('apiSalvarEmailHierarquia', emailHier).then(function (hub) {
+          ocupar(false);
+          Estado.hub = hub;
+          render();
+          toast(t('toast_hierarquia'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
+        return;
+      }
+      var formHierArea = e.target.closest('#form-hierarquia-area');
+      if (formHierArea) {
+        e.preventDefault();
+        var emailHierArea = String((lerForm(formHierArea).email_hierarquia) || '').trim();
+        ocupar(true, t('carregando_ellipsis'));
+        chamar('apiSalvarEmailHierarquiaArea', Estado.deptAberto && Estado.deptAberto.id, emailHierArea)
+          .then(function (resp) {
+            ocupar(false);
+            aplicarPlanosArea(resp, { manterScroll: true });
+            toast(t('toast_hierarquia'));
+          }).catch(function (err) {
+            ocupar(false);
+            toast(err.message || err, true);
+          });
         return;
       }
       var senhaAbre = e.target.closest('form[data-abrir-planos-area]');

@@ -90,6 +90,7 @@ function importarListaFontes_(fontes, abaDestino, abaCadastroFontes, preparar) {
     p.atualizado_em = new Date();
     if (p.prazo && typeof p.prazo !== 'object') p.prazo = Logica.paraData(p.prazo);
     p.emails_enviados = Number(p.emails_enviados || 0);
+    p.reprogramacoes = Number(p.reprogramacoes || 0);
     return p;
   });
 
