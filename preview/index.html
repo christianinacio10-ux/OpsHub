@@ -1088,7 +1088,7 @@ table.dados tr.risco td { box-shadow: none; }
   border-top: 1px solid var(--linha);
 }
 .painel-cobranca-plano {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 12px;
   margin-top: 16px; padding: 14px 16px;
   border: 1px solid var(--linha);
   border-radius: var(--raio);
@@ -1112,6 +1112,65 @@ table.dados tr.risco td { box-shadow: none; }
   background: rgba(237, 232, 224, .14);
   border-color: rgba(237, 232, 224, .42);
   color: var(--tinta);
+}
+.cobranca-bloco {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.cobranca-secao {
+  width: 100%;
+  border-top: 1px solid var(--linha);
+}
+.cobranca-secao-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--tinta);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 520;
+  cursor: pointer;
+  text-align: left;
+}
+.cobranca-secao-resumo {
+  margin-left: auto;
+  min-width: 0;
+  color: var(--tinta-3);
+  font-size: 12px;
+  font-weight: 450;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cobranca-secao-seta {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--tinta-3);
+  border-bottom: 1.5px solid var(--tinta-3);
+  transform: rotate(45deg);
+  margin-top: -3px;
+  flex: 0 0 auto;
+}
+.cobranca-secao.aberta .cobranca-secao-seta {
+  transform: rotate(-135deg);
+  margin-top: 3px;
+}
+.cobranca-secao-corpo { width: 100%; padding: 0 0 10px; }
+.cobranca-secao-corpo[hidden] { display: none !important; }
+.cobranca-secao .bloco-lembrete,
+.cobranca-secao .bloco-hierarquia {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 .bloco-lembrete {
   display: flex; flex-direction: column; gap: 8px;
@@ -2325,7 +2384,13 @@ var I18n = (function () {
       mais_controles: 'Controles e links',
       mais_planos: 'Plano de ação',
       cobranca_abrir: 'Configurar cobrança',
-      cobranca_modal_apoio: 'Temas, relógio, quem recebe o e-mail e o chefe de cada pessoa.',
+      cobranca_modal_apoio: 'O essencial fica à vista. Chefes, lembrete e pessoas abrem quando precisar.',
+      cobranca_quem: 'Quem recebe',
+      cobranca_resumo_nenhum: 'Nenhum',
+      cobranca_chefe_um: '1 chefe',
+      cobranca_chefe_n: '{n} chefes',
+      cobranca_resumo_dias: '{n} dias',
+      cobranca_resumo_pessoas: '{n} de {total}',
       abrir: 'Abrir',
       config_card_tip: 'Configurar ícone, cor e arquivos',
       planos_area_tip: 'Planos de ação desta área',
@@ -2642,7 +2707,13 @@ var I18n = (function () {
       mais_controles: 'Controls and links',
       mais_planos: 'Action plan',
       cobranca_abrir: 'Set up follow-up',
-      cobranca_modal_apoio: 'Themes, the daily clock, who gets the email, and each person boss.',
+      cobranca_modal_apoio: 'The essentials stay in view. Bosses, the reminder, and people open when you need them.',
+      cobranca_quem: 'Who receives it',
+      cobranca_resumo_nenhum: 'None',
+      cobranca_chefe_um: '1 boss',
+      cobranca_chefe_n: '{n} bosses',
+      cobranca_resumo_dias: '{n} days',
+      cobranca_resumo_pessoas: '{n} of {total}',
       abrir: 'Open',
       config_card_tip: 'Configure icon, color and files',
       planos_area_tip: 'Action plans for this area',
@@ -2959,7 +3030,13 @@ var I18n = (function () {
       mais_controles: 'Controles y enlaces',
       mais_planos: 'Plan de acción',
       cobranca_abrir: 'Configurar cobro',
-      cobranca_modal_apoio: 'Temas, reloj, quién recibe el correo y el jefe de cada persona.',
+      cobranca_modal_apoio: 'Lo esencial queda a la vista. Jefes, recordatorio y personas se abren cuando haga falta.',
+      cobranca_quem: 'Quién recibe',
+      cobranca_resumo_nenhum: 'Ninguno',
+      cobranca_chefe_um: '1 jefe',
+      cobranca_chefe_n: '{n} jefes',
+      cobranca_resumo_dias: '{n} días',
+      cobranca_resumo_pessoas: '{n} de {total}',
       abrir: 'Abrir',
       config_card_tip: 'Configurar icono, color y archivos',
       planos_area_tip: 'Planes de acción de esta área',
@@ -3379,6 +3456,7 @@ if (typeof module !== 'undefined' && module.exports) {
     deptAberto: null,
     pastasAbertas: {},
     cobrancaAberta: false,
+    cobrancaAbertas: {},
     maisDept: '',
     configAba: 'dept',
     filtros: filtrosVazios(),
@@ -4320,8 +4398,9 @@ if (typeof module !== 'undefined' && module.exports) {
     };
   }
 
-  function blocoHierarquia(pessoas, mapa, escopo) {
+  function blocoHierarquia(pessoas, mapa, escopo, opts) {
     mapa = mapa || {};
+    opts = opts || {};
     var linhas = (pessoas || []).map(function (p) {
       return '<label class="hierarquia-pessoa">' +
         '<span><strong>' + escapar(tituloNome(p.nome)) + '</strong>' +
@@ -4331,7 +4410,8 @@ if (typeof module !== 'undefined' && module.exports) {
         '</label>';
     }).join('');
     return '<div class="bloco-hierarquia" data-bloco-hierarquia="' + escopo + '">' +
-      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('hierarquia_titulo') + '</div>' +
+      (opts.semCabeca ? '' :
+        '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('hierarquia_titulo') + '</div>') +
       '<div class="secao-apoio" style="margin:0">' + t('hierarquia_apoio') + '</div>' +
       (linhas
         ? '<div class="lista-hierarquia">' + linhas + '</div>' +
@@ -4341,8 +4421,9 @@ if (typeof module !== 'undefined' && module.exports) {
       '</div>';
   }
 
-  function blocoLembrete(escopo, regra) {
+  function blocoLembrete(escopo, regra, opts) {
     regra = regra || {};
+    opts = opts || {};
     var modo = regra.modo === 'eu' || regra.modo === 'pessoa' ? regra.modo : 'off';
     var dias = Number(regra.dias);
     if (!dias || dias < 1) dias = 3;
@@ -4354,7 +4435,8 @@ if (typeof module !== 'undefined' && module.exports) {
         '" aria-pressed="' + (on ? 'true' : 'false') + '">' + rotulo + '</button>';
     }
     return '<div class="bloco-lembrete" data-bloco-lembrete="' + escopo + '">' +
-      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('lembrete_titulo') + '</div>' +
+      (opts.semCabeca ? '' :
+        '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('lembrete_titulo') + '</div>') +
       '<div class="secao-apoio" style="margin:0">' + t('lembrete_apoio') + '</div>' +
       '<div class="cobranca-modos" role="group">' +
       btn('off', t('lembrete_off')) +
@@ -4437,20 +4519,8 @@ if (typeof module !== 'undefined' && module.exports) {
         : '<div class="secao-apoio">' + t('planos_area_follow_sem_pessoas') + '</div>';
     }
     return '<div class="painel-cobranca-plano">' +
-      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_cobranca_bloco') + '</div>' +
-      blocoHierarquia(pessoas, fu.emailsHierarquia, 'area') +
-      '<div class="secao-titulo" style="font-size:13px;margin:4px 0 0">' + t('planos_area_temas_titulo') + '</div>' +
-      '<div class="secao-apoio" style="margin:0">' + t('planos_area_temas_apoio') + '</div>' +
-      chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area', true) +
-      '<div class="secao-apoio" style="margin:4px 0 0">' + t('planos_area_gatilho_apoio') + '</div>' +
-      '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">' +
-      t('planos_area_relogio_selo', { estado: g.ativo ? t('gatilho_ativo') : t('gatilho_inativo'), hora: g.hora }) +
-      '</div>' +
-      '<div class="cobranca-acoes-linha">' +
-      '<button class="botao primario" type="button" data-gatilho-ativar="1">' + t('planos_area_ativar_relogio') + '</button>' +
-      '<button class="botao" type="button" data-gatilho-inativar="1">' + t('planos_area_inativar_relogio') + '</button>' +
-      '<button class="botao" type="button" data-followup-area-agora="1">' + t('enviar_followups') + '</button>' +
-      '</div>' +
+      '<div class="cobranca-bloco">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('cobranca_quem') + '</div>' +
       '<div class="cobranca-modos" role="group">' +
       '<button type="button" class="cobranca-modo' + (soEu ? ' ativo' : '') +
       '" data-followup-escopo="eu" aria-pressed="' + (soEu ? 'true' : 'false') + '">' +
@@ -4464,14 +4534,74 @@ if (typeof module !== 'undefined' && module.exports) {
         ? t('planos_area_follow_so_eu_hint', { email: emailHint })
         : t('planos_area_cobrar_todos_hint')) +
       '</div>' +
-      blocoLembrete('area', fu.lembrete) +
-      (listaPessoas
-        ? '<div class="secao-titulo" style="font-size:13px;margin:4px 0 6px">' + t('planos_area_follow_pessoas') + '</div>' +
-          listaPessoas
-        : '') +
-      '<div class="secao-apoio" style="margin:0">' + t('planos_area_cobranca_acoes_apoio') + '</div>' +
       '<div class="secao-apoio" style="margin:0">' + t('planos_area_cobranca_plano_apoio', { n: nOn, total: nTot }) + '</div>' +
+      '</div>' +
+      '<div class="cobranca-bloco">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_temas_titulo') + '</div>' +
+      chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area', true) +
+      '</div>' +
+      '<div class="cobranca-bloco">' +
+      '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">' +
+      t('planos_area_relogio_selo', { estado: g.ativo ? t('gatilho_ativo') : t('gatilho_inativo'), hora: g.hora }) +
+      '</div>' +
+      '<div class="cobranca-acoes-linha">' +
+      '<button class="botao primario" type="button" data-gatilho-ativar="1">' + t('planos_area_ativar_relogio') + '</button>' +
+      '<button class="botao" type="button" data-gatilho-inativar="1">' + t('planos_area_inativar_relogio') + '</button>' +
+      '<button class="botao" type="button" data-followup-area-agora="1">' + t('enviar_followups') + '</button>' +
+      '</div>' +
+      '</div>' +
+      (soEu ? '' : secaoCobranca(
+        'pessoas',
+        t('planos_area_follow_pessoas'),
+        t('cobranca_resumo_pessoas', { n: pessoas.filter(function (p) { return !off[p.email]; }).length, total: pessoas.length }),
+        listaPessoas || ('<div class="secao-apoio">' + t('planos_area_follow_sem_pessoas') + '</div>')
+      )) +
+      secaoCobranca(
+        'chefes',
+        t('hierarquia_titulo'),
+        resumoChefesCobranca(fu.emailsHierarquia),
+        blocoHierarquia(pessoas, fu.emailsHierarquia, 'area', { semCabeca: true })
+      ) +
+      secaoCobranca(
+        'lembrete',
+        t('lembrete_titulo'),
+        resumoLembreteCobranca(fu.lembrete),
+        blocoLembrete('area', fu.lembrete, { semCabeca: true })
+      ) +
       '</div>';
+  }
+
+  function resumoChefesCobranca(mapa) {
+    var n = 0;
+    mapa = mapa || {};
+    Object.keys(mapa).forEach(function (k) { if (mapa[k]) n++; });
+    if (!n) return t('cobranca_resumo_nenhum');
+    if (n === 1) return t('cobranca_chefe_um');
+    return t('cobranca_chefe_n', { n: n });
+  }
+
+  function resumoLembreteCobranca(regra) {
+    regra = regra || {};
+    var modo = regra.modo === 'eu' || regra.modo === 'pessoa' ? regra.modo : 'off';
+    if (modo === 'off') return t('lembrete_off');
+    var dias = Number(regra.dias);
+    if (!dias || dias < 1) dias = 3;
+    var quem = modo === 'eu' ? t('lembrete_eu') : t('lembrete_pessoa');
+    return quem + ' · ' + t('cobranca_resumo_dias', { n: dias });
+  }
+
+  function secaoCobranca(id, titulo, resumo, corpo) {
+    if (!Estado.cobrancaAbertas) Estado.cobrancaAbertas = {};
+    var aberto = !!Estado.cobrancaAbertas[id];
+    return '<section class="cobranca-secao' + (aberto ? ' aberta' : '') + '">' +
+      '<button type="button" class="cobranca-secao-toggle" data-cobranca-secao="' + id +
+      '" aria-expanded="' + (aberto ? 'true' : 'false') + '">' +
+      '<span class="cobranca-secao-nome">' + escapar(titulo) + '</span>' +
+      '<span class="cobranca-secao-resumo">' + escapar(resumo) + '</span>' +
+      '<span class="cobranca-secao-seta" aria-hidden="true"></span>' +
+      '</button>' +
+      '<div class="cobranca-secao-corpo"' + (aberto ? '' : ' hidden') + '>' + (corpo || '') + '</div>' +
+      '</section>';
   }
 
   function listaPlanosArea() {
@@ -5512,6 +5642,22 @@ if (typeof module !== 'undefined' && module.exports) {
         e.stopPropagation();
         return;
       }
+      var secaoCobrancaBtn = e.target.closest('[data-cobranca-secao]');
+      if (secaoCobrancaBtn) {
+        e.preventDefault();
+        var idSecao = secaoCobrancaBtn.getAttribute('data-cobranca-secao');
+        if (!Estado.cobrancaAbertas) Estado.cobrancaAbertas = {};
+        var vaiAbrir = !Estado.cobrancaAbertas[idSecao];
+        Estado.cobrancaAbertas[idSecao] = vaiAbrir;
+        var secaoEl = secaoCobrancaBtn.closest('.cobranca-secao');
+        if (secaoEl) {
+          secaoEl.classList.toggle('aberta', vaiAbrir);
+          secaoCobrancaBtn.setAttribute('aria-expanded', vaiAbrir ? 'true' : 'false');
+          var corpoSecao = secaoEl.querySelector('.cobranca-secao-corpo');
+          if (corpoSecao) corpoSecao.hidden = !vaiAbrir;
+        }
+        return;
+      }
       var followTemaArea = e.target.closest('[data-followup-tema-area]');
       if (followTemaArea) {
         e.preventDefault();
@@ -5544,6 +5690,10 @@ if (typeof module !== 'undefined' && module.exports) {
         var deptEscopo = Estado.deptAberto && Estado.deptAberto.id;
         if (!deptEscopo || Estado.carregando) return;
         var soEuEscopo = followEscopo.getAttribute('data-followup-escopo') !== 'todos';
+        if (!soEuEscopo) {
+          if (!Estado.cobrancaAbertas) Estado.cobrancaAbertas = {};
+          Estado.cobrancaAbertas.pessoas = true;
+        }
         ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
         chamar('apiDefinirFollowUpAreaEscopo', deptEscopo, soEuEscopo ? 'SIM' : 'NAO')
           .then(function (resp) {
