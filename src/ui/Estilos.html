@@ -270,11 +270,19 @@ body { overflow: hidden; }
   border-collapse: separate;
   border-spacing: 0;
 }
+.painel-planos table.dados tbody tr:nth-child(odd) { background: var(--superficie); }
+.painel-planos table.dados tbody tr:nth-child(even) { background: #161514; }
+.painel-planos table.dados tbody tr:hover { background: var(--superficie-3); }
 .painel-planos table.dados td {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
+  height: 58px;
+  max-height: 58px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  box-sizing: border-box;
 }
 .painel-planos table.dados td.principal,
 .painel-planos table.dados td.como,
@@ -286,10 +294,15 @@ body { overflow: hidden; }
   line-height: 1.35;
 }
 .recorte-2 {
-  display: block;
-  max-height: 2.7em;
-  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
+  max-height: calc(1.35em * 2);
+  line-height: 1.35;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .cel-editar { width: 1%; white-space: nowrap; }
 .painel-planos table.dados td.comentarios { max-width: 240px; }
@@ -390,17 +403,21 @@ body { overflow: hidden; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 10px; margin-bottom: 12px;
+  align-items: stretch;
 }
 .card-dept {
   text-align: left; cursor: grab; font-family: var(--fonte);
   background: var(--superficie);
   border: 1px solid var(--linha);
   border-radius: var(--raio);
-  padding: 18px 18px 16px;
+  padding: 18px 18px 12px;
   color: var(--tinta);
   transition: background var(--transicao), border-color var(--transicao), opacity var(--transicao);
   position: relative; overflow: visible;
   box-shadow: var(--sombra-1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 .card-dept:hover {
   transform: none;
@@ -516,7 +533,8 @@ body { overflow: hidden; }
 .card-dept h3 { margin: 0 0 5px; font-size: 15px; font-weight: 520; letter-spacing: -.02em; }
 .card-dept p { margin: 0; color: var(--tinta-3); font-size: 12.5px; min-height: 36px; line-height: 1.45; }
 .card-dept-meta {
-  margin-top: 16px; display: flex; justify-content: flex-start; align-items: center;
+  margin-top: auto; padding-top: 14px;
+  display: flex; justify-content: flex-start; align-items: center;
   gap: 10px; flex-wrap: wrap;
   color: var(--tinta-3); font-size: 12px; font-weight: 450;
 }
@@ -793,6 +811,8 @@ table.dados tr.risco td { box-shadow: none; }
   overflow: hidden;
   text-overflow: unset;
   max-width: 280px;
+  height: 58px;
+  max-height: 58px;
   line-height: 1.35;
 }
 .drawer.painel .drawer-topo { padding: 14px 20px 10px; }

@@ -55,6 +55,7 @@
       areas: null,
       statuses: null,
       responsaveis: null,
+      reprogramacoes: null,
       omitirEncerradas: true,
     };
   }
@@ -490,7 +491,13 @@
   }
 
   function chaveFiltro(eixo) {
-    return { divisao: 'divisoes', area: 'areas', status: 'statuses', responsavel: 'responsaveis' }[eixo];
+    return {
+      divisao: 'divisoes',
+      area: 'areas',
+      status: 'statuses',
+      responsavel: 'responsaveis',
+      reprogramacao: 'reprogramacoes',
+    }[eixo];
   }
 
   function passaEixoUi(selecionados, valor) {
@@ -562,6 +569,7 @@
         return false;
       }
       if (!passaEixoUi(f.responsaveis, p.responsavel)) return false;
+      if (!passaEixoUi(f.reprogramacoes, String(Number(p.reprogramacoes) || 0))) return false;
       if (!q) return true;
       return [p.tema, p.divisao, p.area, p.oque, p.como, p.responsavel, p.email, p.status, p.comentarios]
         .join(' ').toLowerCase().indexOf(q) !== -1;
@@ -680,6 +688,7 @@
       painelExcel('area', t('filtro_area'), unicos(todos, 'area')) +
       painelExcel('status', t('filtro_status'), unicos(todos, 'status')) +
       painelExcel('responsavel', t('filtro_responsavel'), unicos(todos, 'responsavel')) +
+      painelExcel('reprogramacao', t('filtro_reprogramacao'), valoresReprogramacao(todos)) +
       '<button type="button" class="botao" id="' + limparId + '">' + t('limpar') + '</button>' +
       (ids.nova
         ? '<button type="button" class="botao primario" data-nova-acao="area">' + t('acao_nova') + '</button>'
@@ -1776,8 +1785,22 @@
     return d;
   }
 
+  function valoresReprogramacao(planos) {
+    var set = {};
+    var out = [];
+    (planos || []).forEach(function (p) {
+      var n = String(Number(p && p.reprogramacoes) || 0);
+      if (set[n]) return;
+      set[n] = 1;
+      out.push(n);
+    });
+    out.sort(function (a, b) { return Number(a) - Number(b); });
+    return out;
+  }
+
   function valoresEixo(eixo) {
     var planos = listaPlanosFiltro();
+    if (eixo === 'reprogramacao') return valoresReprogramacao(planos);
     var campo = { divisao: 'divisao', area: 'area', status: 'status', responsavel: 'responsavel' }[eixo];
     return unicos(planos, campo);
   }
