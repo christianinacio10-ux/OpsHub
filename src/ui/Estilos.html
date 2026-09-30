@@ -402,8 +402,16 @@ body { overflow: hidden; }
 .grade-dept {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 10px; margin-bottom: 12px;
+  column-gap: 10px;
+  row-gap: 10px;
+  margin-bottom: 12px;
   align-items: stretch;
+}
+@supports (grid-template-rows: subgrid) {
+  .grade-dept {
+    grid-auto-rows: auto auto auto auto;
+    row-gap: 0;
+  }
 }
 .card-dept {
   text-align: left; cursor: grab; font-family: var(--fonte);
@@ -417,7 +425,16 @@ body { overflow: hidden; }
   box-shadow: var(--sombra-1);
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-width: 0;
+  height: auto;
+}
+@supports (grid-template-rows: subgrid) {
+  .card-dept {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 4;
+    margin-bottom: 10px;
+  }
 }
 .card-dept:hover {
   transform: none;
@@ -531,20 +548,24 @@ body { overflow: hidden; }
   cursor: pointer;
 }
 .card-dept h3 { margin: 0 0 5px; font-size: 15px; font-weight: 520; letter-spacing: -.02em; }
-.card-dept p { margin: 0; color: var(--tinta-3); font-size: 12.5px; min-height: 36px; line-height: 1.45; }
+.card-dept p { margin: 0; color: var(--tinta-3); font-size: 12.5px; line-height: 1.45; flex: 1 1 auto; }
 .card-dept-meta {
   margin-top: auto; padding-top: 14px;
-  display: flex; justify-content: flex-start; align-items: center;
-  gap: 10px; flex-wrap: wrap;
-  color: var(--tinta-3); font-size: 12px; font-weight: 450;
+  display: flex; justify-content: flex-start; align-items: baseline;
+  gap: 10px; flex-wrap: nowrap;
+  color: var(--tinta-3); font-size: 12px; font-weight: 450; line-height: 1.2;
+}
+@supports (grid-template-rows: subgrid) {
+  .card-dept p { flex: none; }
+  .card-dept-meta { margin-top: 0; }
 }
 .card-dept-contagem {
   border: 0; background: transparent; padding: 0;
-  color: var(--tinta-2); font: inherit; font-weight: 500;
-  cursor: pointer; text-align: left;
+  color: var(--tinta-2); font: inherit; font-weight: 500; line-height: inherit;
+  cursor: pointer; text-align: left; white-space: nowrap;
 }
 .card-dept-contagem:hover { color: var(--tinta); text-decoration: underline; }
-.card-dept-abrir { margin-left: auto; }
+.card-dept-abrir { margin-left: auto; white-space: nowrap; line-height: inherit; }
 .card-dept:hover .card-dept-meta { color: var(--tinta-2); }
 .mais-opcoes { display: flex; flex-direction: column; gap: 8px; }
 .mais-opcoes .botao { justify-content: flex-start; height: 44px; }
