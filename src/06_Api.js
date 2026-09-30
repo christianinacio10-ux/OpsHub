@@ -103,7 +103,7 @@ function apiHub() {
     }),
     controlesAdmin: Repo.ler(ABAS.controles),
     gatilho: estadoGatilho_(),
-    emailHierarquia: Cadastros.config().texto('email_hierarquia', ''),
+    emailsHierarquia: Logica.parseEmailsHierarquia(Cadastros.config().texto('emails_hierarquia', '')),
   };
 }
 
@@ -151,19 +151,34 @@ function gravarTemasFollowUp_(valor) {
   );
 }
 
-function emailOpcional_(email) {
-  var valor = Logica.texto(email).toLowerCase();
-  if (!valor) return '';
-  if (!Logica.emailValido(valor)) throw new Error(I18n.t(I18n.atual(), 'erro_hierarquia_email'));
-  return valor;
+function normalizarParcialHierarquia_(parcial) {
+  var lista = [];
+  if (Array.isArray(parcial)) {
+    parcial.forEach(function (item) {
+      if (item) lista.push([item.email, item.chefe]);
+    });
+  } else if (parcial && typeof parcial === 'object') {
+    Object.keys(parcial).forEach(function (k) { lista.push([k, parcial[k]]); });
+  }
+  var out = {};
+  lista.forEach(function (par) {
+    var email = Logica.texto(par[0]).toLowerCase();
+    var chefe = Logica.texto(par[1]).toLowerCase();
+    if (!Logica.emailValido(email)) throw new Error(I18n.t(I18n.atual(), 'erro_hierarquia_email'));
+    if (chefe && !Logica.emailValido(chefe)) throw new Error(I18n.t(I18n.atual(), 'erro_hierarquia_email'));
+    out[email] = chefe;
+  });
+  return out;
 }
 
-function apiSalvarEmailHierarquia(email) {
-  var valor = emailOpcional_(email);
+function apiSalvarEmailsHierarquia(parcial) {
+  var patch = normalizarParcialHierarquia_(parcial);
+  var atual = Cadastros.config().texto('emails_hierarquia', '');
+  var mapa = Logica.mesclarEmailsHierarquia(atual, patch);
   gravarChaveConfig_(
-    'email_hierarquia',
-    valor,
-    'E-mail opcional do proximo nivel no follow-up da planta (vazio = nao escalar)'
+    'emails_hierarquia',
+    Logica.serializarEmailsHierarquia(mapa),
+    'Chefe opcional de cada pessoa no follow-up da planta (JSON email da pessoa -> email do chefe)'
   );
   return apiHub();
 }
@@ -408,7 +423,7 @@ function payloadFollowUpArea_(dept) {
     gestorEmail: regra.gestorEmail || meu,
     emailsOff: regra.emailsOff,
     meuEmail: meu,
-    emailHierarquia: Logica.texto(dept && dept.email_hierarquia).toLowerCase(),
+    emailsHierarquia: Logica.parseEmailsHierarquia(dept && dept.emails_hierarquia),
   };
 }
 
@@ -636,11 +651,14 @@ function apiAlternarEmailFollowUpArea(deptId, email) {
   return payloadPlanosArea_(deptPorId_(dept.id));
 }
 
-function apiSalvarEmailHierarquiaArea(deptId, email) {
+function apiSalvarEmailsHierarquiaArea(deptId, parcial) {
   var gate = exigirAreaAberta_(deptId);
   if (gate.bloqueado) return gate.bloqueado;
-  var valor = emailOpcional_(email);
-  Repo.atualizarRegistro(ABAS.departamentos, gate.dept._linha, { email_hierarquia: valor });
+  var patch = normalizarParcialHierarquia_(parcial);
+  var mapa = Logica.mesclarEmailsHierarquia(gate.dept.emails_hierarquia, patch);
+  Repo.atualizarRegistro(ABAS.departamentos, gate.dept._linha, {
+    emails_hierarquia: Logica.serializarEmailsHierarquia(mapa),
+  });
   Repo.limparMemoria();
   return payloadPlanosArea_(deptPorId_(gate.dept.id));
 }

@@ -837,17 +837,32 @@ table.dados tr.risco td { box-shadow: none; }
   overflow: auto;
   box-sizing: border-box;
 }
-.hierarquia-linha {
+.bloco-hierarquia {
+  width: 100%;
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.lista-hierarquia {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   width: 100%;
+  max-height: 240px;
+  overflow: auto;
 }
-.hierarquia-linha .hierarquia-texto { flex: 1 1 220px; min-width: 0; }
-.hierarquia-linha input {
-  flex: 1 1 180px;
-  min-width: 160px;
+.hierarquia-pessoa {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(160px, 1.2fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+.hierarquia-pessoa strong { display: block; font-size: 13px; font-weight: 520; color: var(--tinta); }
+.hierarquia-pessoa small { display: block; color: var(--tinta-3); font-size: 12px; }
+.hierarquia-pessoa input {
+  width: 100%;
   height: 34px;
   border-radius: var(--raio-p);
   border: 1px solid var(--linha);
@@ -857,8 +872,8 @@ table.dados tr.risco td { box-shadow: none; }
   font-family: var(--fonte);
   font-size: 13px;
 }
-.hierarquia-linha input::placeholder { color: var(--tinta-3); }
-.hierarquia-linha input:focus { outline: none; border-color: rgba(228, 0, 43, .35); }
+.hierarquia-pessoa input::placeholder { color: var(--tinta-3); }
+.hierarquia-pessoa input:focus { outline: none; border-color: rgba(228, 0, 43, .35); }
 .drawer-gestao .temas-barra { margin-top: 4px; }
 
 .fluxo-area { position: relative; }
@@ -1594,14 +1609,34 @@ table.dados tr.risco td { box-shadow: none; }
   ];
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
   var temasFollowUp = [];
-  var emailHierarquiaPlanta = '';
+  var emailsHierarquiaPlanta = {};
   var followupsEnviadosHoje = {};
   var followUpPorArea = {};
   var emailSessao = 'christian.inacio@averydennison.com';
 
+  function mesclarHierarquiaMock_(destino, parcial) {
+    parcial = parcial || {};
+    Object.keys(parcial).forEach(function (k) {
+      var email = String(k || '').trim().toLowerCase();
+      var chefe = String(parcial[k] || '').trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        var msg = 'Informe um e-mail válido ou deixe o campo em branco.';
+        if (typeof I18n !== 'undefined' && I18n.t) msg = I18n.t(I18n.atual(), 'erro_hierarquia_email');
+        throw new Error(msg);
+      }
+      if (chefe && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chefe)) {
+        var msgChefe = 'Informe um e-mail válido ou deixe o campo em branco.';
+        if (typeof I18n !== 'undefined' && I18n.t) msgChefe = I18n.t(I18n.atual(), 'erro_hierarquia_email');
+        throw new Error(msgChefe);
+      }
+      if (!chefe) delete destino[email];
+      else destino[email] = chefe;
+    });
+  }
+
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
-      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailHierarquia: '' };
+      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailsHierarquia: {} };
     }
     return followUpPorArea[deptId];
   }
@@ -1616,7 +1651,7 @@ table.dados tr.risco td { box-shadow: none; }
       gestorEmail: fu.gestorEmail || emailSessao,
       emailsOff: (fu.emailsOff || []).slice(),
       meuEmail: emailSessao,
-      emailHierarquia: fu.emailHierarquia || '',
+      emailsHierarquia: Object.assign({}, fu.emailsHierarquia || {}),
     };
   }
 
@@ -1688,7 +1723,7 @@ table.dados tr.risco td { box-shadow: none; }
       departamentosAdmin: departamentos,
       controlesAdmin: controles,
       gatilho: gatilho,
-      emailHierarquia: emailHierarquiaPlanta,
+      emailsHierarquia: Object.assign({}, emailsHierarquiaPlanta),
     };
   }
 
@@ -1974,25 +2009,13 @@ table.dados tr.risco td { box-shadow: none; }
       h.planosArea = payloadArea(deptId, false);
       return h;
     },
-    apiSalvarEmailHierarquia: function (email) {
-      email = String(email || '').trim().toLowerCase();
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        var msg = 'Informe um e-mail válido ou deixe o campo em branco.';
-        if (typeof I18n !== 'undefined' && I18n.t) msg = I18n.t(I18n.atual(), 'erro_hierarquia_email');
-        throw new Error(msg);
-      }
-      emailHierarquiaPlanta = email;
+    apiSalvarEmailsHierarquia: function (parcial) {
+      mesclarHierarquiaMock_(emailsHierarquiaPlanta, parcial);
       return hub();
     },
-    apiSalvarEmailHierarquiaArea: function (deptId, email) {
+    apiSalvarEmailsHierarquiaArea: function (deptId, parcial) {
       if (areaTrancada(deptId)) return payloadArea(deptId, true);
-      email = String(email || '').trim().toLowerCase();
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        var msgArea = 'Informe um e-mail válido ou deixe o campo em branco.';
-        if (typeof I18n !== 'undefined' && I18n.t) msgArea = I18n.t(I18n.atual(), 'erro_hierarquia_email');
-        throw new Error(msgArea);
-      }
-      followUpDept(deptId).emailHierarquia = email;
+      mesclarHierarquiaMock_(followUpDept(deptId).emailsHierarquia, parcial);
       return payloadArea(deptId, false);
     },
     apiAlternarTemaFollowUp: function (nome) {
@@ -2430,9 +2453,10 @@ var I18n = (function () {
       mail_titulo_hierarquia: 'Escalação: ação ainda atrasada',
       mail_intro_hierarquia: 'O responsável já foi avisado neste prazo. Este é um aviso separado para o próximo nível, porque o atraso continua.',
       mail_texto_hierarquia: 'Escalação: {oque} segue atrasada. Prazo: {prazo}.',
-      hierarquia_titulo: 'E-mail do próximo nível',
-      hierarquia_apoio: 'A partir do 2º dia de atraso deste prazo, um e-mail separado vai para este endereço. Em branco, ninguém mais é avisado.',
-      hierarquia_ph: 'opcional',
+      hierarquia_titulo: 'Chefe de cada pessoa',
+      hierarquia_apoio: 'Cada pessoa do plano pode ter um chefe diferente. A partir do 2º dia de atraso, um e-mail separado vai para o chefe dela. Em branco, essa pessoa não é escalada.',
+      hierarquia_ph: 'e-mail do chefe',
+      hierarquia_sem_pessoas: 'Nenhuma pessoa com e-mail neste plano.',
       toast_hierarquia: 'E-mail do próximo nível atualizado.',
       erro_hierarquia_email: 'Informe um e-mail válido ou deixe o campo em branco.',
       mail_rotulo_email: 'E-mail',
@@ -2717,9 +2741,10 @@ var I18n = (function () {
       mail_titulo_hierarquia: 'Escalation: action still overdue',
       mail_intro_hierarquia: 'The owner was already notified for this due date. This is a separate notice for the next level because the action is still overdue.',
       mail_texto_hierarquia: 'Escalation: {oque} is still overdue. Due: {prazo}.',
-      hierarquia_titulo: 'Next-level email',
-      hierarquia_apoio: 'From the 2nd overdue day of this due date, a separate email goes to this address. Leave it blank and nobody else is notified.',
-      hierarquia_ph: 'optional',
+      hierarquia_titulo: 'Each person\'s boss',
+      hierarquia_apoio: 'Each person on the plan can have a different boss. From the 2nd overdue day, a separate email goes to that person\'s boss. Leave it blank and that person is not escalated.',
+      hierarquia_ph: 'boss email',
+      hierarquia_sem_pessoas: 'No person with an email on this plan.',
       toast_hierarquia: 'Next-level email updated.',
       erro_hierarquia_email: 'Enter a valid email or leave the field blank.',
       mail_rotulo_email: 'Email',
@@ -3004,9 +3029,10 @@ var I18n = (function () {
       mail_titulo_hierarquia: 'Escalamiento: acción aún atrasada',
       mail_intro_hierarquia: 'El responsable ya fue avisado en este plazo. Este es un aviso aparte para el siguiente nivel, porque el retraso continúa.',
       mail_texto_hierarquia: 'Escalamiento: {oque} sigue atrasada. Plazo: {prazo}.',
-      hierarquia_titulo: 'Correo del siguiente nivel',
-      hierarquia_apoio: 'A partir del 2.º día de retraso de este plazo, un correo aparte va a esta dirección. En blanco, nadie más recibe aviso.',
-      hierarquia_ph: 'opcional',
+      hierarquia_titulo: 'Jefe de cada persona',
+      hierarquia_apoio: 'Cada persona del plan puede tener un jefe distinto. A partir del 2.º día de retraso, un correo aparte va al jefe de esa persona. En blanco, esa persona no se escala.',
+      hierarquia_ph: 'correo del jefe',
+      hierarquia_sem_pessoas: 'Ninguna persona con correo en este plan.',
       toast_hierarquia: 'Correo del siguiente nivel actualizado.',
       erro_hierarquia_email: 'Indique un correo válido o deje el campo en blanco.',
       mail_rotulo_email: 'Correo',
@@ -3174,7 +3200,7 @@ if (typeof module !== 'undefined' && module.exports) {
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailHierarquia: '' },
+    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {} },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -4078,8 +4104,39 @@ if (typeof module !== 'undefined' && module.exports) {
 
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailHierarquia: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
     };
+  }
+
+  function blocoHierarquia(pessoas, mapa, escopo) {
+    mapa = mapa || {};
+    var linhas = (pessoas || []).map(function (p) {
+      return '<label class="hierarquia-pessoa">' +
+        '<span><strong>' + escapar(tituloNome(p.nome)) + '</strong>' +
+        '<small>' + escapar(p.email) + '</small></span>' +
+        '<input type="email" data-pessoa="' + escapar(p.email) + '" placeholder="' +
+        escapar(t('hierarquia_ph')) + '" value="' + escapar(mapa[p.email] || '') + '">' +
+        '</label>';
+    }).join('');
+    return '<div class="bloco-hierarquia" data-bloco-hierarquia="' + escopo + '">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('hierarquia_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('hierarquia_apoio') + '</div>' +
+      (linhas
+        ? '<div class="lista-hierarquia">' + linhas + '</div>' +
+          '<div><button type="button" class="botao primario" data-salvar-hierarquia="' + escopo + '">' +
+          t('salvar') + '</button></div>'
+        : '<div class="secao-apoio" style="margin:0">' + t('hierarquia_sem_pessoas') + '</div>') +
+      '</div>';
+  }
+
+  function mapaHierarquiaNo(raiz) {
+    var mapa = {};
+    if (!raiz) return mapa;
+    Array.prototype.forEach.call(raiz.querySelectorAll('input[data-pessoa]'), function (el) {
+      var email = el.getAttribute('data-pessoa') || '';
+      if (email) mapa[email] = el.value || '';
+    });
+    return mapa;
   }
 
   function chipsFollowUpLista(temas, habilitados, attr, vazioNenhum) {
@@ -4138,15 +4195,7 @@ if (typeof module !== 'undefined' && module.exports) {
     }
     return '<div class="painel-cobranca-plano">' +
       '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_cobranca_bloco') + '</div>' +
-      '<form id="form-hierarquia-area" class="hierarquia-linha" onsubmit="return false">' +
-      '<div class="hierarquia-texto">' +
-      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('hierarquia_titulo') + '</div>' +
-      '<div class="secao-apoio" style="margin:0">' + t('hierarquia_apoio') + '</div>' +
-      '</div>' +
-      '<input name="email_hierarquia" type="email" placeholder="' + escapar(t('hierarquia_ph')) +
-      '" value="' + escapar(fu.emailHierarquia || '') + '">' +
-      '<button class="botao primario" type="submit">' + t('salvar') + '</button>' +
-      '</form>' +
+      blocoHierarquia(pessoas, fu.emailsHierarquia, 'area') +
       '<div class="secao-titulo" style="font-size:13px;margin:4px 0 0">' + t('planos_area_temas_titulo') + '</div>' +
       '<div class="secao-apoio" style="margin:0">' + t('planos_area_temas_apoio') + '</div>' +
       chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area', true) +
@@ -4294,7 +4343,7 @@ if (typeof module !== 'undefined' && module.exports) {
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailHierarquia: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
     };
     if (resp.ok) {
       var d = Estado.deptAberto;
@@ -4605,15 +4654,12 @@ if (typeof module !== 'undefined' && module.exports) {
       '<button class="botao" id="btn-remover-gatilho">' + t('inativar_gatilhos') + '</button>' +
       '<button class="botao" id="btn-followup">' + t('enviar_followups') + '</button>' +
       '</div>' +
-      '<form id="form-hierarquia" class="form-grid" onsubmit="return false" style="width:100%;max-width:520px;margin-top:8px;grid-template-columns:1fr">' +
-      '<div class="secao-titulo" style="font-size:13px">' + t('hierarquia_titulo') + '</div>' +
-      '<div class="secao-apoio" style="margin:0 0 8px">' + t('hierarquia_apoio') + '</div>' +
-      campo('email_hierarquia', t('th_email'), (Estado.hub && Estado.hub.emailHierarquia) || '', {
-        tipo: 'email',
-        placeholder: t('hierarquia_ph'),
-      }) +
-      '<div class="acoes-form"><button class="botao primario" type="submit">' + t('salvar') + '</button></div>' +
-      '</form></div></div>';
+      blocoHierarquia(
+        pessoasFollowUpArea((Estado.hub && Estado.hub.planos) || []),
+        (Estado.hub && Estado.hub.emailsHierarquia) || {},
+        'planta'
+      ) +
+      '</div></div>';
   }
 
   function LogicaSim(v) {
@@ -5334,6 +5380,29 @@ if (typeof module !== 'undefined' && module.exports) {
         enviarFollowUpsAgoraUi();
         return;
       }
+      var btnHier = e.target.closest('[data-salvar-hierarquia]');
+      if (btnHier) {
+        var escopoHier = btnHier.getAttribute('data-salvar-hierarquia');
+        var blocoHier = btnHier.closest('[data-bloco-hierarquia]');
+        var mapaHier = mapaHierarquiaNo(blocoHier);
+        ocupar(true, t('carregando_ellipsis'));
+        var pedidoHier = escopoHier === 'area'
+          ? chamar('apiSalvarEmailsHierarquiaArea', Estado.deptAberto && Estado.deptAberto.id, mapaHier)
+          : chamar('apiSalvarEmailsHierarquia', mapaHier);
+        pedidoHier.then(function (resp) {
+          ocupar(false);
+          if (escopoHier === 'area') aplicarPlanosArea(resp, { manterScroll: true });
+          else {
+            Estado.hub = resp;
+            render();
+          }
+          toast(t('toast_hierarquia'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
+        return;
+      }
       if (e.target.closest('#btn-gatilho') || e.target.closest('[data-gatilho-ativar]')) {
         if (Estado.carregando) return;
         ocupar(true, t('ocupado_gatilho'), t('ocupado_gatilho_sub'));
@@ -5427,38 +5496,6 @@ if (typeof module !== 'undefined' && module.exports) {
           ocupar(false);
           toast(err.message || err, true);
         });
-        return;
-      }
-      var formHier = e.target.closest('#form-hierarquia');
-      if (formHier) {
-        e.preventDefault();
-        var emailHier = String((lerForm(formHier).email_hierarquia) || '').trim();
-        ocupar(true, t('carregando_ellipsis'));
-        chamar('apiSalvarEmailHierarquia', emailHier).then(function (hub) {
-          ocupar(false);
-          Estado.hub = hub;
-          render();
-          toast(t('toast_hierarquia'));
-        }).catch(function (err) {
-          ocupar(false);
-          toast(err.message || err, true);
-        });
-        return;
-      }
-      var formHierArea = e.target.closest('#form-hierarquia-area');
-      if (formHierArea) {
-        e.preventDefault();
-        var emailHierArea = String((lerForm(formHierArea).email_hierarquia) || '').trim();
-        ocupar(true, t('carregando_ellipsis'));
-        chamar('apiSalvarEmailHierarquiaArea', Estado.deptAberto && Estado.deptAberto.id, emailHierArea)
-          .then(function (resp) {
-            ocupar(false);
-            aplicarPlanosArea(resp, { manterScroll: true });
-            toast(t('toast_hierarquia'));
-          }).catch(function (err) {
-            ocupar(false);
-            toast(err.message || err, true);
-          });
         return;
       }
       var senhaAbre = e.target.closest('form[data-abrir-planos-area]');

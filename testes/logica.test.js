@@ -137,6 +137,25 @@ assert.strictEqual(Logica.deveEscalarFollowUp(2, '   ', 'ana@avery.com'), false)
 assert.strictEqual(Logica.deveEscalarFollowUp(2, 'nao-email', 'ana@avery.com'), false);
 assert.strictEqual(Logica.deveEscalarFollowUp(2, 'ana@avery.com', 'Ana@avery.com'), false, 'mesmo e-mail do destino nao escala');
 
+var chefes = {
+  'carla@avery.com': 'chefe.carla@avery.com',
+  'diego@avery.com': 'chefe.diego@avery.com',
+};
+assert.strictEqual(Logica.emailChefeDe(chefes, 'Carla@avery.com'), 'chefe.carla@avery.com');
+assert.strictEqual(Logica.emailChefeDe(chefes, 'diego@avery.com'), 'chefe.diego@avery.com');
+assert.strictEqual(Logica.emailChefeDe(chefes, 'bruno@avery.com'), '', 'pessoa sem chefe nao escala');
+assert.strictEqual(Logica.deveEscalarFollowUp(1, Logica.emailChefeDe(chefes, 'carla@avery.com'), 'carla@avery.com'), true);
+assert.strictEqual(Logica.deveEscalarFollowUp(1, Logica.emailChefeDe(chefes, 'bruno@avery.com'), 'bruno@avery.com'), false);
+assert.strictEqual(Logica.deveEscalarFollowUp(0, Logica.emailChefeDe(chefes, 'carla@avery.com'), 'carla@avery.com'), false, '1º aviso nao escala nem com chefe');
+var gravado = Logica.serializarEmailsHierarquia(chefes);
+assert.strictEqual(Logica.emailChefeDe(gravado, 'diego@avery.com'), 'chefe.diego@avery.com');
+var semCarla = Logica.mesclarEmailsHierarquia(gravado, { 'carla@avery.com': '', 'ana@avery.com': 'chefe.ana@avery.com' });
+assert.strictEqual(semCarla['carla@avery.com'], undefined);
+assert.strictEqual(semCarla['diego@avery.com'], 'chefe.diego@avery.com');
+assert.strictEqual(semCarla['ana@avery.com'], 'chefe.ana@avery.com');
+assert.deepStrictEqual(Logica.parseEmailsHierarquia(''), {});
+assert.deepStrictEqual(Logica.parseEmailsHierarquia('nao-json'), {});
+
 var temasChip = ['TIER_3', 'UEE/Scrap_Apparel', 'UEE/SCRAP_APPAREL'];
 assert.deepStrictEqual(
   Logica.proximoFiltroTema(temasChip, temasChip, true, 'UEE/Scrap_Apparel'),

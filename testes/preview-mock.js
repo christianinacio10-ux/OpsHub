@@ -115,14 +115,34 @@
   ];
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
   var temasFollowUp = [];
-  var emailHierarquiaPlanta = '';
+  var emailsHierarquiaPlanta = {};
   var followupsEnviadosHoje = {};
   var followUpPorArea = {};
   var emailSessao = 'christian.inacio@averydennison.com';
 
+  function mesclarHierarquiaMock_(destino, parcial) {
+    parcial = parcial || {};
+    Object.keys(parcial).forEach(function (k) {
+      var email = String(k || '').trim().toLowerCase();
+      var chefe = String(parcial[k] || '').trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        var msg = 'Informe um e-mail válido ou deixe o campo em branco.';
+        if (typeof I18n !== 'undefined' && I18n.t) msg = I18n.t(I18n.atual(), 'erro_hierarquia_email');
+        throw new Error(msg);
+      }
+      if (chefe && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chefe)) {
+        var msgChefe = 'Informe um e-mail válido ou deixe o campo em branco.';
+        if (typeof I18n !== 'undefined' && I18n.t) msgChefe = I18n.t(I18n.atual(), 'erro_hierarquia_email');
+        throw new Error(msgChefe);
+      }
+      if (!chefe) delete destino[email];
+      else destino[email] = chefe;
+    });
+  }
+
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
-      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailHierarquia: '' };
+      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailsHierarquia: {} };
     }
     return followUpPorArea[deptId];
   }
@@ -137,7 +157,7 @@
       gestorEmail: fu.gestorEmail || emailSessao,
       emailsOff: (fu.emailsOff || []).slice(),
       meuEmail: emailSessao,
-      emailHierarquia: fu.emailHierarquia || '',
+      emailsHierarquia: Object.assign({}, fu.emailsHierarquia || {}),
     };
   }
 
@@ -209,7 +229,7 @@
       departamentosAdmin: departamentos,
       controlesAdmin: controles,
       gatilho: gatilho,
-      emailHierarquia: emailHierarquiaPlanta,
+      emailsHierarquia: Object.assign({}, emailsHierarquiaPlanta),
     };
   }
 
@@ -495,25 +515,13 @@
       h.planosArea = payloadArea(deptId, false);
       return h;
     },
-    apiSalvarEmailHierarquia: function (email) {
-      email = String(email || '').trim().toLowerCase();
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        var msg = 'Informe um e-mail válido ou deixe o campo em branco.';
-        if (typeof I18n !== 'undefined' && I18n.t) msg = I18n.t(I18n.atual(), 'erro_hierarquia_email');
-        throw new Error(msg);
-      }
-      emailHierarquiaPlanta = email;
+    apiSalvarEmailsHierarquia: function (parcial) {
+      mesclarHierarquiaMock_(emailsHierarquiaPlanta, parcial);
       return hub();
     },
-    apiSalvarEmailHierarquiaArea: function (deptId, email) {
+    apiSalvarEmailsHierarquiaArea: function (deptId, parcial) {
       if (areaTrancada(deptId)) return payloadArea(deptId, true);
-      email = String(email || '').trim().toLowerCase();
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        var msgArea = 'Informe um e-mail válido ou deixe o campo em branco.';
-        if (typeof I18n !== 'undefined' && I18n.t) msgArea = I18n.t(I18n.atual(), 'erro_hierarquia_email');
-        throw new Error(msgArea);
-      }
-      followUpDept(deptId).emailHierarquia = email;
+      mesclarHierarquiaMock_(followUpDept(deptId).emailsHierarquia, parcial);
       return payloadArea(deptId, false);
     },
     apiAlternarTemaFollowUp: function (nome) {

@@ -29,7 +29,7 @@ ESQUEMA[ABAS.config] = ['chave', 'valor', 'descricao'];
 ESQUEMA[ABAS.departamentos] = [
   'id', 'nome', 'descricao', 'icone', 'cor', 'ordem', 'ativo', 'bandeira', 'senha_planos',
   'followup_temas', 'followup_so_eu', 'followup_gestor_email', 'followup_emails_off',
-  'email_hierarquia',
+  'emails_hierarquia',
 ];
 ESQUEMA[ABAS.controles] = ['id', 'departamento_id', 'nome', 'descricao', 'url', 'ordem', 'ativo', 'negocio', 'pasta'];
 ESQUEMA[ABAS.fontes] = [
@@ -64,7 +64,7 @@ var CONFIG_PADRAO = [
   ['hora_gatilho', '08', 'Hora local do disparo diario (0-23)'],
   ['followup_temas', '', 'Temas que recebem e-mail de follow-up (vazio = todos)'],
   ['versao_instalada', APP.versao, 'Versao aplicada na ultima instalacao'],
-  ['email_hierarquia', '', 'E-mail opcional do proximo nivel no follow-up da planta (vazio = nao escalar)'],
+  ['emails_hierarquia', '', 'Chefe opcional de cada pessoa no follow-up da planta (JSON email da pessoa -> email do chefe)'],
 ];
 
 if (typeof I18n !== 'undefined' && I18n.definirNome) I18n.definirNome(APP.nome);

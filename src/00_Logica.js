@@ -508,6 +508,58 @@ var Logica = (function () {
     return true;
   }
 
+  function parseEmailsHierarquia(valor) {
+    var mapa = {};
+    if (valor == null || valor === '') return mapa;
+    var bruto = valor;
+    if (typeof bruto === 'string') {
+      var s = texto(bruto);
+      if (!s || s.charAt(0) !== '{') return mapa;
+      try { bruto = JSON.parse(s); } catch (e) { return mapa; }
+    }
+    if (!bruto || typeof bruto !== 'object' || Array.isArray(bruto)) return mapa;
+    Object.keys(bruto).forEach(function (k) {
+      var email = texto(k).toLowerCase();
+      var chefe = texto(bruto[k]).toLowerCase();
+      if (emailValido(email) && emailValido(chefe)) mapa[email] = chefe;
+    });
+    return mapa;
+  }
+
+  function serializarEmailsHierarquia(mapa) {
+    var limpo = parseEmailsHierarquia(mapa);
+    var chaves = Object.keys(limpo).sort();
+    if (!chaves.length) return '';
+    var out = {};
+    chaves.forEach(function (k) { out[k] = limpo[k]; });
+    return JSON.stringify(out);
+  }
+
+  function mesclarEmailsHierarquia(atual, parcial) {
+    var mapa = parseEmailsHierarquia(atual);
+    var patch = parcial || {};
+    if (Array.isArray(patch)) {
+      var obj = {};
+      patch.forEach(function (item) {
+        if (item && item.email) obj[item.email] = item.chefe || '';
+      });
+      patch = obj;
+    }
+    Object.keys(patch).forEach(function (k) {
+      var email = texto(k).toLowerCase();
+      if (!emailValido(email)) return;
+      var chefe = texto(patch[k]).toLowerCase();
+      if (!chefe) delete mapa[email];
+      else if (emailValido(chefe)) mapa[email] = chefe;
+    });
+    return mapa;
+  }
+
+  function emailChefeDe(mapa, emailPessoa) {
+    var m = parseEmailsHierarquia(mapa);
+    return m[texto(emailPessoa).toLowerCase()] || '';
+  }
+
   function mesclarImportacao(anteriores, novos) {
     var porChave = {};
     (anteriores || []).forEach(function (a) {
@@ -995,6 +1047,10 @@ var Logica = (function () {
     reprogramacoesAposPrazo: reprogramacoesAposPrazo,
     prazoMudouDeDia: prazoMudouDeDia,
     deveEscalarFollowUp: deveEscalarFollowUp,
+    parseEmailsHierarquia: parseEmailsHierarquia,
+    serializarEmailsHierarquia: serializarEmailsHierarquia,
+    mesclarEmailsHierarquia: mesclarEmailsHierarquia,
+    emailChefeDe: emailChefeDe,
     mesclarImportacao: mesclarImportacao,
     eixoDe: eixoDe,
     passaEixo: passaEixo,

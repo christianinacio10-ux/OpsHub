@@ -77,7 +77,7 @@ function enviarFollowUps(opcoes) {
     emailSessao: identificarEmailSessao_(),
     ignorarPrazo: !!opcoes.ignorarPrazo,
     ignorarTemas: !!opcoes.ignorarTemas,
-    emailHierarquia: Cadastros.config().texto('email_hierarquia', ''),
+    emailsHierarquia: Cadastros.config().texto('emails_hierarquia', ''),
   };
   var enviados = 0;
   var pulados = 0;
@@ -152,11 +152,12 @@ function enviarFollowUps(opcoes) {
 
 function emailHierarquiaDo_(plano, ctx) {
   ctx = ctx || {};
+  var pessoa = plano && plano.email;
   if (plano && plano._folha === 'area') {
     var dept = ctx.depts && ctx.depts[String(plano.departamento_id)];
-    return Logica.texto(dept && dept.email_hierarquia);
+    return Logica.emailChefeDe(dept && dept.emails_hierarquia, pessoa);
   }
-  return Logica.texto(ctx.emailHierarquia);
+  return Logica.emailChefeDe(ctx.emailsHierarquia, pessoa);
 }
 
 function assuntoFollowUp_(plano, escalacao) {

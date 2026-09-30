@@ -33,7 +33,7 @@
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailHierarquia: '' },
+    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {} },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -937,8 +937,39 @@
 
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailHierarquia: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
     };
+  }
+
+  function blocoHierarquia(pessoas, mapa, escopo) {
+    mapa = mapa || {};
+    var linhas = (pessoas || []).map(function (p) {
+      return '<label class="hierarquia-pessoa">' +
+        '<span><strong>' + escapar(tituloNome(p.nome)) + '</strong>' +
+        '<small>' + escapar(p.email) + '</small></span>' +
+        '<input type="email" data-pessoa="' + escapar(p.email) + '" placeholder="' +
+        escapar(t('hierarquia_ph')) + '" value="' + escapar(mapa[p.email] || '') + '">' +
+        '</label>';
+    }).join('');
+    return '<div class="bloco-hierarquia" data-bloco-hierarquia="' + escopo + '">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('hierarquia_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('hierarquia_apoio') + '</div>' +
+      (linhas
+        ? '<div class="lista-hierarquia">' + linhas + '</div>' +
+          '<div><button type="button" class="botao primario" data-salvar-hierarquia="' + escopo + '">' +
+          t('salvar') + '</button></div>'
+        : '<div class="secao-apoio" style="margin:0">' + t('hierarquia_sem_pessoas') + '</div>') +
+      '</div>';
+  }
+
+  function mapaHierarquiaNo(raiz) {
+    var mapa = {};
+    if (!raiz) return mapa;
+    Array.prototype.forEach.call(raiz.querySelectorAll('input[data-pessoa]'), function (el) {
+      var email = el.getAttribute('data-pessoa') || '';
+      if (email) mapa[email] = el.value || '';
+    });
+    return mapa;
   }
 
   function chipsFollowUpLista(temas, habilitados, attr, vazioNenhum) {
@@ -997,15 +1028,7 @@
     }
     return '<div class="painel-cobranca-plano">' +
       '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_cobranca_bloco') + '</div>' +
-      '<form id="form-hierarquia-area" class="hierarquia-linha" onsubmit="return false">' +
-      '<div class="hierarquia-texto">' +
-      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('hierarquia_titulo') + '</div>' +
-      '<div class="secao-apoio" style="margin:0">' + t('hierarquia_apoio') + '</div>' +
-      '</div>' +
-      '<input name="email_hierarquia" type="email" placeholder="' + escapar(t('hierarquia_ph')) +
-      '" value="' + escapar(fu.emailHierarquia || '') + '">' +
-      '<button class="botao primario" type="submit">' + t('salvar') + '</button>' +
-      '</form>' +
+      blocoHierarquia(pessoas, fu.emailsHierarquia, 'area') +
       '<div class="secao-titulo" style="font-size:13px;margin:4px 0 0">' + t('planos_area_temas_titulo') + '</div>' +
       '<div class="secao-apoio" style="margin:0">' + t('planos_area_temas_apoio') + '</div>' +
       chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area', true) +
@@ -1153,7 +1176,7 @@
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailHierarquia: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
     };
     if (resp.ok) {
       var d = Estado.deptAberto;
@@ -1464,15 +1487,12 @@
       '<button class="botao" id="btn-remover-gatilho">' + t('inativar_gatilhos') + '</button>' +
       '<button class="botao" id="btn-followup">' + t('enviar_followups') + '</button>' +
       '</div>' +
-      '<form id="form-hierarquia" class="form-grid" onsubmit="return false" style="width:100%;max-width:520px;margin-top:8px;grid-template-columns:1fr">' +
-      '<div class="secao-titulo" style="font-size:13px">' + t('hierarquia_titulo') + '</div>' +
-      '<div class="secao-apoio" style="margin:0 0 8px">' + t('hierarquia_apoio') + '</div>' +
-      campo('email_hierarquia', t('th_email'), (Estado.hub && Estado.hub.emailHierarquia) || '', {
-        tipo: 'email',
-        placeholder: t('hierarquia_ph'),
-      }) +
-      '<div class="acoes-form"><button class="botao primario" type="submit">' + t('salvar') + '</button></div>' +
-      '</form></div></div>';
+      blocoHierarquia(
+        pessoasFollowUpArea((Estado.hub && Estado.hub.planos) || []),
+        (Estado.hub && Estado.hub.emailsHierarquia) || {},
+        'planta'
+      ) +
+      '</div></div>';
   }
 
   function LogicaSim(v) {
@@ -2193,6 +2213,29 @@
         enviarFollowUpsAgoraUi();
         return;
       }
+      var btnHier = e.target.closest('[data-salvar-hierarquia]');
+      if (btnHier) {
+        var escopoHier = btnHier.getAttribute('data-salvar-hierarquia');
+        var blocoHier = btnHier.closest('[data-bloco-hierarquia]');
+        var mapaHier = mapaHierarquiaNo(blocoHier);
+        ocupar(true, t('carregando_ellipsis'));
+        var pedidoHier = escopoHier === 'area'
+          ? chamar('apiSalvarEmailsHierarquiaArea', Estado.deptAberto && Estado.deptAberto.id, mapaHier)
+          : chamar('apiSalvarEmailsHierarquia', mapaHier);
+        pedidoHier.then(function (resp) {
+          ocupar(false);
+          if (escopoHier === 'area') aplicarPlanosArea(resp, { manterScroll: true });
+          else {
+            Estado.hub = resp;
+            render();
+          }
+          toast(t('toast_hierarquia'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
+        return;
+      }
       if (e.target.closest('#btn-gatilho') || e.target.closest('[data-gatilho-ativar]')) {
         if (Estado.carregando) return;
         ocupar(true, t('ocupado_gatilho'), t('ocupado_gatilho_sub'));
@@ -2286,38 +2329,6 @@
           ocupar(false);
           toast(err.message || err, true);
         });
-        return;
-      }
-      var formHier = e.target.closest('#form-hierarquia');
-      if (formHier) {
-        e.preventDefault();
-        var emailHier = String((lerForm(formHier).email_hierarquia) || '').trim();
-        ocupar(true, t('carregando_ellipsis'));
-        chamar('apiSalvarEmailHierarquia', emailHier).then(function (hub) {
-          ocupar(false);
-          Estado.hub = hub;
-          render();
-          toast(t('toast_hierarquia'));
-        }).catch(function (err) {
-          ocupar(false);
-          toast(err.message || err, true);
-        });
-        return;
-      }
-      var formHierArea = e.target.closest('#form-hierarquia-area');
-      if (formHierArea) {
-        e.preventDefault();
-        var emailHierArea = String((lerForm(formHierArea).email_hierarquia) || '').trim();
-        ocupar(true, t('carregando_ellipsis'));
-        chamar('apiSalvarEmailHierarquiaArea', Estado.deptAberto && Estado.deptAberto.id, emailHierArea)
-          .then(function (resp) {
-            ocupar(false);
-            aplicarPlanosArea(resp, { manterScroll: true });
-            toast(t('toast_hierarquia'));
-          }).catch(function (err) {
-            ocupar(false);
-            toast(err.message || err, true);
-          });
         return;
       }
       var senhaAbre = e.target.closest('form[data-abrir-planos-area]');
