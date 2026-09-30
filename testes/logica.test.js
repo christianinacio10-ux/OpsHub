@@ -149,6 +149,14 @@ assert.strictEqual(Logica.emailChefeDe(chefes, 'bruno@avery.com'), '', 'pessoa s
 assert.strictEqual(Logica.deveEscalarFollowUp(1, Logica.emailChefeDe(chefes, 'carla@avery.com'), 'carla@avery.com'), true);
 assert.strictEqual(Logica.deveEscalarFollowUp(1, Logica.emailChefeDe(chefes, 'bruno@avery.com'), 'bruno@avery.com'), false);
 assert.strictEqual(Logica.deveEscalarFollowUp(0, Logica.emailChefeDe(chefes, 'carla@avery.com'), 'carla@avery.com'), false, '1º aviso nao escala nem com chefe');
+assert.strictEqual(Logica.contarPlanosConectados([
+  { departamento_id: 'D-MAN', nome: 'PCM' },
+  { departamento_id: 'D-MAN', nome: 'Outro PCM' },
+  { departamento_id: 'D-EHS', nome: 'DDS' },
+], 'D-MAN'), 2, 'conta planos conectados, nao as acoes');
+assert.strictEqual(Logica.contarPlanosConectados([
+  { departamento_id: 'D-MAN' },
+], 'D-PROD'), 0);
 var gravado = Logica.serializarEmailsHierarquia(chefes);
 assert.strictEqual(Logica.emailChefeDe(gravado, 'diego@avery.com'), 'chefe.diego@avery.com');
 var semCarla = Logica.mesclarEmailsHierarquia(gravado, { 'carla@avery.com': '', 'ana@avery.com': 'chefe.ana@avery.com' });

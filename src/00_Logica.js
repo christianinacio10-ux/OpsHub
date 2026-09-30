@@ -963,6 +963,11 @@ var Logica = (function () {
     return (lista || []).filter(function (p) { return texto(p.departamento_id) === id; });
   }
 
+  /** Fontes ligadas ao departamento. Cada fonte é um plano, não cada ação. */
+  function contarPlanosConectados(fontes, deptId) {
+    return planosDoDepartamento(fontes, deptId).length;
+  }
+
   function marcarPlanoDaArea(plano, dept) {
     plano = plano || {};
     dept = dept || {};
@@ -1161,6 +1166,7 @@ var Logica = (function () {
     prepararAcaoParaUi: prepararAcaoParaUi,
     temSenhaPlanos: temSenhaPlanos,
     planosDoDepartamento: planosDoDepartamento,
+    contarPlanosConectados: contarPlanosConectados,
     marcarPlanoDaArea: marcarPlanoDaArea,
     normalizarBandeira: normalizarBandeira,
     negocioDoControle: negocioDoControle,

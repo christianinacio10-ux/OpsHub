@@ -225,7 +225,7 @@
         return {
           id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor,
           ordem: d.ordem, bandeira: d.bandeira, tem_senha_planos: !!senhasArea[d.id],
-          n_planos: planosArea.filter(function (p) { return p.departamento_id === d.id; }).length,
+          n_planos: fontesArea.filter(function (f) { return f.departamento_id === d.id; }).length,
         };
       }),
       controles: controles.map(function (c) {
