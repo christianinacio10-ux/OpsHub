@@ -14,6 +14,8 @@
     carregando: false,
     deptAberto: null,
     pastasAbertas: {},
+    cobrancaAberta: false,
+    maisDept: '',
     configAba: 'dept',
     filtros: filtrosVazios(),
     filtroAberto: null,
@@ -225,6 +227,7 @@
     ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.8.4-1.4 1-1.4 1.9V14M12 17h.01"/>',
     lista: '<path d="M8 6H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h4"/>',
     cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    mais: '<path d="M12 5v14M5 12h14"/>',
     chevron: '<path d="M6 9l6 6 6-6"/>',
   };
 
@@ -449,23 +452,25 @@
         var badge = d.bandeira
           ? '<span class="card-dept-badge">' + escapar(d.bandeira) + '</span>'
           : '';
+        var nPlanos = Number(d.n_planos) || 0;
         return '<article class="card-dept" data-dept="' + escapar(d.id) +
           '" style="--dept-cor:' + escapar(d.cor) + '" draggable="true" tabindex="0">' +
           '<div class="card-dept-acoes">' +
           badge +
-          '<button type="button" class="card-dept-config" data-planos-area="' + escapar(d.id) +
-          '" title="' + escapar(d.tem_senha_planos ? t('planos_area_tip_lock') : t('planos_area_tip')) + '">' +
-          svg(d.tem_senha_planos ? 'cadeado' : 'lista') + '</button>' +
-          '<button type="button" class="card-dept-config" data-editar-dept="' + escapar(d.id) +
-          '" title="' + escapar(t('config_card_tip')) + '">' + svg('config') + '</button>' +
+          '<button type="button" class="card-dept-config" data-mais-dept="' + escapar(d.id) +
+          '" title="' + escapar(t('mais_tip')) + '">' + svg('mais') + '</button>' +
           '</div>' +
           '<div class="card-dept-topo">' +
           '<div class="card-dept-icone">' + svg(d.icone) + '</div>' +
           '</div>' +
           '<h3>' + escapar(d.nome) + '</h3>' +
           '<p>' + escapar(d.descricao) + '</p>' +
-          '<div class="card-dept-meta"><span>' + (n === 1 ? t('n_controle', { n: n }) : t('n_controles', { n: n })) +
-          '</span>' + t('abrir') + '</div></article>';
+          '<div class="card-dept-meta">' +
+          '<button type="button" class="card-dept-contagem" data-editar-dept="' + escapar(d.id) + '">' +
+          (n === 1 ? t('n_controle', { n: n }) : t('n_controles', { n: n })) + '</button>' +
+          '<button type="button" class="card-dept-contagem" data-planos-area="' + escapar(d.id) + '">' +
+          (nPlanos === 1 ? t('n_plano', { n: nPlanos }) : t('n_planos', { n: nPlanos })) + '</button>' +
+          '<span class="card-dept-abrir">' + t('abrir') + '</span></div></article>';
       }).join('') + '</div>';
   }
 
@@ -785,7 +790,7 @@
     var html = '';
     (no.pastas || []).forEach(function (p) {
       var chave = prefixo ? prefixo + '/' + p.nome : p.nome;
-      var aberta = Estado.pastasAbertas[chave] !== false;
+      var aberta = Estado.pastasAbertas[chave] === true;
       html += '<div class="arvore-no">' +
         '<button type="button" class="arvore-pasta" data-pasta-toggle="' + escapar(chave) + '">' +
         svg(aberta ? 'pasta-aberta' : 'pasta') +
@@ -1110,9 +1115,15 @@
         '<button class="botao primario" type="button" data-abrir-etapa="fonte">' +
         t('planos_area_ir_fonte') + '</button></div>';
     }
+    var nOn = (Estado.planosArea || []).filter(function (p) { return !!p.followup; }).length;
+    var nTot = (Estado.planosArea || []).length;
     return kpisHtml(Estado.planosAreaKpis) +
       listaPlanosArea() +
-      barraCobrancaPlano();
+      '<div class="cobranca-atalho">' +
+      '<div><div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_cobranca_bloco') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('planos_area_cobranca_plano_apoio', { n: nOn, total: nTot }) + '</div></div>' +
+      '<button type="button" class="botao primario" data-abrir-cobranca="1">' + t('cobranca_abrir') + '</button>' +
+      '</div>';
   }
 
   function htmlFluxoProgresso() {
@@ -1244,6 +1255,58 @@
       if (formEtapa) revelarAlvo(formEtapa);
       else if (elEtapa && elEtapa.scrollIntoView) elEtapa.scrollIntoView({ block: 'nearest' });
     }
+    if (Estado.cobrancaAberta) pintarCobrancaModal();
+  }
+
+  function pintarCobrancaModal() {
+    var modal = $('modal-cobranca');
+    var corpo = $('modal-cobranca-corpo');
+    if (!modal || !corpo) return;
+    if (!Estado.cobrancaAberta) {
+      modal.hidden = true;
+      modal.classList.remove('aberto');
+      corpo.innerHTML = '';
+      return;
+    }
+    corpo.innerHTML =
+      '<div class="cobranca-modal-topo">' +
+      '<div><div class="secao-titulo">' + t('planos_area_cobranca_bloco') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('cobranca_modal_apoio') + '</div></div>' +
+      '<button type="button" class="botao" data-fechar-cobranca="1">' + t('fechar') + '</button>' +
+      '</div>' +
+      barraCobrancaPlano();
+    modal.hidden = false;
+    modal.classList.add('aberto');
+  }
+
+  function fecharCobranca() {
+    Estado.cobrancaAberta = false;
+    pintarCobrancaModal();
+  }
+
+  function abrirEscolhaCadastro(id) {
+    var modal = $('modal-mais');
+    var corpo = $('modal-mais-corpo');
+    if (!modal || !corpo) return;
+    corpo.innerHTML =
+      '<div class="secao-titulo">' + t('mais_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0 0 12px">' + t('mais_apoio') + '</div>' +
+      '<div class="mais-opcoes">' +
+      '<button type="button" class="botao" data-mais-ir="controles">' + t('mais_controles') + '</button>' +
+      '<button type="button" class="botao" data-mais-ir="planos">' + t('mais_planos') + '</button>' +
+      '</div>' +
+      '<div class="acoes-form"><button type="button" class="botao" data-fechar-mais="1">' + t('cancelar') + '</button></div>';
+    Estado.maisDept = id;
+    modal.hidden = false;
+    modal.classList.add('aberto');
+  }
+
+  function fecharEscolhaCadastro() {
+    var modal = $('modal-mais');
+    Estado.maisDept = '';
+    if (!modal) return;
+    modal.hidden = true;
+    modal.classList.remove('aberto');
   }
 
   function carregarPlanosArea(id, senha) {
@@ -1335,6 +1398,7 @@
     Estado.formFonteArea = {};
     Estado.fontesArea = [];
     Estado.planosAreaPrecisaSenha = false;
+    fecharCobranca();
   }
 
   function campo(nome, rotulo, valor, extra) {
@@ -1849,6 +1913,52 @@
         definirIdioma(idiomaBtn.getAttribute('data-idioma'));
         return;
       }
+      var maisBtn = e.target.closest('button[data-mais-dept]');
+      if (maisBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        abrirEscolhaCadastro(maisBtn.getAttribute('data-mais-dept'));
+        return;
+      }
+      var maisIr = e.target.closest('[data-mais-ir]');
+      if (maisIr) {
+        e.preventDefault();
+        var destinoMais = maisIr.getAttribute('data-mais-ir');
+        var idMais = Estado.maisDept || '';
+        fecharEscolhaCadastro();
+        if (destinoMais === 'planos') {
+          var dPlanosMais = ((Estado.hub && Estado.hub.departamentos) || []).filter(function (x) {
+            return x.id === idMais;
+          })[0];
+          Estado.formFonteArea = {};
+          Estado.planosArea = [];
+          Estado.fontesArea = [];
+          Estado.planosAreaPrecisaSenha = !!(dPlanosMais && dPlanosMais.tem_senha_planos);
+          carregarFiltrosArea(idMais);
+          carregarEtapasArea(idMais);
+          abrirDept(idMais, 'planos');
+          carregarPlanosArea(idMais);
+        } else {
+          abrirDept(idMais, 'editar');
+        }
+        return;
+      }
+      if (e.target.closest('[data-fechar-mais]') || e.target.id === 'modal-mais') {
+        e.preventDefault();
+        fecharEscolhaCadastro();
+        return;
+      }
+      if (e.target.closest('[data-abrir-cobranca]')) {
+        e.preventDefault();
+        Estado.cobrancaAberta = true;
+        pintarCobrancaModal();
+        return;
+      }
+      if (e.target.closest('[data-fechar-cobranca]') || e.target.id === 'modal-cobranca') {
+        e.preventDefault();
+        fecharCobranca();
+        return;
+      }
       var planosBtn = e.target.closest('[data-planos-area]');
       if (planosBtn) {
         e.preventDefault();
@@ -2113,7 +2223,7 @@
       var pastaBtn = e.target.closest('[data-pasta-toggle]');
       if (pastaBtn) {
         var chavePasta = pastaBtn.getAttribute('data-pasta-toggle');
-        Estado.pastasAbertas[chavePasta] = Estado.pastasAbertas[chavePasta] === false;
+        Estado.pastasAbertas[chavePasta] = !Estado.pastasAbertas[chavePasta];
         if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, Estado.deptModo);
         return;
       }
@@ -2151,7 +2261,7 @@
       }
       var dept = e.target.closest('[data-dept]');
       if (dept) {
-        if (e.target.closest('[data-editar-dept], [data-planos-area]')) return;
+        if (e.target.closest('[data-editar-dept], [data-planos-area], [data-mais-dept]')) return;
         if (Estado.arrastouDept) {
           Estado.arrastouDept = false;
           return;
@@ -2451,11 +2561,19 @@
           recarregarFiltrosUi();
           return;
         }
+        if ($('modal-mais') && !$('modal-mais').hidden) {
+          fecharEscolhaCadastro();
+          return;
+        }
+        if (Estado.cobrancaAberta) {
+          fecharCobranca();
+          return;
+        }
         fecharDrawer();
         return;
       }
       if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('card-dept')) {
-        if (e.target.closest('[data-editar-dept], [data-planos-area], .seletor-icone, .cor-edicao')) return;
+        if (e.target.closest('[data-editar-dept], [data-planos-area], [data-mais-dept], .seletor-icone, .cor-edicao')) return;
         e.preventDefault();
         abrirDept(e.target.getAttribute('data-dept'), 'ver');
       }

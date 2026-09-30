@@ -216,6 +216,7 @@
         return {
           id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor,
           ordem: d.ordem, bandeira: d.bandeira, tem_senha_planos: !!senhasArea[d.id],
+          n_planos: planosArea.filter(function (p) { return p.departamento_id === d.id; }).length,
         };
       }),
       controles: controles.map(function (c) {
@@ -273,7 +274,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.7' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.8' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };

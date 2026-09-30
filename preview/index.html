@@ -522,11 +522,35 @@ body { overflow: hidden; }
 .card-dept h3 { margin: 0 0 5px; font-size: 15px; font-weight: 520; letter-spacing: -.02em; }
 .card-dept p { margin: 0; color: var(--tinta-3); font-size: 12.5px; min-height: 36px; line-height: 1.45; }
 .card-dept-meta {
-  margin-top: 16px; display: flex; justify-content: space-between; align-items: center;
+  margin-top: 16px; display: flex; justify-content: flex-start; align-items: center;
+  gap: 10px; flex-wrap: wrap;
   color: var(--tinta-3); font-size: 12px; font-weight: 450;
 }
-.card-dept-meta span { color: var(--tinta-2); font-weight: 500; }
+.card-dept-contagem {
+  border: 0; background: transparent; padding: 0;
+  color: var(--tinta-2); font: inherit; font-weight: 500;
+  cursor: pointer; text-align: left;
+}
+.card-dept-contagem:hover { color: var(--tinta); text-decoration: underline; }
+.card-dept-abrir { margin-left: auto; }
 .card-dept:hover .card-dept-meta { color: var(--tinta-2); }
+.mais-opcoes { display: flex; flex-direction: column; gap: 8px; }
+.mais-opcoes .botao { justify-content: flex-start; height: 44px; }
+.modal-mais { width: min(420px, 100%); }
+.modal-cobranca { width: min(880px, 100%); max-height: min(90vh, 920px); }
+.cobranca-modal-topo {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  margin-bottom: 8px;
+}
+.modal-cobranca .painel-cobranca-plano {
+  margin: 0; padding: 0; border: 0; background: transparent; max-height: none;
+}
+.cobranca-atalho {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 8px; padding: 10px 12px;
+  border: 1px solid var(--linha); border-radius: var(--raio);
+  background: var(--superficie);
+}
 
 .painel {
   background: var(--superficie);
@@ -1473,6 +1497,12 @@ table.dados tr.risco td { box-shadow: none; }
   <div class="modal-fundo" id="modal-acao" hidden>
     <form class="modal-acao" id="form-acao" data-form-acao="1"></form>
   </div>
+  <div class="modal-fundo" id="modal-mais" hidden>
+    <div class="modal-acao modal-mais" id="modal-mais-corpo" role="dialog"></div>
+  </div>
+  <div class="modal-fundo" id="modal-cobranca" hidden>
+    <div class="modal-acao modal-cobranca" id="modal-cobranca-corpo" role="dialog"></div>
+  </div>
 
   <div class="toast" id="toast" hidden></div>
   <div class="overlay-carga" id="overlay-carga" hidden>
@@ -1710,6 +1740,7 @@ table.dados tr.risco td { box-shadow: none; }
         return {
           id: d.id, nome: d.nome, descricao: d.descricao, icone: d.icone, cor: d.cor,
           ordem: d.ordem, bandeira: d.bandeira, tem_senha_planos: !!senhasArea[d.id],
+          n_planos: planosArea.filter(function (p) { return p.departamento_id === d.id; }).length,
         };
       }),
       controles: controles.map(function (c) {
@@ -1767,7 +1798,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.7' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.8' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -2207,6 +2238,15 @@ var I18n = (function () {
       hub_apoio: 'Arraste para reordenar. A lista abre os planos da área; a engrenagem configura o card. Clique no card para abrir os arquivos.',
       n_controle: '{n} controle',
       n_controles: '{n} controles',
+      n_plano: '{n} plano de ação',
+      n_planos: '{n} planos de ação',
+      mais_tip: 'Cadastrar',
+      mais_titulo: 'O que cadastrar?',
+      mais_apoio: 'Escolha se vai incluir controles e links ou o plano de ação deste departamento.',
+      mais_controles: 'Controles e links',
+      mais_planos: 'Plano de ação',
+      cobranca_abrir: 'Configurar cobrança',
+      cobranca_modal_apoio: 'Temas, relógio, quem recebe o e-mail e o chefe de cada pessoa.',
       abrir: 'Abrir',
       config_card_tip: 'Configurar ícone, cor e arquivos',
       planos_area_tip: 'Planos de ação desta área',
@@ -2495,6 +2535,15 @@ var I18n = (function () {
       hub_apoio: 'Drag to reorder. The list opens this area’s action plans; the gear configures the card. Click a card to open its files.',
       n_controle: '{n} control',
       n_controles: '{n} controls',
+      n_plano: '{n} action plan',
+      n_planos: '{n} action plans',
+      mais_tip: 'Add',
+      mais_titulo: 'What do you want to add?',
+      mais_apoio: 'Choose whether to add controls and links or this department action plan.',
+      mais_controles: 'Controls and links',
+      mais_planos: 'Action plan',
+      cobranca_abrir: 'Set up follow-up',
+      cobranca_modal_apoio: 'Themes, the daily clock, who gets the email, and each person boss.',
       abrir: 'Open',
       config_card_tip: 'Configure icon, color and files',
       planos_area_tip: 'Action plans for this area',
@@ -2783,6 +2832,15 @@ var I18n = (function () {
       hub_apoio: 'Arrastre para reordenar. La lista abre los planes del área; el engranaje configura la tarjeta. Pulse la tarjeta para abrir los archivos.',
       n_controle: '{n} control',
       n_controles: '{n} controles',
+      n_plano: '{n} plan de acción',
+      n_planos: '{n} planes de acción',
+      mais_tip: 'Registrar',
+      mais_titulo: '¿Qué registrar?',
+      mais_apoio: 'Elija si va a incluir controles y enlaces o el plan de acción de este departamento.',
+      mais_controles: 'Controles y enlaces',
+      mais_planos: 'Plan de acción',
+      cobranca_abrir: 'Configurar cobro',
+      cobranca_modal_apoio: 'Temas, reloj, quién recibe el correo y el jefe de cada persona.',
       abrir: 'Abrir',
       config_card_tip: 'Configurar icono, color y archivos',
       planos_area_tip: 'Planes de acción de esta área',
@@ -3181,6 +3239,8 @@ if (typeof module !== 'undefined' && module.exports) {
     carregando: false,
     deptAberto: null,
     pastasAbertas: {},
+    cobrancaAberta: false,
+    maisDept: '',
     configAba: 'dept',
     filtros: filtrosVazios(),
     filtroAberto: null,
@@ -3392,6 +3452,7 @@ if (typeof module !== 'undefined' && module.exports) {
     ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.8.4-1.4 1-1.4 1.9V14M12 17h.01"/>',
     lista: '<path d="M8 6H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h4"/>',
     cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    mais: '<path d="M12 5v14M5 12h14"/>',
     chevron: '<path d="M6 9l6 6 6-6"/>',
   };
 
@@ -3616,23 +3677,25 @@ if (typeof module !== 'undefined' && module.exports) {
         var badge = d.bandeira
           ? '<span class="card-dept-badge">' + escapar(d.bandeira) + '</span>'
           : '';
+        var nPlanos = Number(d.n_planos) || 0;
         return '<article class="card-dept" data-dept="' + escapar(d.id) +
           '" style="--dept-cor:' + escapar(d.cor) + '" draggable="true" tabindex="0">' +
           '<div class="card-dept-acoes">' +
           badge +
-          '<button type="button" class="card-dept-config" data-planos-area="' + escapar(d.id) +
-          '" title="' + escapar(d.tem_senha_planos ? t('planos_area_tip_lock') : t('planos_area_tip')) + '">' +
-          svg(d.tem_senha_planos ? 'cadeado' : 'lista') + '</button>' +
-          '<button type="button" class="card-dept-config" data-editar-dept="' + escapar(d.id) +
-          '" title="' + escapar(t('config_card_tip')) + '">' + svg('config') + '</button>' +
+          '<button type="button" class="card-dept-config" data-mais-dept="' + escapar(d.id) +
+          '" title="' + escapar(t('mais_tip')) + '">' + svg('mais') + '</button>' +
           '</div>' +
           '<div class="card-dept-topo">' +
           '<div class="card-dept-icone">' + svg(d.icone) + '</div>' +
           '</div>' +
           '<h3>' + escapar(d.nome) + '</h3>' +
           '<p>' + escapar(d.descricao) + '</p>' +
-          '<div class="card-dept-meta"><span>' + (n === 1 ? t('n_controle', { n: n }) : t('n_controles', { n: n })) +
-          '</span>' + t('abrir') + '</div></article>';
+          '<div class="card-dept-meta">' +
+          '<button type="button" class="card-dept-contagem" data-editar-dept="' + escapar(d.id) + '">' +
+          (n === 1 ? t('n_controle', { n: n }) : t('n_controles', { n: n })) + '</button>' +
+          '<button type="button" class="card-dept-contagem" data-planos-area="' + escapar(d.id) + '">' +
+          (nPlanos === 1 ? t('n_plano', { n: nPlanos }) : t('n_planos', { n: nPlanos })) + '</button>' +
+          '<span class="card-dept-abrir">' + t('abrir') + '</span></div></article>';
       }).join('') + '</div>';
   }
 
@@ -3952,7 +4015,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var html = '';
     (no.pastas || []).forEach(function (p) {
       var chave = prefixo ? prefixo + '/' + p.nome : p.nome;
-      var aberta = Estado.pastasAbertas[chave] !== false;
+      var aberta = Estado.pastasAbertas[chave] === true;
       html += '<div class="arvore-no">' +
         '<button type="button" class="arvore-pasta" data-pasta-toggle="' + escapar(chave) + '">' +
         svg(aberta ? 'pasta-aberta' : 'pasta') +
@@ -4277,9 +4340,15 @@ if (typeof module !== 'undefined' && module.exports) {
         '<button class="botao primario" type="button" data-abrir-etapa="fonte">' +
         t('planos_area_ir_fonte') + '</button></div>';
     }
+    var nOn = (Estado.planosArea || []).filter(function (p) { return !!p.followup; }).length;
+    var nTot = (Estado.planosArea || []).length;
     return kpisHtml(Estado.planosAreaKpis) +
       listaPlanosArea() +
-      barraCobrancaPlano();
+      '<div class="cobranca-atalho">' +
+      '<div><div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_cobranca_bloco') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('planos_area_cobranca_plano_apoio', { n: nOn, total: nTot }) + '</div></div>' +
+      '<button type="button" class="botao primario" data-abrir-cobranca="1">' + t('cobranca_abrir') + '</button>' +
+      '</div>';
   }
 
   function htmlFluxoProgresso() {
@@ -4411,6 +4480,58 @@ if (typeof module !== 'undefined' && module.exports) {
       if (formEtapa) revelarAlvo(formEtapa);
       else if (elEtapa && elEtapa.scrollIntoView) elEtapa.scrollIntoView({ block: 'nearest' });
     }
+    if (Estado.cobrancaAberta) pintarCobrancaModal();
+  }
+
+  function pintarCobrancaModal() {
+    var modal = $('modal-cobranca');
+    var corpo = $('modal-cobranca-corpo');
+    if (!modal || !corpo) return;
+    if (!Estado.cobrancaAberta) {
+      modal.hidden = true;
+      modal.classList.remove('aberto');
+      corpo.innerHTML = '';
+      return;
+    }
+    corpo.innerHTML =
+      '<div class="cobranca-modal-topo">' +
+      '<div><div class="secao-titulo">' + t('planos_area_cobranca_bloco') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('cobranca_modal_apoio') + '</div></div>' +
+      '<button type="button" class="botao" data-fechar-cobranca="1">' + t('fechar') + '</button>' +
+      '</div>' +
+      barraCobrancaPlano();
+    modal.hidden = false;
+    modal.classList.add('aberto');
+  }
+
+  function fecharCobranca() {
+    Estado.cobrancaAberta = false;
+    pintarCobrancaModal();
+  }
+
+  function abrirEscolhaCadastro(id) {
+    var modal = $('modal-mais');
+    var corpo = $('modal-mais-corpo');
+    if (!modal || !corpo) return;
+    corpo.innerHTML =
+      '<div class="secao-titulo">' + t('mais_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0 0 12px">' + t('mais_apoio') + '</div>' +
+      '<div class="mais-opcoes">' +
+      '<button type="button" class="botao" data-mais-ir="controles">' + t('mais_controles') + '</button>' +
+      '<button type="button" class="botao" data-mais-ir="planos">' + t('mais_planos') + '</button>' +
+      '</div>' +
+      '<div class="acoes-form"><button type="button" class="botao" data-fechar-mais="1">' + t('cancelar') + '</button></div>';
+    Estado.maisDept = id;
+    modal.hidden = false;
+    modal.classList.add('aberto');
+  }
+
+  function fecharEscolhaCadastro() {
+    var modal = $('modal-mais');
+    Estado.maisDept = '';
+    if (!modal) return;
+    modal.hidden = true;
+    modal.classList.remove('aberto');
   }
 
   function carregarPlanosArea(id, senha) {
@@ -4502,6 +4623,7 @@ if (typeof module !== 'undefined' && module.exports) {
     Estado.formFonteArea = {};
     Estado.fontesArea = [];
     Estado.planosAreaPrecisaSenha = false;
+    fecharCobranca();
   }
 
   function campo(nome, rotulo, valor, extra) {
@@ -5016,6 +5138,52 @@ if (typeof module !== 'undefined' && module.exports) {
         definirIdioma(idiomaBtn.getAttribute('data-idioma'));
         return;
       }
+      var maisBtn = e.target.closest('button[data-mais-dept]');
+      if (maisBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        abrirEscolhaCadastro(maisBtn.getAttribute('data-mais-dept'));
+        return;
+      }
+      var maisIr = e.target.closest('[data-mais-ir]');
+      if (maisIr) {
+        e.preventDefault();
+        var destinoMais = maisIr.getAttribute('data-mais-ir');
+        var idMais = Estado.maisDept || '';
+        fecharEscolhaCadastro();
+        if (destinoMais === 'planos') {
+          var dPlanosMais = ((Estado.hub && Estado.hub.departamentos) || []).filter(function (x) {
+            return x.id === idMais;
+          })[0];
+          Estado.formFonteArea = {};
+          Estado.planosArea = [];
+          Estado.fontesArea = [];
+          Estado.planosAreaPrecisaSenha = !!(dPlanosMais && dPlanosMais.tem_senha_planos);
+          carregarFiltrosArea(idMais);
+          carregarEtapasArea(idMais);
+          abrirDept(idMais, 'planos');
+          carregarPlanosArea(idMais);
+        } else {
+          abrirDept(idMais, 'editar');
+        }
+        return;
+      }
+      if (e.target.closest('[data-fechar-mais]') || e.target.id === 'modal-mais') {
+        e.preventDefault();
+        fecharEscolhaCadastro();
+        return;
+      }
+      if (e.target.closest('[data-abrir-cobranca]')) {
+        e.preventDefault();
+        Estado.cobrancaAberta = true;
+        pintarCobrancaModal();
+        return;
+      }
+      if (e.target.closest('[data-fechar-cobranca]') || e.target.id === 'modal-cobranca') {
+        e.preventDefault();
+        fecharCobranca();
+        return;
+      }
       var planosBtn = e.target.closest('[data-planos-area]');
       if (planosBtn) {
         e.preventDefault();
@@ -5280,7 +5448,7 @@ if (typeof module !== 'undefined' && module.exports) {
       var pastaBtn = e.target.closest('[data-pasta-toggle]');
       if (pastaBtn) {
         var chavePasta = pastaBtn.getAttribute('data-pasta-toggle');
-        Estado.pastasAbertas[chavePasta] = Estado.pastasAbertas[chavePasta] === false;
+        Estado.pastasAbertas[chavePasta] = !Estado.pastasAbertas[chavePasta];
         if (Estado.deptAberto) abrirDept(Estado.deptAberto.id, Estado.deptModo);
         return;
       }
@@ -5318,7 +5486,7 @@ if (typeof module !== 'undefined' && module.exports) {
       }
       var dept = e.target.closest('[data-dept]');
       if (dept) {
-        if (e.target.closest('[data-editar-dept], [data-planos-area]')) return;
+        if (e.target.closest('[data-editar-dept], [data-planos-area], [data-mais-dept]')) return;
         if (Estado.arrastouDept) {
           Estado.arrastouDept = false;
           return;
@@ -5618,11 +5786,19 @@ if (typeof module !== 'undefined' && module.exports) {
           recarregarFiltrosUi();
           return;
         }
+        if ($('modal-mais') && !$('modal-mais').hidden) {
+          fecharEscolhaCadastro();
+          return;
+        }
+        if (Estado.cobrancaAberta) {
+          fecharCobranca();
+          return;
+        }
         fecharDrawer();
         return;
       }
       if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('card-dept')) {
-        if (e.target.closest('[data-editar-dept], [data-planos-area], .seletor-icone, .cor-edicao')) return;
+        if (e.target.closest('[data-editar-dept], [data-planos-area], [data-mais-dept], .seletor-icone, .cor-edicao')) return;
         e.preventDefault();
         abrirDept(e.target.getAttribute('data-dept'), 'ver');
       }
