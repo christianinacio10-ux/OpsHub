@@ -1087,6 +1087,25 @@ table.dados tr.risco td { box-shadow: none; }
   border-color: rgba(237, 232, 224, .42);
   color: var(--tinta);
 }
+.bloco-lembrete {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--linha);
+}
+.lembrete-dias-linha {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px;
+}
+.lembrete-dias-linha label {
+  display: flex; flex-direction: column; gap: 4px;
+  color: var(--tinta-2); font-size: 12px;
+}
+.lembrete-dias-linha input {
+  width: 88px; height: 36px; border-radius: 10px;
+  border: 1px solid var(--linha); background: var(--superficie);
+  color: var(--tinta); padding: 0 10px;
+  font-family: var(--fonte); font-size: 14px;
+}
+.lembrete-dias-linha input:focus { outline: none; border-color: rgba(228, 0, 43, .35); }
 .senha-area-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
 .drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
 .rotulo-com-ajuda {

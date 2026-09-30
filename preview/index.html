@@ -1093,6 +1093,25 @@ table.dados tr.risco td { box-shadow: none; }
   border-color: rgba(237, 232, 224, .42);
   color: var(--tinta);
 }
+.bloco-lembrete {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--linha);
+}
+.lembrete-dias-linha {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px;
+}
+.lembrete-dias-linha label {
+  display: flex; flex-direction: column; gap: 4px;
+  color: var(--tinta-2); font-size: 12px;
+}
+.lembrete-dias-linha input {
+  width: 88px; height: 36px; border-radius: 10px;
+  border: 1px solid var(--linha); background: var(--superficie);
+  color: var(--tinta); padding: 0 10px;
+  font-family: var(--fonte); font-size: 14px;
+}
+.lembrete-dias-linha input:focus { outline: none; border-color: rgba(228, 0, 43, .35); }
 .senha-area-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
 .drawer-corpo .form-grid { margin-bottom: 12px; padding: 14px; }
 .rotulo-com-ajuda {
@@ -1641,6 +1660,7 @@ table.dados tr.risco td { box-shadow: none; }
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
   var temasFollowUp = [];
   var emailsHierarquiaPlanta = {};
+  var lembretePlanta = { modo: 'off', dias: 3, email: '' };
   var followupsEnviadosHoje = {};
   var followUpPorArea = {};
   var emailSessao = 'christian.inacio@averydennison.com';
@@ -1667,7 +1687,10 @@ table.dados tr.risco td { box-shadow: none; }
 
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
-      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailsHierarquia: {} };
+      followUpPorArea[deptId] = {
+        temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailsHierarquia: {},
+        lembrete: { modo: 'off', dias: 3, email: '' },
+      };
     }
     return followUpPorArea[deptId];
   }
@@ -1683,6 +1706,11 @@ table.dados tr.risco td { box-shadow: none; }
       emailsOff: (fu.emailsOff || []).slice(),
       meuEmail: emailSessao,
       emailsHierarquia: Object.assign({}, fu.emailsHierarquia || {}),
+      lembrete: {
+        modo: (fu.lembrete && fu.lembrete.modo) || 'off',
+        dias: (fu.lembrete && fu.lembrete.dias) || 3,
+        email: (fu.lembrete && fu.lembrete.email) || '',
+      },
     };
   }
 
@@ -1756,6 +1784,11 @@ table.dados tr.risco td { box-shadow: none; }
       controlesAdmin: controles,
       gatilho: gatilho,
       emailsHierarquia: Object.assign({}, emailsHierarquiaPlanta),
+      lembrete: {
+        modo: lembretePlanta.modo || 'off',
+        dias: lembretePlanta.dias || 3,
+        email: lembretePlanta.email || '',
+      },
     };
   }
 
@@ -2040,6 +2073,31 @@ table.dados tr.risco td { box-shadow: none; }
       var h = hub();
       h.planosArea = payloadArea(deptId, false);
       return h;
+    },
+    apiSalvarLembrete: function (modo, dias) {
+      modo = String(modo || 'off').toLowerCase();
+      if (modo !== 'eu' && modo !== 'pessoa') modo = 'off';
+      var n = parseInt(dias, 10);
+      if (!isFinite(n) || n < 1) n = 3;
+      if (n > 90) n = 90;
+      lembretePlanta.modo = modo;
+      lembretePlanta.dias = n;
+      if (modo === 'eu') lembretePlanta.email = emailSessao;
+      return hub();
+    },
+    apiSalvarLembreteArea: function (deptId, modo, dias) {
+      if (areaTrancada(deptId)) return payloadArea(deptId, true);
+      modo = String(modo || 'off').toLowerCase();
+      if (modo !== 'eu' && modo !== 'pessoa') modo = 'off';
+      var n = parseInt(dias, 10);
+      if (!isFinite(n) || n < 1) n = 3;
+      if (n > 90) n = 90;
+      var fu = followUpDept(deptId);
+      fu.lembrete = fu.lembrete || { modo: 'off', dias: 3, email: '' };
+      fu.lembrete.modo = modo;
+      fu.lembrete.dias = n;
+      if (modo === 'eu') fu.lembrete.email = emailSessao;
+      return payloadArea(deptId, false);
     },
     apiSalvarEmailsHierarquia: function (parcial) {
       mesclarHierarquiaMock_(emailsHierarquiaPlanta, parcial);
@@ -2500,6 +2558,25 @@ var I18n = (function () {
       hierarquia_sem_pessoas: 'Nenhuma pessoa com e-mail neste plano.',
       toast_hierarquia: 'E-mail do próximo nível atualizado.',
       erro_hierarquia_email: 'Informe um e-mail válido ou deixe o campo em branco.',
+      lembrete_titulo: 'Lembrete por e-mail',
+      lembrete_apoio: 'Opcional. No meu nome, o e-mail vem só das ações em que você é o responsável. Pessoa do plano, quem está na ação recebe o lembrete. Entram só os temas ligados.',
+      lembrete_off: 'Desligado',
+      lembrete_eu: 'Ações no meu nome',
+      lembrete_pessoa: 'Pessoa do plano',
+      lembrete_dias: 'Dias de lembrete',
+      lembrete_dias_apoio: 'Com {n} dia(s), sai um e-mail por dia até o prazo, inclusive no vencimento. No dia seguinte, se continuar atrasada, vale a cobrança normal.',
+      toast_lembrete: 'Lembrete por e-mail atualizado.',
+      ocupado_lembrete_sub: 'Gravando quem recebe e por quantos dias',
+      erro_lembrete_email: 'Não achei o seu e-mail nesta sessão. Abra o painel logado para lembrar as ações no seu nome.',
+      mail_titulo_lembrete: 'Lembrete de ação',
+      mail_intro_lembrete: 'Faltam {n} dia(s) para o prazo. Este lembrete sai uma vez por dia até o vencimento.',
+      mail_intro_lembrete_hoje: 'Esta ação vence hoje.',
+      mail_faltam: 'Faltam {n} dia(s)',
+      mail_vence_hoje: 'Vence hoje',
+      mail_rotulo_lembrete: 'Lembrete',
+      mail_assunto_lembrete: '[{app}] Lembrete — {oque} vence em {n} dia(s)',
+      mail_assunto_lembrete_hoje: '[{app}] Lembrete — {oque} vence hoje',
+      mail_texto_lembrete: 'Lembrete: {oque}. Prazo: {prazo}.',
       mail_rotulo_email: 'E-mail',
       mail_rotulo_atraso: 'Atraso',
     },
@@ -2797,6 +2874,25 @@ var I18n = (function () {
       hierarquia_sem_pessoas: 'No person with an email on this plan.',
       toast_hierarquia: 'Next-level email updated.',
       erro_hierarquia_email: 'Enter a valid email or leave the field blank.',
+      lembrete_titulo: 'Email reminder',
+      lembrete_apoio: 'Optional. In my name, the email covers only actions where you are the owner. Person on the plan sends the reminder to whoever is on the action. Only themes that are on are included.',
+      lembrete_off: 'Off',
+      lembrete_eu: 'Actions in my name',
+      lembrete_pessoa: 'Person on the plan',
+      lembrete_dias: 'Reminder days',
+      lembrete_dias_apoio: 'With {n} day(s), one email goes out each day through the due date, including that day. The next day, if it is still overdue, the usual chase applies.',
+      toast_lembrete: 'Email reminder updated.',
+      ocupado_lembrete_sub: 'Saving who receives it and for how many days',
+      erro_lembrete_email: 'Could not find your email in this session. Open the panel while signed in to be reminded of actions in your name.',
+      mail_titulo_lembrete: 'Action reminder',
+      mail_intro_lembrete: '{n} day(s) left until the due date. This reminder goes out once a day through the due date.',
+      mail_intro_lembrete_hoje: 'This action is due today.',
+      mail_faltam: '{n} day(s) left',
+      mail_vence_hoje: 'Due today',
+      mail_rotulo_lembrete: 'Reminder',
+      mail_assunto_lembrete: '[{app}] Reminder — {oque} due in {n} day(s)',
+      mail_assunto_lembrete_hoje: '[{app}] Reminder — {oque} due today',
+      mail_texto_lembrete: 'Reminder: {oque}. Due: {prazo}.',
       mail_rotulo_email: 'Email',
       mail_rotulo_atraso: 'Overdue',
     },
@@ -3094,6 +3190,25 @@ var I18n = (function () {
       hierarquia_sem_pessoas: 'Ninguna persona con correo en este plan.',
       toast_hierarquia: 'Correo del siguiente nivel actualizado.',
       erro_hierarquia_email: 'Indique un correo válido o deje el campo en blanco.',
+      lembrete_titulo: 'Recordatorio por correo',
+      lembrete_apoio: 'Opcional. A mi nombre, el correo cubre solo las acciones en las que usted es el responsable. Persona del plan, quien está en la acción recibe el recordatorio. Solo entran los temas encendidos.',
+      lembrete_off: 'Apagado',
+      lembrete_eu: 'Acciones a mi nombre',
+      lembrete_pessoa: 'Persona del plan',
+      lembrete_dias: 'Días de recordatorio',
+      lembrete_dias_apoio: 'Con {n} día(s), sale un correo por día hasta el plazo, incluido el vencimiento. Al día siguiente, si sigue atrasada, vale el cobro normal.',
+      toast_lembrete: 'Recordatorio por correo actualizado.',
+      ocupado_lembrete_sub: 'Guardando quién recibe y por cuántos días',
+      erro_lembrete_email: 'No encontré su correo en esta sesión. Abra el panel con la sesión iniciada para recordar las acciones a su nombre.',
+      mail_titulo_lembrete: 'Recordatorio de acción',
+      mail_intro_lembrete: 'Faltan {n} día(s) para el plazo. Este recordatorio sale una vez al día hasta el vencimiento.',
+      mail_intro_lembrete_hoje: 'Esta acción vence hoy.',
+      mail_faltam: 'Faltan {n} día(s)',
+      mail_vence_hoje: 'Vence hoy',
+      mail_rotulo_lembrete: 'Recordatorio',
+      mail_assunto_lembrete: '[{app}] Recordatorio — {oque} vence en {n} día(s)',
+      mail_assunto_lembrete_hoje: '[{app}] Recordatorio — {oque} vence hoy',
+      mail_texto_lembrete: 'Recordatorio: {oque}. Plazo: {prazo}.',
       mail_rotulo_email: 'Correo',
       mail_rotulo_atraso: 'Retraso',
     },
@@ -3261,7 +3376,7 @@ if (typeof module !== 'undefined' && module.exports) {
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {} },
+    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {}, lembrete: { modo: 'off', dias: 3, email: '' } },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -4169,6 +4284,7 @@ if (typeof module !== 'undefined' && module.exports) {
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
       temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
+      lembrete: { modo: 'off', dias: 3, email: '' },
     };
   }
 
@@ -4190,6 +4306,37 @@ if (typeof module !== 'undefined' && module.exports) {
           '<div><button type="button" class="botao primario" data-salvar-hierarquia="' + escopo + '">' +
           t('salvar') + '</button></div>'
         : '<div class="secao-apoio" style="margin:0">' + t('hierarquia_sem_pessoas') + '</div>') +
+      '</div>';
+  }
+
+  function blocoLembrete(escopo, regra) {
+    regra = regra || {};
+    var modo = regra.modo === 'eu' || regra.modo === 'pessoa' ? regra.modo : 'off';
+    var dias = Number(regra.dias);
+    if (!dias || dias < 1) dias = 3;
+    if (dias > 90) dias = 90;
+    function btn(id, rotulo) {
+      var on = modo === id;
+      return '<button type="button" class="cobranca-modo' + (on ? ' ativo' : '') +
+        '" data-lembrete-modo="' + id + '" data-lembrete-escopo="' + escopo +
+        '" aria-pressed="' + (on ? 'true' : 'false') + '">' + rotulo + '</button>';
+    }
+    return '<div class="bloco-lembrete" data-bloco-lembrete="' + escopo + '">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('lembrete_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('lembrete_apoio') + '</div>' +
+      '<div class="cobranca-modos" role="group">' +
+      btn('off', t('lembrete_off')) +
+      btn('eu', t('lembrete_eu')) +
+      btn('pessoa', t('lembrete_pessoa')) +
+      '</div>' +
+      '<div class="lembrete-dias-linha">' +
+      '<label>' + t('lembrete_dias') +
+      '<input type="number" min="1" max="90" step="1" data-lembrete-dias value="' + dias + '">' +
+      '</label>' +
+      '<button type="button" class="botao primario" data-salvar-lembrete="' + escopo + '">' +
+      t('salvar') + '</button>' +
+      '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('lembrete_dias_apoio', { n: dias }) + '</div>' +
       '</div>';
   }
 
@@ -4285,6 +4432,7 @@ if (typeof module !== 'undefined' && module.exports) {
         ? t('planos_area_follow_so_eu_hint', { email: emailHint })
         : t('planos_area_cobrar_todos_hint')) +
       '</div>' +
+      blocoLembrete('area', fu.lembrete) +
       (listaPessoas
         ? '<div class="secao-titulo" style="font-size:13px;margin:4px 0 6px">' + t('planos_area_follow_pessoas') + '</div>' +
           listaPessoas
@@ -4414,6 +4562,7 @@ if (typeof module !== 'undefined' && module.exports) {
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
       temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
+      lembrete: { modo: 'off', dias: 3, email: '' },
     };
     if (resp.ok) {
       var d = Estado.deptAberto;
@@ -4769,6 +4918,7 @@ if (typeof module !== 'undefined' && module.exports) {
       '<div class="secao-titulo">' + t('mail_regra') + '</div>' +
       '<div class="secao-apoio">' + t('mail_regra_apoio') + '</div>' +
       chipsFollowUp() +
+      blocoLembrete('planta', Estado.hub && Estado.hub.lembrete) +
       '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">' +
       t('gatilho_selo', { estado: g.ativo ? t('gatilho_ativo') : t('gatilho_inativo'), hora: g.hora }) +
       '</div>' +
@@ -5103,6 +5253,30 @@ if (typeof module !== 'undefined' && module.exports) {
       return t('toast_nenhum_followup_agora');
     }
     return t('toast_nenhum_followup');
+  }
+
+  function salvarLembreteUi(escopo, modo, raiz) {
+    if (Estado.carregando) return;
+    var input = raiz && raiz.querySelector('[data-lembrete-dias]');
+    var dias = input ? input.value : 3;
+    if (escopo === 'area' && !(Estado.deptAberto && Estado.deptAberto.id)) return;
+    ocupar(true, t('ocupado_followup'), t('ocupado_lembrete_sub'));
+    var pedido = escopo === 'area'
+      ? chamar('apiSalvarLembreteArea', Estado.deptAberto.id, modo, dias)
+      : chamar('apiSalvarLembrete', modo, dias);
+    pedido.then(function (resp) {
+      ocupar(false);
+      if (escopo === 'area') aplicarPlanosArea(resp, { manterScroll: true });
+      else {
+        Estado.hub = resp;
+        Estado.configAba = 'mail';
+        render();
+      }
+      toast(t('toast_lembrete'));
+    }).catch(function (err) {
+      ocupar(false);
+      toast(err.message || err, true);
+    });
   }
 
   function toggleFollowUpTemaArea(nome) {
@@ -5547,6 +5721,30 @@ if (typeof module !== 'undefined' && module.exports) {
       }
       if (e.target.closest('#btn-followup')) {
         enviarFollowUpsAgoraUi();
+        return;
+      }
+      var lemModo = e.target.closest('[data-lembrete-modo]');
+      if (lemModo) {
+        e.preventDefault();
+        e.stopPropagation();
+        salvarLembreteUi(
+          lemModo.getAttribute('data-lembrete-escopo') || 'planta',
+          lemModo.getAttribute('data-lembrete-modo'),
+          lemModo.closest('[data-bloco-lembrete]')
+        );
+        return;
+      }
+      var lemSalvar = e.target.closest('[data-salvar-lembrete]');
+      if (lemSalvar) {
+        e.preventDefault();
+        e.stopPropagation();
+        var blocoLem = lemSalvar.closest('[data-bloco-lembrete]');
+        var ativoLem = blocoLem && blocoLem.querySelector('[data-lembrete-modo].ativo');
+        salvarLembreteUi(
+          lemSalvar.getAttribute('data-salvar-lembrete') || 'planta',
+          ativoLem ? ativoLem.getAttribute('data-lembrete-modo') : 'off',
+          blocoLem
+        );
         return;
       }
       var btnHier = e.target.closest('[data-salvar-hierarquia]');
