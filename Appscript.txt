@@ -321,6 +321,25 @@ var I18n = (function () {
       hierarquia_sem_pessoas: 'Nenhuma pessoa com e-mail neste plano.',
       toast_hierarquia: 'E-mail do próximo nível atualizado.',
       erro_hierarquia_email: 'Informe um e-mail válido ou deixe o campo em branco.',
+      lembrete_titulo: 'Lembrete por e-mail',
+      lembrete_apoio: 'Opcional. No meu nome, o e-mail vem só das ações em que você é o responsável. Pessoa do plano, quem está na ação recebe o lembrete. Entram só os temas ligados.',
+      lembrete_off: 'Desligado',
+      lembrete_eu: 'Ações no meu nome',
+      lembrete_pessoa: 'Pessoa do plano',
+      lembrete_dias: 'Dias de lembrete',
+      lembrete_dias_apoio: 'Com {n} dia(s), sai um e-mail por dia até o prazo, inclusive no vencimento. No dia seguinte, se continuar atrasada, vale a cobrança normal.',
+      toast_lembrete: 'Lembrete por e-mail atualizado.',
+      ocupado_lembrete_sub: 'Gravando quem recebe e por quantos dias',
+      erro_lembrete_email: 'Não achei o seu e-mail nesta sessão. Abra o painel logado para lembrar as ações no seu nome.',
+      mail_titulo_lembrete: 'Lembrete de ação',
+      mail_intro_lembrete: 'Faltam {n} dia(s) para o prazo. Este lembrete sai uma vez por dia até o vencimento.',
+      mail_intro_lembrete_hoje: 'Esta ação vence hoje.',
+      mail_faltam: 'Faltam {n} dia(s)',
+      mail_vence_hoje: 'Vence hoje',
+      mail_rotulo_lembrete: 'Lembrete',
+      mail_assunto_lembrete: '[{app}] Lembrete — {oque} vence em {n} dia(s)',
+      mail_assunto_lembrete_hoje: '[{app}] Lembrete — {oque} vence hoje',
+      mail_texto_lembrete: 'Lembrete: {oque}. Prazo: {prazo}.',
       mail_rotulo_email: 'E-mail',
       mail_rotulo_atraso: 'Atraso',
     },
@@ -619,6 +638,25 @@ var I18n = (function () {
       hierarquia_sem_pessoas: 'No person with an email on this plan.',
       toast_hierarquia: 'Next-level email updated.',
       erro_hierarquia_email: 'Enter a valid email or leave the field blank.',
+      lembrete_titulo: 'Email reminder',
+      lembrete_apoio: 'Optional. In my name, the email covers only actions where you are the owner. Person on the plan sends the reminder to whoever is on the action. Only themes that are on are included.',
+      lembrete_off: 'Off',
+      lembrete_eu: 'Actions in my name',
+      lembrete_pessoa: 'Person on the plan',
+      lembrete_dias: 'Reminder days',
+      lembrete_dias_apoio: 'With {n} day(s), one email goes out each day through the due date, including that day. The next day, if it is still overdue, the usual chase applies.',
+      toast_lembrete: 'Email reminder updated.',
+      ocupado_lembrete_sub: 'Saving who receives it and for how many days',
+      erro_lembrete_email: 'Could not find your email in this session. Open the panel while signed in to be reminded of actions in your name.',
+      mail_titulo_lembrete: 'Action reminder',
+      mail_intro_lembrete: '{n} day(s) left until the due date. This reminder goes out once a day through the due date.',
+      mail_intro_lembrete_hoje: 'This action is due today.',
+      mail_faltam: '{n} day(s) left',
+      mail_vence_hoje: 'Due today',
+      mail_rotulo_lembrete: 'Reminder',
+      mail_assunto_lembrete: '[{app}] Reminder — {oque} due in {n} day(s)',
+      mail_assunto_lembrete_hoje: '[{app}] Reminder — {oque} due today',
+      mail_texto_lembrete: 'Reminder: {oque}. Due: {prazo}.',
       mail_rotulo_email: 'Email',
       mail_rotulo_atraso: 'Overdue',
     },
@@ -917,6 +955,25 @@ var I18n = (function () {
       hierarquia_sem_pessoas: 'Ninguna persona con correo en este plan.',
       toast_hierarquia: 'Correo del siguiente nivel actualizado.',
       erro_hierarquia_email: 'Indique un correo válido o deje el campo en blanco.',
+      lembrete_titulo: 'Recordatorio por correo',
+      lembrete_apoio: 'Opcional. A mi nombre, el correo cubre solo las acciones en las que usted es el responsable. Persona del plan, quien está en la acción recibe el recordatorio. Solo entran los temas encendidos.',
+      lembrete_off: 'Apagado',
+      lembrete_eu: 'Acciones a mi nombre',
+      lembrete_pessoa: 'Persona del plan',
+      lembrete_dias: 'Días de recordatorio',
+      lembrete_dias_apoio: 'Con {n} día(s), sale un correo por día hasta el plazo, incluido el vencimiento. Al día siguiente, si sigue atrasada, vale el cobro normal.',
+      toast_lembrete: 'Recordatorio por correo actualizado.',
+      ocupado_lembrete_sub: 'Guardando quién recibe y por cuántos días',
+      erro_lembrete_email: 'No encontré su correo en esta sesión. Abra el panel con la sesión iniciada para recordar las acciones a su nombre.',
+      mail_titulo_lembrete: 'Recordatorio de acción',
+      mail_intro_lembrete: 'Faltan {n} día(s) para el plazo. Este recordatorio sale una vez al día hasta el vencimiento.',
+      mail_intro_lembrete_hoje: 'Esta acción vence hoy.',
+      mail_faltam: 'Faltan {n} día(s)',
+      mail_vence_hoje: 'Vence hoy',
+      mail_rotulo_lembrete: 'Recordatorio',
+      mail_assunto_lembrete: '[{app}] Recordatorio — {oque} vence en {n} día(s)',
+      mail_assunto_lembrete_hoje: '[{app}] Recordatorio — {oque} vence hoy',
+      mail_texto_lembrete: 'Recordatorio: {oque}. Plazo: {prazo}.',
       mail_rotulo_email: 'Correo',
       mail_rotulo_atraso: 'Retraso',
     },
@@ -1490,6 +1547,79 @@ var Logica = (function () {
     };
   }
 
+  function normalizarModoLembrete(v) {
+    var s = texto(v).toLowerCase();
+    if (s === 'eu') return 'eu';
+    if (s === 'pessoa') return 'pessoa';
+    return 'off';
+  }
+
+  function normalizarDiasLembrete(v) {
+    if (v == null || texto(v) === '') return 3;
+    var n = Number(v);
+    if (!isFinite(n)) return 3;
+    n = Math.round(n);
+    if (n < 1) return 1;
+    if (n > 90) return 90;
+    return n;
+  }
+
+  function regraLembrete(fonte) {
+    fonte = fonte || {};
+    var modoBruto = fonte.lembrete_modo != null ? fonte.lembrete_modo : fonte.modo;
+    var diasBruto = fonte.lembrete_dias != null ? fonte.lembrete_dias : fonte.dias;
+    var emailBruto = fonte.lembrete_email != null ? fonte.lembrete_email : fonte.email;
+    return {
+      modo: normalizarModoLembrete(modoBruto),
+      dias: normalizarDiasLembrete(diasBruto),
+      email: texto(emailBruto).toLowerCase(),
+    };
+  }
+
+  /**
+   * Lembrete opcional nos N dias até o prazo, inclusive o vencimento.
+   * modo eu: só a ação cujo e-mail do responsável é o nosso.
+   * modo pessoa: o e-mail vai para quem está na ação.
+   * Fora dessa janela, a cobrança de atraso segue em elegivelFollowUp.
+   */
+  function elegivelLembrete(acao, hoje, regra, temasHabilitados, opcoes) {
+    regra = regraLembrete(regra);
+    opcoes = opcoes || {};
+    if (regra.modo === 'off') return { ok: false, motivo: 'lembrete_desligado' };
+    var base = elegivelFollowUp(acao, hoje, temasHabilitados, {
+      ignorarPrazo: true,
+      ignorarJaEnviadoHoje: true,
+      ignorarTemas: !!opcoes.ignorarTemas,
+    });
+    if (!base.ok) return base;
+    var prazo = paraData(acao && acao.prazo);
+    var hojeData = paraData(hoje) || paraData(new Date());
+    var inicio = adicionarDias(prazo, -(regra.dias - 1));
+    if (compararDatas(hojeData, inicio) < 0) return { ok: false, motivo: 'cedo_demais' };
+    if (compararDatas(hojeData, prazo) > 0) return { ok: false, motivo: 'janela_passou' };
+    var ultimo = paraData(acao && acao.ultimo_lembrete_em);
+    if (ultimo && mesmoDia(ultimo, hojeData) && !opcoes.ignorarJaEnviadoHoje) {
+      return { ok: false, motivo: 'ja_enviado_hoje' };
+    }
+    var daAcao = texto(acao && acao.email).toLowerCase();
+    var destino = daAcao;
+    if (regra.modo === 'eu') {
+      var meu = texto(regra.email).toLowerCase();
+      if (!emailValido(meu)) return { ok: false, motivo: 'sem_email' };
+      if (daAcao !== meu) return { ok: false, motivo: 'nao_e_minha' };
+      destino = meu;
+    }
+    if (!emailValido(destino)) return { ok: false, motivo: 'sem_email' };
+    var diasParaPrazo = Math.round((prazo.getTime() - hojeData.getTime()) / 86400000);
+    return {
+      ok: true,
+      motivo: 'lembrete',
+      email: destino,
+      diasParaPrazo: diasParaPrazo,
+      dias: regra.dias,
+    };
+  }
+
   function linhaFonteParaPlano(valores, mapa, meta) {
     meta = meta || {};
     function col(campo) {
@@ -1624,6 +1754,7 @@ var Logica = (function () {
       }
       var prazoChegando = n.prazo;
       n.ultimo_email_em = velho.ultimo_email_em || '';
+      n.ultimo_lembrete_em = velho.ultimo_lembrete_em || '';
       n.emails_enviados = Number(velho.emails_enviados) || 0;
       n.followup = velho.followup || n.followup || '';
       n.reprogramacoes = Number(velho.reprogramacoes) || 0;
@@ -1636,6 +1767,7 @@ var Logica = (function () {
         n.reprogramacoes = reprogramacoesAposPrazo(velho, prazoChegando);
         n.emails_enviados = 0;
         n.ultimo_email_em = '';
+        n.ultimo_lembrete_em = '';
       }
       return n;
     });
@@ -1994,14 +2126,32 @@ var Logica = (function () {
       }
       return out;
     }
-    var tituloChave = opts.escalacao ? 'mail_titulo_hierarquia' : 'mail_titulo';
-    var introChave = opts.escalacao ? 'mail_intro_hierarquia' : 'mail_intro';
-    var tituloPadrao = opts.escalacao ? 'Escalação: ação ainda atrasada' : 'Ação com prazo vencido';
-    var introPadrao = opts.escalacao
-      ? 'O responsável já foi avisado neste prazo. Este é um aviso separado para o próximo nível, porque o atraso continua.'
-      : 'Este follow-up é enviado a partir de 1 dia de atraso, uma vez por dia, até o prazo ser reprogramado.';
+    var lembrete = !!opts.lembrete;
+    var diasParaPrazo = dec.diasParaPrazo;
+    var tituloChave = lembrete
+      ? 'mail_titulo_lembrete'
+      : (opts.escalacao ? 'mail_titulo_hierarquia' : 'mail_titulo');
+    var introChave = lembrete
+      ? (diasParaPrazo === 0 ? 'mail_intro_lembrete_hoje' : 'mail_intro_lembrete')
+      : (opts.escalacao ? 'mail_intro_hierarquia' : 'mail_intro');
+    var tituloPadrao = lembrete
+      ? 'Lembrete de ação'
+      : (opts.escalacao ? 'Escalação: ação ainda atrasada' : 'Ação com prazo vencido');
+    var introPadrao = lembrete
+      ? (diasParaPrazo === 0
+        ? 'Esta ação vence hoje.'
+        : 'Faltam {n} dia(s) para o prazo. Este lembrete sai uma vez por dia até o vencimento.')
+      : (opts.escalacao
+        ? 'O responsável já foi avisado neste prazo. Este é um aviso separado para o próximo nível, porque o atraso continua.'
+        : 'Este follow-up é enviado a partir de 1 dia de atraso, uma vez por dia, até o prazo ser reprogramado.');
+    var rotuloQuando = lembrete ? 'mail_rotulo_lembrete' : 'mail_rotulo_atraso';
+    var rotuloQuandoPadrao = lembrete ? 'Lembrete' : 'Atraso';
     var atraso = '';
-    if (dec.diasAtraso != null) {
+    if (lembrete) {
+      atraso = diasParaPrazo === 0
+        ? tm('mail_vence_hoje', 'Vence hoje')
+        : tm('mail_faltam', 'Faltam {n} dia(s)', { n: diasParaPrazo });
+    } else if (dec.diasAtraso != null) {
       atraso = tm('mail_atraso', '{n} dia(s) em {data}', {
         n: dec.diasAtraso,
         data: hoje ? formatarDataBr(paraData(hoje)) : '',
@@ -2044,7 +2194,7 @@ var Logica = (function () {
       '<h1 style="font-size:22px;margin:0 0 8px;font-weight:600;letter-spacing:-0.03em;color:#F4F6FA">' +
         escaparHtml(tm(tituloChave, tituloPadrao)) + '</h1>',
       '<p style="color:#A8B2C5;margin:0 0 20px;font-size:14px;line-height:1.5">' +
-        escaparHtml(tm(introChave, introPadrao)) + '</p>',
+        escaparHtml(tm(introChave, introPadrao, { n: diasParaPrazo })) + '</p>',
       '<table style="width:100%;border-collapse:collapse">',
       linhaHtmlFollowUp_(tm('th_tema', 'Tema'), plano.tema),
       linhaHtmlFollowUp_(tm('th_divisao', 'Divisão'), plano.divisao),
@@ -2053,7 +2203,7 @@ var Logica = (function () {
       linhaHtmlFollowUp_(tm('th_como', 'Como'), plano.como),
       linhaHtmlFollowUp_(tm('th_responsavel', 'Responsável'), plano.responsavel),
       linhaHtmlFollowUp_(tm('th_prazo', 'Prazo'), prazo),
-      linhaHtmlFollowUp_(tm('mail_rotulo_atraso', 'Atraso'), atraso),
+      linhaHtmlFollowUp_(tm(rotuloQuando, rotuloQuandoPadrao), atraso),
       linhaHtmlFollowUp_(tm('th_status', 'Status'), plano.status),
       linhaHtmlFollowUp_(tm('th_comentarios', 'Comentários'), plano.comentarios),
       '</table>',
@@ -2101,6 +2251,10 @@ var Logica = (function () {
     emailDestinoFollowUp: emailDestinoFollowUp,
     emailFollowUpPermitido: emailFollowUpPermitido,
     elegivelFollowUp: elegivelFollowUp,
+    normalizarModoLembrete: normalizarModoLembrete,
+    normalizarDiasLembrete: normalizarDiasLembrete,
+    regraLembrete: regraLembrete,
+    elegivelLembrete: elegivelLembrete,
     linhaFonteParaPlano: linhaFonteParaPlano,
     reprogramacoesAposPrazo: reprogramacoesAposPrazo,
     prazoMudouDeDia: prazoMudouDeDia,
@@ -2173,7 +2327,7 @@ ESQUEMA[ABAS.config] = ['chave', 'valor', 'descricao'];
 ESQUEMA[ABAS.departamentos] = [
   'id', 'nome', 'descricao', 'icone', 'cor', 'ordem', 'ativo', 'bandeira', 'senha_planos',
   'followup_temas', 'followup_so_eu', 'followup_gestor_email', 'followup_emails_off',
-  'emails_hierarquia',
+  'emails_hierarquia', 'lembrete_modo', 'lembrete_dias', 'lembrete_email',
 ];
 ESQUEMA[ABAS.controles] = ['id', 'departamento_id', 'nome', 'descricao', 'url', 'ordem', 'ativo', 'negocio', 'pasta'];
 ESQUEMA[ABAS.fontes] = [
@@ -2189,12 +2343,14 @@ ESQUEMA[ABAS.planos] = [
   'tema', 'divisao', 'area', 'oque', 'como',
   'responsavel', 'email', 'prazo', 'status', 'comentarios',
   'ultimo_email_em', 'emails_enviados', 'atualizado_em', 'editado_manual', 'reprogramacoes',
+  'ultimo_lembrete_em',
 ];
 ESQUEMA[ABAS.planosArea] = [
   'id', 'departamento_id', 'fonte_id', 'fonte_nome', 'chave_origem',
   'tema', 'divisao', 'area', 'oque', 'como',
   'responsavel', 'email', 'prazo', 'status', 'comentarios',
   'ultimo_email_em', 'emails_enviados', 'atualizado_em', 'followup', 'editado_manual', 'reprogramacoes',
+  'ultimo_lembrete_em',
 ];
 ESQUEMA[ABAS.emails] = [
   'quando', 'acao_id', 'email', 'assunto', 'status', 'detalhe',
@@ -2209,6 +2365,9 @@ var CONFIG_PADRAO = [
   ['followup_temas', '', 'Temas que recebem e-mail de follow-up (vazio = todos)'],
   ['versao_instalada', APP.versao, 'Versao aplicada na ultima instalacao'],
   ['emails_hierarquia', '', 'Chefe opcional de cada pessoa no follow-up da planta (JSON email da pessoa -> email do chefe)'],
+  ['lembrete_modo', 'off', 'Lembrete antes do vencimento: off, eu (ações no meu e-mail) ou pessoa (responsável do plano)'],
+  ['lembrete_dias', '3', 'Quantos dias até o prazo, inclusive o vencimento, o lembrete sai por e-mail'],
+  ['lembrete_email', '', 'E-mail que recebe o lembrete das ações no próprio nome'],
 ];
 
 if (typeof I18n !== 'undefined' && I18n.definirNome) I18n.definirNome(APP.nome);
@@ -2500,6 +2659,8 @@ function formatarAbas_() {
     var idxEmail = ESQUEMA[ABAS.planos].indexOf('ultimo_email_em') + 1;
     if (idxPrazo > 0) planos.getRange(2, idxPrazo, Math.max(planos.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy');
     if (idxEmail > 0) planos.getRange(2, idxEmail, Math.max(planos.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy hh:mm');
+    var idxLem = ESQUEMA[ABAS.planos].indexOf('ultimo_lembrete_em') + 1;
+    if (idxLem > 0) planos.getRange(2, idxLem, Math.max(planos.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy hh:mm');
   }
   var area = ss.getSheetByName(ABAS.planosArea);
   if (area) {
@@ -2507,6 +2668,8 @@ function formatarAbas_() {
     var idxEmailA = ESQUEMA[ABAS.planosArea].indexOf('ultimo_email_em') + 1;
     if (idxPrazoA > 0) area.getRange(2, idxPrazoA, Math.max(area.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy');
     if (idxEmailA > 0) area.getRange(2, idxEmailA, Math.max(area.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy hh:mm');
+    var idxLemA = ESQUEMA[ABAS.planosArea].indexOf('ultimo_lembrete_em') + 1;
+    if (idxLemA > 0) area.getRange(2, idxLemA, Math.max(area.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy hh:mm');
   }
 }
 
@@ -2865,6 +3028,29 @@ function decisaoFollowUp_(plano, hoje, ctx) {
   return dec;
 }
 
+function decisaoLembrete_(plano, hoje, ctx) {
+  ctx = ctx || {};
+  var fonte;
+  var temas;
+  if (plano._folha === 'area') {
+    var dept = ctx.depts && ctx.depts[String(plano.departamento_id)];
+    fonte = dept || {};
+    temas = Logica.regraFollowUpArea(dept).temas;
+  } else {
+    fonte = {
+      lembrete_modo: ctx.lembreteModo,
+      lembrete_dias: ctx.lembreteDias,
+      lembrete_email: ctx.lembreteEmail,
+    };
+    temas = ctx.temasPlanta;
+  }
+  var regra = Logica.regraLembrete(fonte);
+  if (regra.modo === 'eu' && !regra.email) regra.email = Logica.texto(ctx.emailSessao);
+  return Logica.elegivelLembrete(plano, hoje, regra, temas, {
+    ignorarJaEnviadoHoje: !!ctx.ignorarJaEnviadoHoje,
+  });
+}
+
 function enviarFollowUps(opcoes) {
   instalarSistema();
   opcoes = opcoes || {};
@@ -2879,12 +3065,46 @@ function enviarFollowUps(opcoes) {
     ignorarPrazo: !!opcoes.ignorarPrazo,
     ignorarTemas: !!opcoes.ignorarTemas,
     emailsHierarquia: Cadastros.config().texto('emails_hierarquia', ''),
+    lembreteModo: Cadastros.config().texto('lembrete_modo', 'off'),
+    lembreteDias: Cadastros.config().texto('lembrete_dias', '3'),
+    lembreteEmail: Cadastros.config().texto('lembrete_email', ''),
   };
   var enviados = 0;
   var pulados = 0;
   var erros = 0;
 
   planos.forEach(function (plano) {
+    if (!forcar) {
+      var lem = decisaoLembrete_(plano, hoje, ctx);
+      if (lem.ok) {
+        try {
+          enviarEmailAcao_(plano, lem, hoje, { lembrete: true });
+          var abaLembrete = plano._folha === 'area' ? ABAS.planosArea : ABAS.planos;
+          Repo.atualizarRegistro(abaLembrete, plano._linha, { ultimo_lembrete_em: new Date() });
+          Repo.acrescentar(ABAS.emails, [{
+            quando: new Date(),
+            acao_id: plano.id || plano.chave_origem,
+            email: lem.email,
+            assunto: assuntoFollowUp_(plano, { lembrete: true, diasParaPrazo: lem.diasParaPrazo }),
+            status: 'OK',
+            detalhe: 'lembrete ' + lem.diasParaPrazo + 'd',
+          }]);
+          enviados++;
+        } catch (lemErr) {
+          erros++;
+          Repo.acrescentar(ABAS.emails, [{
+            quando: new Date(),
+            acao_id: plano.id || plano.chave_origem,
+            email: lem.email,
+            assunto: assuntoFollowUp_(plano, { lembrete: true, diasParaPrazo: lem.diasParaPrazo }),
+            status: 'ERRO',
+            detalhe: lemErr && lemErr.message ? lemErr.message : String(lemErr),
+          }]);
+          Repo.registrarLog('followup', 'ERRO', (plano.id || '') + ' lembrete ' + (lemErr && lemErr.message ? lemErr.message : lemErr));
+        }
+        return;
+      }
+    }
     var dec = decisaoFollowUp_(plano, hoje, ctx);
     if (!dec.ok) {
       pulados++;
@@ -2961,12 +3181,18 @@ function emailHierarquiaDo_(plano, ctx) {
   return Logica.emailChefeDe(ctx.emailsHierarquia, pessoa);
 }
 
-function assuntoFollowUp_(plano, escalacao) {
+function assuntoFollowUp_(plano, flags) {
+  var escalacao = flags === true || !!(flags && flags.escalacao);
+  var lembrete = !!(flags && flags !== true && flags.lembrete);
   var prazo = Logica.formatarDataBr(Logica.paraData(plano.prazo));
   var idioma = I18n.atual();
   var oque = Logica.texto(plano.oque) || I18n.t(idioma, 'mail_oque_vazio');
   var curto = oque.slice(0, 80);
-  var vars = { oque: curto, prazo: prazo };
+  var vars = { oque: curto, prazo: prazo, n: flags && flags.diasParaPrazo };
+  if (lembrete) {
+    if (flags.diasParaPrazo === 0) return I18n.t(idioma, 'mail_assunto_lembrete_hoje', vars);
+    return I18n.t(idioma, 'mail_assunto_lembrete', vars);
+  }
   if (escalacao) {
     if (prazo) return I18n.t(idioma, 'mail_assunto_hierarquia_prazo', vars);
     return I18n.t(idioma, 'mail_assunto_hierarquia', vars);
@@ -2979,6 +3205,7 @@ function enviarEmailAcao_(plano, dec, hoje, extra) {
   extra = extra || {};
   var destino = extra.email || dec.email;
   var escalacao = !!extra.escalacao;
+  var lembrete = !!extra.lembrete;
   var prazo = Logica.formatarDataBr(Logica.paraData(plano.prazo));
   var idioma = I18n.atual();
   var blobLogo = blobLogoAvery_();
@@ -2992,15 +3219,22 @@ function enviarEmailAcao_(plano, dec, hoje, extra) {
     idioma: idioma,
     nomeApp: APP.nome,
     escalacao: escalacao,
+    lembrete: lembrete,
   });
 
   var nome = Cadastros.config().texto('remetente_nome', APP.nome);
   var opcoes = { htmlBody: html, name: nome };
   if (blobLogo) opcoes.inlineImages = { logoAvery: blobLogo };
-  var textoChave = escalacao ? 'mail_texto_hierarquia' : 'mail_texto';
-  GmailApp.sendEmail(destino, assuntoFollowUp_(plano, escalacao),
-    I18n.t(idioma, textoChave, { oque: Logica.texto(plano.oque), prazo: prazo }),
-    opcoes);
+  var textoChave = lembrete ? 'mail_texto_lembrete' : (escalacao ? 'mail_texto_hierarquia' : 'mail_texto');
+  GmailApp.sendEmail(destino, assuntoFollowUp_(plano, {
+    escalacao: escalacao,
+    lembrete: lembrete,
+    diasParaPrazo: dec && dec.diasParaPrazo,
+  }), I18n.t(idioma, textoChave, {
+    oque: Logica.texto(plano.oque),
+    prazo: prazo,
+    n: dec && dec.diasParaPrazo,
+  }), opcoes);
 }
 
 function blobLogoAvery_() {
@@ -3154,6 +3388,11 @@ function apiHub() {
     controlesAdmin: Repo.ler(ABAS.controles),
     gatilho: estadoGatilho_(),
     emailsHierarquia: Logica.parseEmailsHierarquia(Cadastros.config().texto('emails_hierarquia', '')),
+    lembrete: Logica.regraLembrete({
+      lembrete_modo: Cadastros.config().texto('lembrete_modo', 'off'),
+      lembrete_dias: Cadastros.config().texto('lembrete_dias', '3'),
+      lembrete_email: Cadastros.config().texto('lembrete_email', ''),
+    }),
   };
 }
 
@@ -3474,6 +3713,7 @@ function payloadFollowUpArea_(dept) {
     emailsOff: regra.emailsOff,
     meuEmail: meu,
     emailsHierarquia: Logica.parseEmailsHierarquia(dept && dept.emails_hierarquia),
+    lembrete: Logica.regraLembrete(dept),
   };
 }
 
@@ -3701,6 +3941,42 @@ function apiAlternarEmailFollowUpArea(deptId, email) {
   return payloadPlanosArea_(deptPorId_(dept.id));
 }
 
+function gravarLembrete_(modo, dias, emailAtual) {
+  var regra = Logica.regraLembrete({ modo: modo, dias: dias, email: emailAtual });
+  if (regra.modo === 'eu') {
+    var email = Logica.texto(identificarUsuario_().email).toLowerCase();
+    if (!Logica.emailValido(email)) throw new Error(I18n.t(I18n.atual(), 'erro_lembrete_email'));
+    regra.email = email;
+  }
+  return regra;
+}
+
+function apiSalvarLembrete(modo, dias) {
+  instalarSistema();
+  var atual = Cadastros.config().texto('lembrete_email', '');
+  var regra = gravarLembrete_(modo, dias, atual);
+  gravarChaveConfig_('lembrete_modo', regra.modo, 'Lembrete antes do vencimento: off, eu ou pessoa');
+  gravarChaveConfig_('lembrete_dias', String(regra.dias), 'Dias de lembrete até o prazo, inclusive o vencimento');
+  if (regra.modo === 'eu') {
+    gravarChaveConfig_('lembrete_email', regra.email, 'E-mail que recebe o lembrete das ações no próprio nome');
+  }
+  return apiHub();
+}
+
+function apiSalvarLembreteArea(deptId, modo, dias) {
+  instalarSistema();
+  var gate = exigirAreaAberta_(deptId);
+  if (gate.bloqueado) return gate.bloqueado;
+  var regra = gravarLembrete_(modo, dias, gate.dept.lembrete_email);
+  Repo.atualizarRegistro(ABAS.departamentos, gate.dept._linha, {
+    lembrete_modo: regra.modo,
+    lembrete_dias: String(regra.dias),
+    lembrete_email: regra.modo === 'eu' ? regra.email : Logica.texto(gate.dept.lembrete_email),
+  });
+  Repo.limparMemoria();
+  return payloadPlanosArea_(deptPorId_(gate.dept.id));
+}
+
 function apiSalvarEmailsHierarquiaArea(deptId, parcial) {
   var gate = exigirAreaAberta_(deptId);
   if (gate.bloqueado) return gate.bloqueado;
@@ -3737,6 +4013,7 @@ function aplicarContagemPrazo_(patch, anterior) {
   if (Logica.prazoMudouDeDia(anterior, patch.prazo)) {
     patch.emails_enviados = 0;
     patch.ultimo_email_em = '';
+    patch.ultimo_lembrete_em = '';
   }
   return patch;
 }

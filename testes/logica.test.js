@@ -89,20 +89,22 @@ assert.strictEqual(Logica.prazoMudouDeDia({ prazo: '21/09/2026' }, '2026-09-21')
 assert.strictEqual(Logica.prazoMudouDeDia({ prazo: '21/09/2026' }, '2026-09-22'), true);
 
 var mesmoDia = Logica.mesclarImportacao(
-  [{ chave_origem: 'k1', prazo: d(2026, 9, 21), reprogramacoes: 3, emails_enviados: 2, ultimo_email_em: hoje }],
+  [{ chave_origem: 'k1', prazo: d(2026, 9, 21), reprogramacoes: 3, emails_enviados: 2, ultimo_email_em: hoje, ultimo_lembrete_em: hoje }],
   [{ chave_origem: 'k1', prazo: '21/09/2026', oque: 'igual' }]
 );
 assert.strictEqual(mesmoDia[0].reprogramacoes, 3, 'prazo igual nao soma');
 assert.strictEqual(mesmoDia[0].emails_enviados, 2);
 assert.strictEqual(mesmoDia[0].ultimo_email_em, hoje);
+assert.strictEqual(mesmoDia[0].ultimo_lembrete_em, hoje, 'lembrete do mesmo prazo permanece');
 
 var novoDia = Logica.mesclarImportacao(
-  [{ chave_origem: 'k1', prazo: '2026-09-21', reprogramacoes: 3, emails_enviados: 2, ultimo_email_em: hoje }],
+  [{ chave_origem: 'k1', prazo: '2026-09-21', reprogramacoes: 3, emails_enviados: 2, ultimo_email_em: hoje, ultimo_lembrete_em: hoje }],
   [{ chave_origem: 'k1', prazo: '22/09/2026', oque: 'mudou' }]
 );
 assert.strictEqual(novoDia[0].reprogramacoes, 4, 'prazo novo soma');
 assert.strictEqual(novoDia[0].emails_enviados, 0, 'prazo novo zera a contagem de e-mails daquele prazo');
 assert.strictEqual(novoDia[0].ultimo_email_em, '');
+assert.strictEqual(novoDia[0].ultimo_lembrete_em, '', 'prazo novo zera o lembrete daquele prazo');
 assert.strictEqual(novoDia[0].oque, 'mudou');
 
 var primeiraData = Logica.mesclarImportacao(
@@ -531,6 +533,73 @@ assert.ok(htmlEscala.indexOf('Ação com prazo vencido') === -1);
 assert.ok(htmlMail.indexOf('ana@avery.com') !== -1);
 assert.ok(htmlMail.indexOf('cid:logoAvery') !== -1);
 assert.ok(htmlMail.indexOf('border:1px solid #C9C3BB') !== -1);
+
+assert.strictEqual(Logica.normalizarModoLembrete('eu'), 'eu');
+assert.strictEqual(Logica.normalizarModoLembrete('pessoa'), 'pessoa');
+assert.strictEqual(Logica.normalizarModoLembrete(''), 'off');
+assert.strictEqual(Logica.normalizarDiasLembrete(''), 3);
+assert.strictEqual(Logica.normalizarDiasLembrete(0), 1);
+assert.strictEqual(Logica.normalizarDiasLembrete(120), 90);
+assert.deepStrictEqual(Logica.regraLembrete({}), { modo: 'off', dias: 3, email: '' });
+assert.strictEqual(
+  Logica.elegivelLembrete(acao, hoje, { modo: 'off', dias: 3 }).motivo,
+  'lembrete_desligado'
+);
+
+var noPrazo = Object.assign({}, acao, { prazo: d(2026, 8, 27), tema: 'EHS', followup: 'SIM' });
+var regraPessoa = { modo: 'pessoa', dias: 3, email: '' };
+assert.strictEqual(Logica.elegivelLembrete(noPrazo, hoje, regraPessoa, ['EHS']).ok, true, '2 dias antes entra na janela de 3');
+assert.strictEqual(Logica.elegivelLembrete(noPrazo, hoje, regraPessoa, ['EHS']).email, 'carla@avery.com');
+assert.strictEqual(Logica.elegivelLembrete(noPrazo, hoje, regraPessoa, ['EHS']).diasParaPrazo, 2);
+assert.strictEqual(
+  Logica.elegivelLembrete(Object.assign({}, noPrazo, { prazo: d(2026, 8, 30) }), hoje, regraPessoa).motivo,
+  'cedo_demais'
+);
+assert.strictEqual(
+  Logica.elegivelLembrete(Object.assign({}, noPrazo, { prazo: d(2026, 8, 24) }), hoje, regraPessoa).motivo,
+  'janela_passou'
+);
+assert.strictEqual(
+  Logica.elegivelLembrete(Object.assign({}, noPrazo, { prazo: hoje }), hoje, { modo: 'pessoa', dias: 1 }).ok,
+  true,
+  'o dia do vencimento entra no lembrete'
+);
+assert.strictEqual(
+  Logica.elegivelLembrete(Object.assign({}, noPrazo, { prazo: hoje }), hoje, { modo: 'pessoa', dias: 1 }).diasParaPrazo,
+  0
+);
+assert.strictEqual(
+  Logica.elegivelLembrete(noPrazo, hoje, { modo: 'eu', dias: 3, email: 'carla@avery.com' }, ['EHS']).ok,
+  true,
+  'ação no meu e-mail entra no lembrete'
+);
+assert.strictEqual(
+  Logica.elegivelLembrete(noPrazo, hoje, { modo: 'eu', dias: 3, email: 'gestor@avery.com' }).motivo,
+  'nao_e_minha'
+);
+assert.strictEqual(
+  Logica.elegivelLembrete(Object.assign({}, noPrazo, { ultimo_lembrete_em: hoje }), hoje, regraPessoa).motivo,
+  'ja_enviado_hoje'
+);
+assert.strictEqual(
+  Logica.elegivelLembrete(Object.assign({}, noPrazo, { status: 'Concluído' }), hoje, regraPessoa).ok,
+  false
+);
+assert.strictEqual(
+  Logica.elegivelLembrete(noPrazo, hoje, regraPessoa, ['OEE']).motivo,
+  'tema_desligado'
+);
+assert.strictEqual(Logica.elegivelFollowUp(acao, hoje).ok, true, 'lembrete nao muda a cobrança de atraso');
+
+var htmlLem = Logica.htmlFollowUp({
+  lembrete: true,
+  plano: { tema: 'EHS', oque: 'LOTO', responsavel: 'Ana', status: 'Aberto' },
+  dec: { email: 'ana@avery.com', diasParaPrazo: 2 },
+  prazo: '27/08/2026',
+});
+assert.ok(htmlLem.indexOf('Lembrete de ação') !== -1);
+assert.ok(htmlLem.indexOf('Faltam 2 dia(s)') !== -1);
+assert.strictEqual(htmlLem.indexOf('Ação com prazo vencido'), -1);
 
 var I18n = require('../src/00_I18n.js');
 global.I18n = I18n;

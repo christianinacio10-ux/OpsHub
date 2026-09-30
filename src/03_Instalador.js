@@ -69,6 +69,8 @@ function formatarAbas_() {
     var idxEmail = ESQUEMA[ABAS.planos].indexOf('ultimo_email_em') + 1;
     if (idxPrazo > 0) planos.getRange(2, idxPrazo, Math.max(planos.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy');
     if (idxEmail > 0) planos.getRange(2, idxEmail, Math.max(planos.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy hh:mm');
+    var idxLem = ESQUEMA[ABAS.planos].indexOf('ultimo_lembrete_em') + 1;
+    if (idxLem > 0) planos.getRange(2, idxLem, Math.max(planos.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy hh:mm');
   }
   var area = ss.getSheetByName(ABAS.planosArea);
   if (area) {
@@ -76,6 +78,8 @@ function formatarAbas_() {
     var idxEmailA = ESQUEMA[ABAS.planosArea].indexOf('ultimo_email_em') + 1;
     if (idxPrazoA > 0) area.getRange(2, idxPrazoA, Math.max(area.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy');
     if (idxEmailA > 0) area.getRange(2, idxEmailA, Math.max(area.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy hh:mm');
+    var idxLemA = ESQUEMA[ABAS.planosArea].indexOf('ultimo_lembrete_em') + 1;
+    if (idxLemA > 0) area.getRange(2, idxLemA, Math.max(area.getMaxRows() - 1, 1), 1).setNumberFormat('dd/mm/yyyy hh:mm');
   }
 }
 
