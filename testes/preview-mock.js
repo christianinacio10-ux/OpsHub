@@ -274,7 +274,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.8' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.9' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
