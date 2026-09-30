@@ -270,11 +270,19 @@ body { overflow: hidden; }
   border-collapse: separate;
   border-spacing: 0;
 }
+.painel-planos table.dados tbody tr:nth-child(odd) { background: var(--superficie); }
+.painel-planos table.dados tbody tr:nth-child(even) { background: #161514; }
+.painel-planos table.dados tbody tr:hover { background: var(--superficie-3); }
 .painel-planos table.dados td {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
+  height: 58px;
+  max-height: 58px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  box-sizing: border-box;
 }
 .painel-planos table.dados td.principal,
 .painel-planos table.dados td.como,
@@ -286,10 +294,15 @@ body { overflow: hidden; }
   line-height: 1.35;
 }
 .recorte-2 {
-  display: block;
-  max-height: 2.7em;
-  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
+  max-height: calc(1.35em * 2);
+  line-height: 1.35;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .cel-editar { width: 1%; white-space: nowrap; }
 .painel-planos table.dados td.comentarios { max-width: 240px; }
@@ -798,6 +811,8 @@ table.dados tr.risco td { box-shadow: none; }
   overflow: hidden;
   text-overflow: unset;
   max-width: 280px;
+  height: 58px;
+  max-height: 58px;
   line-height: 1.35;
 }
 .drawer.painel .drawer-topo { padding: 14px 20px 10px; }
