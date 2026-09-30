@@ -290,9 +290,16 @@ body { overflow: hidden; }
   white-space: normal;
   overflow: hidden;
   text-overflow: unset;
-  max-width: 280px;
   line-height: 1.35;
 }
+.painel-planos table.dados th[data-ord="oque"],
+.painel-planos table.dados th[data-ord="como"],
+.painel-planos table.dados td.principal,
+.painel-planos table.dados td.como {
+  min-width: 280px;
+  width: 22%;
+}
+.painel-planos table.dados td.comentarios { max-width: 240px; }
 .recorte-2 {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -301,11 +308,9 @@ body { overflow: hidden; }
   overflow: hidden;
   max-height: calc(1.35em * 2);
   line-height: 1.35;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .cel-editar { width: 1%; white-space: nowrap; }
-.painel-planos table.dados td.comentarios { max-width: 240px; }
 .painel-planos table.dados th:first-child,
 .painel-planos table.dados td:first-child {
   position: sticky;
@@ -831,11 +836,11 @@ table.dados tr.risco td { box-shadow: none; }
   white-space: normal;
   overflow: hidden;
   text-overflow: unset;
-  max-width: 280px;
   height: 58px;
   max-height: 58px;
   line-height: 1.35;
 }
+.drawer-gestao .painel-planos table.dados td.comentarios { max-width: 240px; }
 .drawer.painel .drawer-topo { padding: 14px 20px 10px; }
 .drawer.painel .drawer-titulo { margin: 4px 0 2px; font-size: 22px; }
 .drawer.painel .drawer-corpo {
