@@ -11,16 +11,16 @@ var Logica = (function () {
   ];
 
   var ALIASES = {
-    tema: ['tema', 'theme', 'assunto'],
-    divisao: ['divisao', 'divisão', 'division', 'bu'],
-    area: ['area', 'área', 'setor', 'department', 'departamento'],
-    oque: ['oque', 'o que', 'o quê', 'what', 'descricao', 'descrição', 'titulo', 'título', 'action item'],
-    como: ['como', 'how', 'contramedida', 'acao corretiva', 'ação corretiva', 'countermeasure'],
-    responsavel: ['responsavel', 'responsável', 'owner', 'dono', 'pic'],
-    email: ['email', 'e-mail', 'e mail', 'mail', 'correio'],
-    prazo: ['prazo', 'due date', 'deadline', 'data limite', 'data prazo', 'vencimento', 'target date'],
-    status: ['status', 'situacao', 'situação', 'estado'],
-    comentarios: ['comentarios', 'comentários', 'comments', 'obs', 'observacao', 'observação', 'observacoes', 'observações'],
+    tema: ['tema', 'theme', 'assunto', 'subject', 'topic'],
+    divisao: ['divisao', 'divisão', 'division', 'bu', 'business unit', 'negocio', 'negócio', 'business'],
+    area: ['area', 'área', 'setor', 'department', 'departamento', 'processo', 'process', 'secao', 'seção', 'section'],
+    oque: ['o que', 'oque', 'what', 'que', 'qué', 'descricao', 'descrição', 'description', 'titulo', 'título', 'title', 'action item', 'acao', 'ação', 'action', 'task', 'tarea'],
+    como: ['acao corretiva', 'ação corretiva', 'corrective action', 'accion correctiva', 'acción correctiva', 'contramedida', 'countermeasure', 'como', 'how', 'medida'],
+    responsavel: ['responsavel', 'responsável', 'responsable', 'responsible', 'owner', 'assignee', 'dono', 'pic'],
+    email: ['email', 'e-mail', 'e mail', 'mail', 'correio', 'correo'],
+    prazo: ['data limite', 'data prazo', 'due date', 'target date', 'fecha limite', 'fecha límite', 'prazo', 'plazo', 'deadline', 'vencimento', 'fecha', 'due'],
+    status: ['status', 'situacao', 'situação', 'situacion', 'situación', 'estado', 'state'],
+    comentarios: ['comentarios', 'comentários', 'comments', 'comment', 'observacoes', 'observações', 'observacao', 'observação', 'obs', 'notes', 'note', 'remarks', 'notas', 'nota'],
     id: ['id', 'codigo', 'código', 'chave'],
   };
 
@@ -85,29 +85,25 @@ var Logica = (function () {
     var a = cabecalhoChave(alias);
     if (!chave || !a) return false;
     if (chave === a) return true;
-    if (a.length >= 5 && (chave.indexOf(a + ' ') === 0 || chave.indexOf(' ' + a + ' ') !== -1 || chave.slice(-a.length - 1) === ' ' + a)) {
-      return true;
-    }
-    return false;
+    return a.length >= 3 && chave.indexOf(a + ' ') === 0;
   }
 
   function mapearColunas(cabecalhos) {
     var mapa = {};
-    var usados = {};
     (cabecalhos || []).forEach(function (h, i) {
       var chave = cabecalhoChave(h);
-      if (!chave || usados[i]) return;
+      if (!chave) return;
+      var melhor = null;
       Object.keys(ALIASES).forEach(function (campo) {
         if (mapa[campo] !== undefined) return;
         var lista = ALIASES[campo];
         for (var k = 0; k < lista.length; k++) {
-          if (aliasBate(chave, lista[k])) {
-            mapa[campo] = i;
-            usados[i] = true;
-            return;
-          }
+          if (!aliasBate(chave, lista[k])) continue;
+          var len = cabecalhoChave(lista[k]).length;
+          if (!melhor || len > melhor.len) melhor = { campo: campo, len: len };
         }
       });
+      if (melhor) mapa[melhor.campo] = i;
     });
     return mapa;
   }

@@ -370,6 +370,28 @@ assert.strictEqual(mapaAcao.como, 1);
 assert.strictEqual(mapaAcao.oque, 2);
 assert.strictEqual(mapaAcao.prazo, 3);
 
+var mapaEn = Logica.mapearColunas(['Theme', 'Division', 'Area', 'What', 'How', 'Owner', 'Email', 'Due date', 'Status', 'Comments']);
+assert.strictEqual(mapaEn.tema, 0);
+assert.strictEqual(mapaEn.oque, 3);
+assert.strictEqual(mapaEn.como, 4);
+assert.strictEqual(mapaEn.prazo, 7);
+assert.strictEqual(mapaEn.comentarios, 9);
+
+var mapaEs = Logica.mapearColunas(['Tema', 'División', 'Área', 'Qué', 'Cómo', 'Responsable', 'Correo', 'Plazo', 'Estado', 'Comentarios']);
+assert.strictEqual(mapaEs.divisao, 1);
+assert.strictEqual(mapaEs.oque, 3);
+assert.strictEqual(mapaEs.como, 4);
+assert.strictEqual(mapaEs.responsavel, 5);
+assert.strictEqual(mapaEs.email, 6);
+assert.strictEqual(mapaEs.prazo, 7);
+assert.strictEqual(mapaEs.status, 8);
+
+var mapaOrdem = Logica.mapearColunas(['Corrective action', 'Action', 'Deadline', 'Responsible']);
+assert.strictEqual(mapaOrdem.como, 0);
+assert.strictEqual(mapaOrdem.oque, 1);
+assert.strictEqual(mapaOrdem.prazo, 2);
+assert.strictEqual(mapaOrdem.responsavel, 3);
+
 var cab = Logica.escolherLinhaCabecalho([
   ['Planos 2026', '', '', ''],
   ['Tema', 'Divisão', 'Área', 'O quê?', 'Como', 'Responsável', 'E-mail', 'Prazo', 'Status', 'Comentários'],

@@ -477,9 +477,11 @@ function apiSalvarFonteArea(reg) {
     nome: Logica.texto(reg.nome) || Logica.texto(gate.dept.nome),
     referencia: Logica.texto(reg.referencia),
     aba: Logica.texto(reg.aba),
-    linha_cabecalho: Number(reg.linha_cabecalho || 1) || 1,
     ativo: (reg.ativo === false || reg.ativo === 'NAO' || reg.ativo === 'NÃO') ? 'NAO' : 'SIM',
   };
+  if (reg.linha_cabecalho !== undefined && String(reg.linha_cabecalho) !== '') {
+    registro.linha_cabecalho = Number(reg.linha_cabecalho) || 1;
+  }
   var lista = Repo.ler(ABAS.fontesArea);
   var atual = lista.filter(function (r) { return String(r.id) === String(id); })[0];
   if (atual) {

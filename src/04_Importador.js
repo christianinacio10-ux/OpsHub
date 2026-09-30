@@ -142,7 +142,7 @@ function lerFonte_(fonte) {
   var ultimaCol = aba.getLastColumn();
   if (ultima < 2 || ultimaCol < 1) return [];
 
-  var scan = Math.min(8, ultima);
+  var scan = Math.min(20, ultima);
   var topo = aba.getRange(1, 1, scan, ultimaCol).getValues();
   var escolhido = Logica.escolherLinhaCabecalho(topo, cabLinhaPref);
   if (escolhido.score < 2 && escolhido.mapa.oque === undefined && escolhido.mapa.tema === undefined) {
