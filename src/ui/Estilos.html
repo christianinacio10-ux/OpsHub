@@ -516,11 +516,35 @@ body { overflow: hidden; }
 .card-dept h3 { margin: 0 0 5px; font-size: 15px; font-weight: 520; letter-spacing: -.02em; }
 .card-dept p { margin: 0; color: var(--tinta-3); font-size: 12.5px; min-height: 36px; line-height: 1.45; }
 .card-dept-meta {
-  margin-top: 16px; display: flex; justify-content: space-between; align-items: center;
+  margin-top: 16px; display: flex; justify-content: flex-start; align-items: center;
+  gap: 10px; flex-wrap: wrap;
   color: var(--tinta-3); font-size: 12px; font-weight: 450;
 }
-.card-dept-meta span { color: var(--tinta-2); font-weight: 500; }
+.card-dept-contagem {
+  border: 0; background: transparent; padding: 0;
+  color: var(--tinta-2); font: inherit; font-weight: 500;
+  cursor: pointer; text-align: left;
+}
+.card-dept-contagem:hover { color: var(--tinta); text-decoration: underline; }
+.card-dept-abrir { margin-left: auto; }
 .card-dept:hover .card-dept-meta { color: var(--tinta-2); }
+.mais-opcoes { display: flex; flex-direction: column; gap: 8px; }
+.mais-opcoes .botao { justify-content: flex-start; height: 44px; }
+.modal-mais { width: min(420px, 100%); }
+.modal-cobranca { width: min(880px, 100%); max-height: min(90vh, 920px); }
+.cobranca-modal-topo {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  margin-bottom: 8px;
+}
+.modal-cobranca .painel-cobranca-plano {
+  margin: 0; padding: 0; border: 0; background: transparent; max-height: none;
+}
+.cobranca-atalho {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 8px; padding: 10px 12px;
+  border: 1px solid var(--linha); border-radius: var(--raio);
+  background: var(--superficie);
+}
 
 .painel {
   background: var(--superficie);

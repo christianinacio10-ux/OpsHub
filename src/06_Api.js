@@ -42,6 +42,12 @@ function apiContexto() {
 
 function apiHub() {
   var hoje = hojeLocal_();
+  var contagemPlanos = {};
+  Cadastros.planosArea().forEach(function (p) {
+    var id = Logica.texto(p.departamento_id);
+    if (!id) return;
+    contagemPlanos[id] = (contagemPlanos[id] || 0) + 1;
+  });
   var departamentos = Cadastros.departamentos().map(function (d) {
     return {
       id: d.id,
@@ -52,6 +58,7 @@ function apiHub() {
       ordem: Number(d.ordem || 0),
       bandeira: Logica.normalizarBandeira(d.bandeira),
       tem_senha_planos: Logica.temSenhaPlanos(d),
+      n_planos: contagemPlanos[Logica.texto(d.id)] || 0,
     };
   });
   var controles = Cadastros.controles().map(function (c) {
