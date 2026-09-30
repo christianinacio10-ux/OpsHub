@@ -390,17 +390,21 @@ body { overflow: hidden; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 10px; margin-bottom: 12px;
+  align-items: stretch;
 }
 .card-dept {
   text-align: left; cursor: grab; font-family: var(--fonte);
   background: var(--superficie);
   border: 1px solid var(--linha);
   border-radius: var(--raio);
-  padding: 18px 18px 16px;
+  padding: 18px 18px 12px;
   color: var(--tinta);
   transition: background var(--transicao), border-color var(--transicao), opacity var(--transicao);
   position: relative; overflow: visible;
   box-shadow: var(--sombra-1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 .card-dept:hover {
   transform: none;
@@ -516,7 +520,8 @@ body { overflow: hidden; }
 .card-dept h3 { margin: 0 0 5px; font-size: 15px; font-weight: 520; letter-spacing: -.02em; }
 .card-dept p { margin: 0; color: var(--tinta-3); font-size: 12.5px; min-height: 36px; line-height: 1.45; }
 .card-dept-meta {
-  margin-top: 16px; display: flex; justify-content: flex-start; align-items: center;
+  margin-top: auto; padding-top: 14px;
+  display: flex; justify-content: flex-start; align-items: center;
   gap: 10px; flex-wrap: wrap;
   color: var(--tinta-3); font-size: 12px; font-weight: 450;
 }
