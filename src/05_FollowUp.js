@@ -77,6 +77,7 @@ function enviarFollowUps(opcoes) {
     emailSessao: identificarEmailSessao_(),
     ignorarPrazo: !!opcoes.ignorarPrazo,
     ignorarTemas: !!opcoes.ignorarTemas,
+    emailsHierarquia: Cadastros.config().texto('emails_hierarquia', ''),
   };
   var enviados = 0;
   var pulados = 0;
@@ -89,8 +90,34 @@ function enviarFollowUps(opcoes) {
       return;
     }
     try {
+      var jaEnviados = Number(plano.emails_enviados || 0);
       enviarEmailAcao_(plano, dec, hoje);
-      var n = Number(plano.emails_enviados || 0) + 1;
+      var hier = emailHierarquiaDo_(plano, ctx);
+      if (Logica.deveEscalarFollowUp(jaEnviados, hier, dec.email)) {
+        try {
+          enviarEmailAcao_(plano, dec, hoje, { escalacao: true, email: hier });
+          Repo.acrescentar(ABAS.emails, [{
+            quando: new Date(),
+            acao_id: plano.id || plano.chave_origem,
+            email: hier,
+            assunto: assuntoFollowUp_(plano, true),
+            status: 'OK',
+            detalhe: 'escalacao atraso ' + dec.diasAtraso + 'd',
+          }]);
+        } catch (escalaErr) {
+          erros++;
+          Repo.acrescentar(ABAS.emails, [{
+            quando: new Date(),
+            acao_id: plano.id || plano.chave_origem,
+            email: hier,
+            assunto: assuntoFollowUp_(plano, true),
+            status: 'ERRO',
+            detalhe: escalaErr && escalaErr.message ? escalaErr.message : String(escalaErr),
+          }]);
+          Repo.registrarLog('followup', 'ERRO', (plano.id || '') + ' escalacao ' + (escalaErr && escalaErr.message ? escalaErr.message : escalaErr));
+        }
+      }
+      var n = jaEnviados + 1;
       var abaPlano = plano._folha === 'area' ? ABAS.planosArea : ABAS.planos;
       Repo.atualizarRegistro(abaPlano, plano._linha, {
         ultimo_email_em: new Date(),
@@ -123,16 +150,34 @@ function enviarFollowUps(opcoes) {
   return { enviados: enviados, pulados: pulados, erros: erros };
 }
 
-function assuntoFollowUp_(plano) {
+function emailHierarquiaDo_(plano, ctx) {
+  ctx = ctx || {};
+  var pessoa = plano && plano.email;
+  if (plano && plano._folha === 'area') {
+    var dept = ctx.depts && ctx.depts[String(plano.departamento_id)];
+    return Logica.emailChefeDe(dept && dept.emails_hierarquia, pessoa);
+  }
+  return Logica.emailChefeDe(ctx.emailsHierarquia, pessoa);
+}
+
+function assuntoFollowUp_(plano, escalacao) {
   var prazo = Logica.formatarDataBr(Logica.paraData(plano.prazo));
   var idioma = I18n.atual();
   var oque = Logica.texto(plano.oque) || I18n.t(idioma, 'mail_oque_vazio');
   var curto = oque.slice(0, 80);
-  if (prazo) return I18n.t(idioma, 'mail_assunto_prazo', { oque: curto, prazo: prazo });
-  return I18n.t(idioma, 'mail_assunto', { oque: curto });
+  var vars = { oque: curto, prazo: prazo };
+  if (escalacao) {
+    if (prazo) return I18n.t(idioma, 'mail_assunto_hierarquia_prazo', vars);
+    return I18n.t(idioma, 'mail_assunto_hierarquia', vars);
+  }
+  if (prazo) return I18n.t(idioma, 'mail_assunto_prazo', vars);
+  return I18n.t(idioma, 'mail_assunto', vars);
 }
 
-function enviarEmailAcao_(plano, dec, hoje) {
+function enviarEmailAcao_(plano, dec, hoje, extra) {
+  extra = extra || {};
+  var destino = extra.email || dec.email;
+  var escalacao = !!extra.escalacao;
   var prazo = Logica.formatarDataBr(Logica.paraData(plano.prazo));
   var idioma = I18n.atual();
   var blobLogo = blobLogoAvery_();
@@ -141,17 +186,19 @@ function enviarEmailAcao_(plano, dec, hoje) {
     dec: dec,
     hoje: hoje,
     prazo: prazo,
-    email: dec.email,
+    email: destino,
     logoSrc: blobLogo ? 'cid:logoAvery' : '',
     idioma: idioma,
     nomeApp: APP.nome,
+    escalacao: escalacao,
   });
 
   var nome = Cadastros.config().texto('remetente_nome', APP.nome);
   var opcoes = { htmlBody: html, name: nome };
   if (blobLogo) opcoes.inlineImages = { logoAvery: blobLogo };
-  GmailApp.sendEmail(dec.email, assuntoFollowUp_(plano),
-    I18n.t(idioma, 'mail_texto', { oque: Logica.texto(plano.oque), prazo: prazo }),
+  var textoChave = escalacao ? 'mail_texto_hierarquia' : 'mail_texto';
+  GmailApp.sendEmail(destino, assuntoFollowUp_(plano, escalacao),
+    I18n.t(idioma, textoChave, { oque: Logica.texto(plano.oque), prazo: prazo }),
     opcoes);
 }
 

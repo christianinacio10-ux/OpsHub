@@ -103,6 +103,7 @@ function apiHub() {
     }),
     controlesAdmin: Repo.ler(ABAS.controles),
     gatilho: estadoGatilho_(),
+    emailsHierarquia: Logica.parseEmailsHierarquia(Cadastros.config().texto('emails_hierarquia', '')),
   };
 }
 
@@ -131,19 +132,55 @@ function apiReordenarDepartamentos(ids) {
   return apiHub();
 }
 
-function gravarTemasFollowUp_(valor) {
+function gravarChaveConfig_(chave, valor, descricao) {
   var linhas = Repo.ler(ABAS.config);
-  var atual = linhas.filter(function (l) { return String(l.chave) === 'followup_temas'; })[0];
+  var atual = linhas.filter(function (l) { return String(l.chave) === String(chave); })[0];
   if (atual) {
     Repo.atualizarRegistro(ABAS.config, atual._linha, { valor: valor });
   } else {
-    Repo.acrescentar(ABAS.config, [{
-      chave: 'followup_temas',
-      valor: valor,
-      descricao: 'Temas que recebem e-mail de follow-up (vazio = todos, NONE = nenhum)',
-    }]);
+    Repo.acrescentar(ABAS.config, [{ chave: chave, valor: valor, descricao: descricao }]);
   }
   Repo.limparMemoria();
+}
+
+function gravarTemasFollowUp_(valor) {
+  gravarChaveConfig_(
+    'followup_temas',
+    valor,
+    'Temas que recebem e-mail de follow-up (vazio = todos, NONE = nenhum)'
+  );
+}
+
+function normalizarParcialHierarquia_(parcial) {
+  var lista = [];
+  if (Array.isArray(parcial)) {
+    parcial.forEach(function (item) {
+      if (item) lista.push([item.email, item.chefe]);
+    });
+  } else if (parcial && typeof parcial === 'object') {
+    Object.keys(parcial).forEach(function (k) { lista.push([k, parcial[k]]); });
+  }
+  var out = {};
+  lista.forEach(function (par) {
+    var email = Logica.texto(par[0]).toLowerCase();
+    var chefe = Logica.texto(par[1]).toLowerCase();
+    if (!Logica.emailValido(email)) throw new Error(I18n.t(I18n.atual(), 'erro_hierarquia_email'));
+    if (chefe && !Logica.emailValido(chefe)) throw new Error(I18n.t(I18n.atual(), 'erro_hierarquia_email'));
+    out[email] = chefe;
+  });
+  return out;
+}
+
+function apiSalvarEmailsHierarquia(parcial) {
+  var patch = normalizarParcialHierarquia_(parcial);
+  var atual = Cadastros.config().texto('emails_hierarquia', '');
+  var mapa = Logica.mesclarEmailsHierarquia(atual, patch);
+  gravarChaveConfig_(
+    'emails_hierarquia',
+    Logica.serializarEmailsHierarquia(mapa),
+    'Chefe opcional de cada pessoa no follow-up da planta (JSON email da pessoa -> email do chefe)'
+  );
+  return apiHub();
 }
 
 function apiSalvarTemasFollowUp(temas) {
@@ -386,6 +423,7 @@ function payloadFollowUpArea_(dept) {
     gestorEmail: regra.gestorEmail || meu,
     emailsOff: regra.emailsOff,
     meuEmail: meu,
+    emailsHierarquia: Logica.parseEmailsHierarquia(dept && dept.emails_hierarquia),
   };
 }
 
@@ -613,6 +651,18 @@ function apiAlternarEmailFollowUpArea(deptId, email) {
   return payloadPlanosArea_(deptPorId_(dept.id));
 }
 
+function apiSalvarEmailsHierarquiaArea(deptId, parcial) {
+  var gate = exigirAreaAberta_(deptId);
+  if (gate.bloqueado) return gate.bloqueado;
+  var patch = normalizarParcialHierarquia_(parcial);
+  var mapa = Logica.mesclarEmailsHierarquia(gate.dept.emails_hierarquia, patch);
+  Repo.atualizarRegistro(ABAS.departamentos, gate.dept._linha, {
+    emails_hierarquia: Logica.serializarEmailsHierarquia(mapa),
+  });
+  Repo.limparMemoria();
+  return payloadPlanosArea_(deptPorId_(gate.dept.id));
+}
+
 function apiAlternarFollowUpAcaoArea(deptId, acaoId) {
   var gate = exigirAreaAberta_(deptId);
   if (gate.bloqueado) return gate.bloqueado;
@@ -630,6 +680,15 @@ function apiAlternarFollowUpAcaoArea(deptId, acaoId) {
   });
   Repo.limparMemoria();
   return payloadPlanosArea_(deptPorId_(gate.dept.id));
+}
+
+function aplicarContagemPrazo_(patch, anterior) {
+  patch.reprogramacoes = Logica.reprogramacoesAposPrazo(anterior, patch.prazo);
+  if (Logica.prazoMudouDeDia(anterior, patch.prazo)) {
+    patch.emails_enviados = 0;
+    patch.ultimo_email_em = '';
+  }
+  return patch;
 }
 
 function camposAcaoManual_(reg) {
@@ -667,7 +726,7 @@ function apiSalvarAcaoPlanta(reg) {
   exigirOqueAcao_(reg);
   var plano = acharPlano_(ABAS.planos, reg && reg.id);
   if (!plano) throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
-  Repo.atualizarRegistro(ABAS.planos, plano._linha, camposAcaoManual_(reg));
+  Repo.atualizarRegistro(ABAS.planos, plano._linha, aplicarContagemPrazo_(camposAcaoManual_(reg), plano));
   Repo.limparMemoria();
   return apiHub();
 }
@@ -683,6 +742,7 @@ function apiSalvarAcaoArea(deptId, reg) {
     if (!plano || Logica.texto(plano.departamento_id) !== Logica.texto(gate.dept.id)) {
       throw new Error(I18n.t(I18n.atual(), 'erro_registro'));
     }
+    aplicarContagemPrazo_(patch, plano);
     Repo.atualizarRegistro(ABAS.planosArea, plano._linha, patch);
   } else {
     var novoId = Logica.idNovo('PA');
@@ -693,6 +753,7 @@ function apiSalvarAcaoArea(deptId, reg) {
     patch.chave_origem = novoId;
     patch.ultimo_email_em = '';
     patch.emails_enviados = 0;
+    patch.reprogramacoes = 0;
     patch.followup = 'NAO';
     Repo.acrescentar(ABAS.planosArea, [patch]);
   }

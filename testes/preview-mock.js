@@ -61,6 +61,7 @@
       status: st, status_origem: o.status,
       status_classe: classe,
       comentarios: o.comentarios || '',
+      reprogramacoes: Number(o.reprogramacoes) || 0,
       tem_email: tem,
       followup: o.followup !== false,
       tooltip_email: tem ? o.email : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.',
@@ -80,7 +81,7 @@
     planoArea('A2', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Padronizar handover da DDA1', como: 'Checklist de 10 min no quadro da linha', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(8), status: 'Em andamento', comentarios: '' }),
     planoArea('A3', 'D-QUAL', { fonte_id: 'FA2', tema: 'Qualidade', divisao: 'Apparel', area: 'Qualidade', oque: 'Tratar NC de viscosidade sem expor no consolidado', como: 'Carta de controle e treino do turno 2', responsavel: 'Bruno Lima', email: 'bruno.lima@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Só o gestor da qualidade vê' }),
     planoArea('A4', 'D-PROD', { fonte_id: 'FA1', tema: 'OEE', divisao: 'Solutions', area: 'Produção', oque: 'Encerrar piloto de microparada', como: 'Relatório semanal arquivado', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-12), status: 'Concluído', comentarios: 'Encerrada' }),
-    planoArea('A5', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Consultar outras plantas para problema de setup', como: 'Alinhar com Joly o padrão de SMED', responsavel: 'Joly Soares', email: 'joly.soares@example.com', prazo: add(-6), status: 'Aberto', comentarios: 'Atrasada só nesta área' }),
+    planoArea('A5', 'D-PROD', { fonte_id: 'FA1', tema: 'Produção', divisao: 'Solutions', area: 'Produção', oque: 'Consultar outras plantas para problema de setup', como: 'Alinhar com Joly o padrão de SMED', responsavel: 'Joly Soares', email: 'joly.soares@example.com', prazo: add(-6), status: 'Aberto', comentarios: 'Atrasada só nesta área', reprogramacoes: 3 }),
     planoArea('A6', 'D-EHS', { fonte_id: 'FA3', tema: 'TIER_3', divisao: 'Smartrac', area: 'Manutenção', oque: 'Consultar outras plantas para problema no re', como: 'Antes e depois', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(-3), status: 'Aberto', comentarios: '' }),
     planoArea('A7', 'D-EHS', { fonte_id: 'FA3', tema: 'TIER_3', divisao: 'Smartrac', area: 'Engenharia', oque: 'Apresentação detalhada das ações de redução', como: 'Antes e depois', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(4), status: 'Em andamento', comentarios: '' }),
     planoArea('A8', 'D-EHS', { fonte_id: 'FA3', tema: 'UEE/Scrap_Apparel', divisao: 'Apparel', area: 'Supply Chain', oque: 'Controle preventivo para E&O', como: 'Suporte financeiro', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(6), status: 'Aberto', comentarios: '' }),
@@ -97,7 +98,7 @@
   var planos = [
     plano('1', { tema: 'Segurança', divisao: 'Operations', area: 'EHS', oque: 'Eliminar desvio de bloqueio LOTO na DDA2', como: 'Padronizar checklist de LOTO e treinar turno 1 e 2', responsavel: 'Ana Souza', email: 'ana.souza@example.com', prazo: add(5), status: 'Em andamento', comentarios: 'Treinamento agendado' }),
     plano('2', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Reduzir NC de epóxi irregular', como: 'Ajustar janela de viscosidade e inspeção visual a cada 2h', responsavel: 'Bruno Lima', email: '', prazo: add(-3), status: 'Aberto', comentarios: 'Aguardando e-mail do responsável' }),
-    plano('3', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Recuperar uptime da DDA1 abaixo da meta', como: 'A3 de paradas não justificadas + padrão de apontamento', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: '' }),
+    plano('3', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Recuperar uptime da DDA1 abaixo da meta', como: 'A3 de paradas não justificadas + padrão de apontamento', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-2), status: 'Aberto', comentarios: '', reprogramacoes: 2 }),
     plano('4', { tema: 'Entrega', divisao: 'Supply Chain', area: 'Logística', oque: 'Estabilizar FIFO do armazém de acabados', como: 'Sinalizar endereços e auditar 2x por semana', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(12), status: 'Aberto', comentarios: '' }),
     plano('5', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Zerar backlog de preventiva atrasada > 7 dias', como: 'Janela semanal congelada na sexta para PCM', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(-10), status: 'Concluída', comentarios: 'Backlog zerado na semana 32' }),
     plano('6', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Fechar CAPA de auditoria de cliente', como: 'Atualizar procedimento e treinar operadores', responsavel: 'Bruno Lima', email: '', prazo: add(-1), status: 'Aberto', comentarios: '' }),
@@ -106,7 +107,7 @@
     plano('9', { tema: 'Entrega', divisao: 'Supply Chain', area: 'Logística', oque: 'Reduzir lead time de expedição de acabados', como: 'Pré-separar pedidos do dia seguinte no turno 3', responsavel: 'Diego Alves', email: 'diego.alves@example.com', prazo: add(4), status: 'Aberto', comentarios: 'Falta confirmar capacidade do armazém' }),
     plano('10', { tema: 'Manutenção', divisao: 'Operations', area: 'Manutenção', oque: 'Implantar RCM na linha Smartrac', como: 'Mapear falhas críticas e definir preventiva por modo de falha', responsavel: 'Elisa Rocha', email: 'elisa.rocha@example.com', prazo: add(18), status: 'Aberto', comentarios: '' }),
     plano('11', { tema: 'Qualidade', divisao: 'Operations', area: 'Qualidade', oque: 'Eliminar retrabalho de etiqueta ilegível', como: 'Trocar ribbon e calibrar cabeça de impressão semanalmente', responsavel: 'Bruno Lima', email: '', prazo: add(6), status: 'Em andamento', comentarios: 'Peças em trânsito' }),
-    plano('12', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Reduzir microparadas da DDA2 no setup', como: 'SMED com cronoanálise e kit pré-montado ao lado da máquina', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Aguardando foto do estado atual' }),
+    plano('12', { tema: 'OEE', divisao: 'Operations', area: 'Produção', oque: 'Reduzir microparadas da DDA2 no setup', como: 'SMED com cronoanálise e kit pré-montado ao lado da máquina', responsavel: 'Carla Mendes', email: 'carla.mendes@example.com', prazo: add(-4), status: 'Aberto', comentarios: 'Aguardando foto do estado atual', reprogramacoes: 1 }),
   ];
 
   var fontes = [
@@ -114,13 +115,34 @@
   ];
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
   var temasFollowUp = [];
+  var emailsHierarquiaPlanta = {};
   var followupsEnviadosHoje = {};
   var followUpPorArea = {};
   var emailSessao = 'christian.inacio@averydennison.com';
 
+  function mesclarHierarquiaMock_(destino, parcial) {
+    parcial = parcial || {};
+    Object.keys(parcial).forEach(function (k) {
+      var email = String(k || '').trim().toLowerCase();
+      var chefe = String(parcial[k] || '').trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        var msg = 'Informe um e-mail válido ou deixe o campo em branco.';
+        if (typeof I18n !== 'undefined' && I18n.t) msg = I18n.t(I18n.atual(), 'erro_hierarquia_email');
+        throw new Error(msg);
+      }
+      if (chefe && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chefe)) {
+        var msgChefe = 'Informe um e-mail válido ou deixe o campo em branco.';
+        if (typeof I18n !== 'undefined' && I18n.t) msgChefe = I18n.t(I18n.atual(), 'erro_hierarquia_email');
+        throw new Error(msgChefe);
+      }
+      if (!chefe) delete destino[email];
+      else destino[email] = chefe;
+    });
+  }
+
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
-      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [] };
+      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailsHierarquia: {} };
     }
     return followUpPorArea[deptId];
   }
@@ -135,6 +157,7 @@
       gestorEmail: fu.gestorEmail || emailSessao,
       emailsOff: (fu.emailsOff || []).slice(),
       meuEmail: emailSessao,
+      emailsHierarquia: Object.assign({}, fu.emailsHierarquia || {}),
     };
   }
 
@@ -206,6 +229,7 @@
       departamentosAdmin: departamentos,
       controlesAdmin: controles,
       gatilho: gatilho,
+      emailsHierarquia: Object.assign({}, emailsHierarquiaPlanta),
     };
   }
 
@@ -215,11 +239,17 @@
     ['tema', 'divisao', 'area', 'oque', 'como', 'responsavel', 'email', 'comentarios'].forEach(function (c) {
       if (reg[c] != null) p[c] = String(reg[c]);
     });
+    var prazoAntes = String(p.prazo || '').slice(0, 10);
     if (reg.prazo) {
-      p.prazo = String(reg.prazo).slice(0, 10);
+      var prazoNovo = String(reg.prazo).slice(0, 10);
+      if (prazoAntes && prazoNovo && prazoAntes !== prazoNovo) {
+        p.reprogramacoes = (Number(p.reprogramacoes) || 0) + 1;
+      }
+      p.prazo = prazoNovo;
       var partes = p.prazo.split('-');
       if (partes.length === 3) p.prazo_br = partes[2] + '/' + partes[1] + '/' + partes[0];
     }
+    if (p.reprogramacoes == null) p.reprogramacoes = 0;
     p.status_origem = reg.status || p.status_origem || 'Aberto';
     var st = p.status_origem;
     var s = String(st).toLowerCase();
@@ -243,7 +273,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.6' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.7' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -484,6 +514,15 @@
       var h = hub();
       h.planosArea = payloadArea(deptId, false);
       return h;
+    },
+    apiSalvarEmailsHierarquia: function (parcial) {
+      mesclarHierarquiaMock_(emailsHierarquiaPlanta, parcial);
+      return hub();
+    },
+    apiSalvarEmailsHierarquiaArea: function (deptId, parcial) {
+      if (areaTrancada(deptId)) return payloadArea(deptId, true);
+      mesclarHierarquiaMock_(followUpDept(deptId).emailsHierarquia, parcial);
+      return payloadArea(deptId, false);
     },
     apiAlternarTemaFollowUp: function (nome) {
       nome = String(nome || '').trim();

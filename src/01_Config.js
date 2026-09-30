@@ -9,7 +9,7 @@
  */
 var APP = {
   nome: 'OpsHub',
-  versao: '1.6.6',
+  versao: '1.6.7',
 };
 
 var ABAS = {
@@ -29,6 +29,7 @@ ESQUEMA[ABAS.config] = ['chave', 'valor', 'descricao'];
 ESQUEMA[ABAS.departamentos] = [
   'id', 'nome', 'descricao', 'icone', 'cor', 'ordem', 'ativo', 'bandeira', 'senha_planos',
   'followup_temas', 'followup_so_eu', 'followup_gestor_email', 'followup_emails_off',
+  'emails_hierarquia',
 ];
 ESQUEMA[ABAS.controles] = ['id', 'departamento_id', 'nome', 'descricao', 'url', 'ordem', 'ativo', 'negocio', 'pasta'];
 ESQUEMA[ABAS.fontes] = [
@@ -43,13 +44,13 @@ ESQUEMA[ABAS.planos] = [
   'id', 'fonte_id', 'fonte_nome', 'chave_origem',
   'tema', 'divisao', 'area', 'oque', 'como',
   'responsavel', 'email', 'prazo', 'status', 'comentarios',
-  'ultimo_email_em', 'emails_enviados', 'atualizado_em', 'editado_manual',
+  'ultimo_email_em', 'emails_enviados', 'atualizado_em', 'editado_manual', 'reprogramacoes',
 ];
 ESQUEMA[ABAS.planosArea] = [
   'id', 'departamento_id', 'fonte_id', 'fonte_nome', 'chave_origem',
   'tema', 'divisao', 'area', 'oque', 'como',
   'responsavel', 'email', 'prazo', 'status', 'comentarios',
-  'ultimo_email_em', 'emails_enviados', 'atualizado_em', 'followup', 'editado_manual',
+  'ultimo_email_em', 'emails_enviados', 'atualizado_em', 'followup', 'editado_manual', 'reprogramacoes',
 ];
 ESQUEMA[ABAS.emails] = [
   'quando', 'acao_id', 'email', 'assunto', 'status', 'detalhe',
@@ -63,6 +64,7 @@ var CONFIG_PADRAO = [
   ['hora_gatilho', '08', 'Hora local do disparo diario (0-23)'],
   ['followup_temas', '', 'Temas que recebem e-mail de follow-up (vazio = todos)'],
   ['versao_instalada', APP.versao, 'Versao aplicada na ultima instalacao'],
+  ['emails_hierarquia', '', 'Chefe opcional de cada pessoa no follow-up da planta (JSON email da pessoa -> email do chefe)'],
 ];
 
 if (typeof I18n !== 'undefined' && I18n.definirNome) I18n.definirNome(APP.nome);

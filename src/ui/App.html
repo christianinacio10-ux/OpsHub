@@ -33,7 +33,7 @@
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '' },
+    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {} },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -637,6 +637,10 @@
       var va = a[campo] || '';
       var vb = b[campo] || '';
       if (campo === 'prazo') { va = a.prazo || ''; vb = b.prazo || ''; }
+      if (campo === 'reprogramacoes') {
+        va = Number(a.reprogramacoes) || 0;
+        vb = Number(b.reprogramacoes) || 0;
+      }
       if (va < vb) return -1 * dir;
       if (va > vb) return 1 * dir;
       return 0;
@@ -703,6 +707,7 @@
         td(p.responsavel) +
         '<td title="' + escapar(tipEmail) + '">' + emailCel + '</td>' +
         td(p.prazo_br) +
+        td(p.reprogramacoes == null ? 0 : p.reprogramacoes, 'num') +
         '<td title="' + escapar(stLabel) + '"><span class="selo ' + p.status_classe + '">' + escapar(stLabel) + '</span></td>' +
         td(p.comentarios, 'comentarios') +
         (ids.editar
@@ -731,7 +736,8 @@
       th('tema', t('th_tema')) +
       th('divisao', t('th_divisao')) + th('area', t('th_area')) +
       th('oque', t('th_oque')) + th('como', t('th_como')) + th('responsavel', t('th_responsavel')) +
-      th('email', t('th_email')) + th('prazo', t('th_prazo')) + th('status', t('th_status')) +
+      th('email', t('th_email')) + th('prazo', t('th_prazo')) +
+      th('reprogramacoes', t('th_reprogramacoes')) + th('status', t('th_status')) +
       th('comentarios', t('th_comentarios')) +
       (ids.editar ? '<th></th>' : '') +
       '</tr></thead><tbody>' + linhasTabelaPlanos(filtrados, ids) + '</tbody></table></div>' +
@@ -931,8 +937,39 @@
 
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
     };
+  }
+
+  function blocoHierarquia(pessoas, mapa, escopo) {
+    mapa = mapa || {};
+    var linhas = (pessoas || []).map(function (p) {
+      return '<label class="hierarquia-pessoa">' +
+        '<span><strong>' + escapar(tituloNome(p.nome)) + '</strong>' +
+        '<small>' + escapar(p.email) + '</small></span>' +
+        '<input type="email" data-pessoa="' + escapar(p.email) + '" placeholder="' +
+        escapar(t('hierarquia_ph')) + '" value="' + escapar(mapa[p.email] || '') + '">' +
+        '</label>';
+    }).join('');
+    return '<div class="bloco-hierarquia" data-bloco-hierarquia="' + escopo + '">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('hierarquia_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('hierarquia_apoio') + '</div>' +
+      (linhas
+        ? '<div class="lista-hierarquia">' + linhas + '</div>' +
+          '<div><button type="button" class="botao primario" data-salvar-hierarquia="' + escopo + '">' +
+          t('salvar') + '</button></div>'
+        : '<div class="secao-apoio" style="margin:0">' + t('hierarquia_sem_pessoas') + '</div>') +
+      '</div>';
+  }
+
+  function mapaHierarquiaNo(raiz) {
+    var mapa = {};
+    if (!raiz) return mapa;
+    Array.prototype.forEach.call(raiz.querySelectorAll('input[data-pessoa]'), function (el) {
+      var email = el.getAttribute('data-pessoa') || '';
+      if (email) mapa[email] = el.value || '';
+    });
+    return mapa;
   }
 
   function chipsFollowUpLista(temas, habilitados, attr, vazioNenhum) {
@@ -991,6 +1028,7 @@
     }
     return '<div class="painel-cobranca-plano">' +
       '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('planos_area_cobranca_bloco') + '</div>' +
+      blocoHierarquia(pessoas, fu.emailsHierarquia, 'area') +
       '<div class="secao-titulo" style="font-size:13px;margin:4px 0 0">' + t('planos_area_temas_titulo') + '</div>' +
       '<div class="secao-apoio" style="margin:0">' + t('planos_area_temas_apoio') + '</div>' +
       chipsFollowUpLista(temas, fu.temas, 'data-followup-tema-area', true) +
@@ -1138,7 +1176,7 @@
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '',
+      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
     };
     if (resp.ok) {
       var d = Estado.deptAberto;
@@ -1448,7 +1486,13 @@
       '<button class="botao primario" id="btn-gatilho">' + t('ativar_gatilho') + '</button>' +
       '<button class="botao" id="btn-remover-gatilho">' + t('inativar_gatilhos') + '</button>' +
       '<button class="botao" id="btn-followup">' + t('enviar_followups') + '</button>' +
-      '</div></div></div>';
+      '</div>' +
+      blocoHierarquia(
+        pessoasFollowUpArea((Estado.hub && Estado.hub.planos) || []),
+        (Estado.hub && Estado.hub.emailsHierarquia) || {},
+        'planta'
+      ) +
+      '</div></div>';
   }
 
   function LogicaSim(v) {
@@ -2167,6 +2211,29 @@
       }
       if (e.target.closest('#btn-followup')) {
         enviarFollowUpsAgoraUi();
+        return;
+      }
+      var btnHier = e.target.closest('[data-salvar-hierarquia]');
+      if (btnHier) {
+        var escopoHier = btnHier.getAttribute('data-salvar-hierarquia');
+        var blocoHier = btnHier.closest('[data-bloco-hierarquia]');
+        var mapaHier = mapaHierarquiaNo(blocoHier);
+        ocupar(true, t('carregando_ellipsis'));
+        var pedidoHier = escopoHier === 'area'
+          ? chamar('apiSalvarEmailsHierarquiaArea', Estado.deptAberto && Estado.deptAberto.id, mapaHier)
+          : chamar('apiSalvarEmailsHierarquia', mapaHier);
+        pedidoHier.then(function (resp) {
+          ocupar(false);
+          if (escopoHier === 'area') aplicarPlanosArea(resp, { manterScroll: true });
+          else {
+            Estado.hub = resp;
+            render();
+          }
+          toast(t('toast_hierarquia'));
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
         return;
       }
       if (e.target.closest('#btn-gatilho') || e.target.closest('[data-gatilho-ativar]')) {

@@ -473,6 +473,93 @@ var Logica = (function () {
     'responsavel', 'email', 'prazo', 'status', 'comentarios',
   ];
 
+  function diaDoPrazo_(v) {
+    return ymd(paraData(v));
+  }
+
+  /** A primeira data não conta. O mesmo dia regravado não conta. */
+  function reprogramacoesAposPrazo(anterior, prazoNovo) {
+    anterior = anterior || {};
+    var base = Number(anterior.reprogramacoes) || 0;
+    if (base < 0) base = 0;
+    var antes = diaDoPrazo_(anterior.prazo);
+    var depois = diaDoPrazo_(prazoNovo);
+    if (antes && antes !== depois) return base + 1;
+    return base;
+  }
+
+  function prazoMudouDeDia(anterior, prazoNovo) {
+    var antes = diaDoPrazo_(anterior && anterior.prazo);
+    var depois = diaDoPrazo_(prazoNovo);
+    return !!(antes && antes !== depois);
+  }
+
+  /**
+   * O 1º aviso daquele prazo (emails ainda em 0) fica só com o responsável.
+   * Do 2º em diante, um e-mail separado vai ao próximo nível se o cadastro
+   * existir e for diferente do destino.
+   */
+  function deveEscalarFollowUp(emailsEnviados, emailHierarquia, emailDestino) {
+    if ((Number(emailsEnviados) || 0) < 1) return false;
+    var hier = texto(emailHierarquia).toLowerCase();
+    var dest = texto(emailDestino).toLowerCase();
+    if (!emailValido(hier)) return false;
+    if (hier === dest) return false;
+    return true;
+  }
+
+  function parseEmailsHierarquia(valor) {
+    var mapa = {};
+    if (valor == null || valor === '') return mapa;
+    var bruto = valor;
+    if (typeof bruto === 'string') {
+      var s = texto(bruto);
+      if (!s || s.charAt(0) !== '{') return mapa;
+      try { bruto = JSON.parse(s); } catch (e) { return mapa; }
+    }
+    if (!bruto || typeof bruto !== 'object' || Array.isArray(bruto)) return mapa;
+    Object.keys(bruto).forEach(function (k) {
+      var email = texto(k).toLowerCase();
+      var chefe = texto(bruto[k]).toLowerCase();
+      if (emailValido(email) && emailValido(chefe)) mapa[email] = chefe;
+    });
+    return mapa;
+  }
+
+  function serializarEmailsHierarquia(mapa) {
+    var limpo = parseEmailsHierarquia(mapa);
+    var chaves = Object.keys(limpo).sort();
+    if (!chaves.length) return '';
+    var out = {};
+    chaves.forEach(function (k) { out[k] = limpo[k]; });
+    return JSON.stringify(out);
+  }
+
+  function mesclarEmailsHierarquia(atual, parcial) {
+    var mapa = parseEmailsHierarquia(atual);
+    var patch = parcial || {};
+    if (Array.isArray(patch)) {
+      var obj = {};
+      patch.forEach(function (item) {
+        if (item && item.email) obj[item.email] = item.chefe || '';
+      });
+      patch = obj;
+    }
+    Object.keys(patch).forEach(function (k) {
+      var email = texto(k).toLowerCase();
+      if (!emailValido(email)) return;
+      var chefe = texto(patch[k]).toLowerCase();
+      if (!chefe) delete mapa[email];
+      else if (emailValido(chefe)) mapa[email] = chefe;
+    });
+    return mapa;
+  }
+
+  function emailChefeDe(mapa, emailPessoa) {
+    var m = parseEmailsHierarquia(mapa);
+    return m[texto(emailPessoa).toLowerCase()] || '';
+  }
+
   function mesclarImportacao(anteriores, novos) {
     var porChave = {};
     (anteriores || []).forEach(function (a) {
@@ -480,15 +567,24 @@ var Logica = (function () {
     });
     return (novos || []).map(function (n) {
       var velho = porChave[n.chave_origem || n.id];
-      if (!velho) return n;
+      if (!velho) {
+        n.reprogramacoes = Number(n.reprogramacoes) || 0;
+        return n;
+      }
+      var prazoChegando = n.prazo;
       n.ultimo_email_em = velho.ultimo_email_em || '';
-      n.emails_enviados = velho.emails_enviados || 0;
+      n.emails_enviados = Number(velho.emails_enviados) || 0;
       n.followup = velho.followup || n.followup || '';
+      n.reprogramacoes = Number(velho.reprogramacoes) || 0;
       if (sim(velho.editado_manual)) {
         CAMPOS_EDICAO_MANUAL.forEach(function (c) {
           if (velho[c] !== undefined) n[c] = velho[c];
         });
         n.editado_manual = 'SIM';
+      } else if (prazoMudouDeDia(velho, prazoChegando)) {
+        n.reprogramacoes = reprogramacoesAposPrazo(velho, prazoChegando);
+        n.emails_enviados = 0;
+        n.ultimo_email_em = '';
       }
       return n;
     });
@@ -565,6 +661,7 @@ var Logica = (function () {
 
   function valorSort(p, campo, hoje) {
     if (campo === 'prazo') return paraData(p.prazo) ? paraData(p.prazo).getTime() : 0;
+    if (campo === 'reprogramacoes') return Number(p.reprogramacoes) || 0;
     if (campo === 'status') return statusEfetivo(p, hoje);
     if (campo === 'email') return texto(p.email);
     return texto(p[campo]);
@@ -716,6 +813,7 @@ var Logica = (function () {
         : 'Não é possível enviar o e-mail de follow-up pois não há e-mail cadastrado.',
       departamento_id: texto(p.departamento_id),
       editado_manual: sim(p.editado_manual),
+      reprogramacoes: Number(p.reprogramacoes) || 0,
     };
   }
 
@@ -838,6 +936,12 @@ var Logica = (function () {
       }
       return out;
     }
+    var tituloChave = opts.escalacao ? 'mail_titulo_hierarquia' : 'mail_titulo';
+    var introChave = opts.escalacao ? 'mail_intro_hierarquia' : 'mail_intro';
+    var tituloPadrao = opts.escalacao ? 'Escalação: ação ainda atrasada' : 'Ação com prazo vencido';
+    var introPadrao = opts.escalacao
+      ? 'O responsável já foi avisado neste prazo. Este é um aviso separado para o próximo nível, porque o atraso continua.'
+      : 'Este follow-up é enviado a partir de 1 dia de atraso, uma vez por dia, até o prazo ser reprogramado.';
     var atraso = '';
     if (dec.diasAtraso != null) {
       atraso = tm('mail_atraso', '{n} dia(s) em {data}', {
@@ -880,9 +984,9 @@ var Logica = (function () {
       '<div style="background:#E4002B;height:6px;line-height:6px;font-size:0">&nbsp;</div>',
       '<div style="padding:28px">',
       '<h1 style="font-size:22px;margin:0 0 8px;font-weight:600;letter-spacing:-0.03em;color:#F4F6FA">' +
-        escaparHtml(tm('mail_titulo', 'Ação com prazo vencido')) + '</h1>',
+        escaparHtml(tm(tituloChave, tituloPadrao)) + '</h1>',
       '<p style="color:#A8B2C5;margin:0 0 20px;font-size:14px;line-height:1.5">' +
-        escaparHtml(tm('mail_intro', 'Este follow-up é enviado a partir de 1 dia de atraso, uma vez por dia, até o prazo ser reprogramado.')) + '</p>',
+        escaparHtml(tm(introChave, introPadrao)) + '</p>',
       '<table style="width:100%;border-collapse:collapse">',
       linhaHtmlFollowUp_(tm('th_tema', 'Tema'), plano.tema),
       linhaHtmlFollowUp_(tm('th_divisao', 'Divisão'), plano.divisao),
@@ -940,6 +1044,13 @@ var Logica = (function () {
     emailFollowUpPermitido: emailFollowUpPermitido,
     elegivelFollowUp: elegivelFollowUp,
     linhaFonteParaPlano: linhaFonteParaPlano,
+    reprogramacoesAposPrazo: reprogramacoesAposPrazo,
+    prazoMudouDeDia: prazoMudouDeDia,
+    deveEscalarFollowUp: deveEscalarFollowUp,
+    parseEmailsHierarquia: parseEmailsHierarquia,
+    serializarEmailsHierarquia: serializarEmailsHierarquia,
+    mesclarEmailsHierarquia: mesclarEmailsHierarquia,
+    emailChefeDe: emailChefeDe,
     mesclarImportacao: mesclarImportacao,
     eixoDe: eixoDe,
     passaEixo: passaEixo,
