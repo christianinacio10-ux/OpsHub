@@ -439,6 +439,79 @@ var Logica = (function () {
     };
   }
 
+  function normalizarModoLembrete(v) {
+    var s = texto(v).toLowerCase();
+    if (s === 'eu') return 'eu';
+    if (s === 'pessoa') return 'pessoa';
+    return 'off';
+  }
+
+  function normalizarDiasLembrete(v) {
+    if (v == null || texto(v) === '') return 3;
+    var n = Number(v);
+    if (!isFinite(n)) return 3;
+    n = Math.round(n);
+    if (n < 1) return 1;
+    if (n > 90) return 90;
+    return n;
+  }
+
+  function regraLembrete(fonte) {
+    fonte = fonte || {};
+    var modoBruto = fonte.lembrete_modo != null ? fonte.lembrete_modo : fonte.modo;
+    var diasBruto = fonte.lembrete_dias != null ? fonte.lembrete_dias : fonte.dias;
+    var emailBruto = fonte.lembrete_email != null ? fonte.lembrete_email : fonte.email;
+    return {
+      modo: normalizarModoLembrete(modoBruto),
+      dias: normalizarDiasLembrete(diasBruto),
+      email: texto(emailBruto).toLowerCase(),
+    };
+  }
+
+  /**
+   * Lembrete opcional nos N dias até o prazo, inclusive o vencimento.
+   * modo eu: só a ação cujo e-mail do responsável é o nosso.
+   * modo pessoa: o e-mail vai para quem está na ação.
+   * Fora dessa janela, a cobrança de atraso segue em elegivelFollowUp.
+   */
+  function elegivelLembrete(acao, hoje, regra, temasHabilitados, opcoes) {
+    regra = regraLembrete(regra);
+    opcoes = opcoes || {};
+    if (regra.modo === 'off') return { ok: false, motivo: 'lembrete_desligado' };
+    var base = elegivelFollowUp(acao, hoje, temasHabilitados, {
+      ignorarPrazo: true,
+      ignorarJaEnviadoHoje: true,
+      ignorarTemas: !!opcoes.ignorarTemas,
+    });
+    if (!base.ok) return base;
+    var prazo = paraData(acao && acao.prazo);
+    var hojeData = paraData(hoje) || paraData(new Date());
+    var inicio = adicionarDias(prazo, -(regra.dias - 1));
+    if (compararDatas(hojeData, inicio) < 0) return { ok: false, motivo: 'cedo_demais' };
+    if (compararDatas(hojeData, prazo) > 0) return { ok: false, motivo: 'janela_passou' };
+    var ultimo = paraData(acao && acao.ultimo_lembrete_em);
+    if (ultimo && mesmoDia(ultimo, hojeData) && !opcoes.ignorarJaEnviadoHoje) {
+      return { ok: false, motivo: 'ja_enviado_hoje' };
+    }
+    var daAcao = texto(acao && acao.email).toLowerCase();
+    var destino = daAcao;
+    if (regra.modo === 'eu') {
+      var meu = texto(regra.email).toLowerCase();
+      if (!emailValido(meu)) return { ok: false, motivo: 'sem_email' };
+      if (daAcao !== meu) return { ok: false, motivo: 'nao_e_minha' };
+      destino = meu;
+    }
+    if (!emailValido(destino)) return { ok: false, motivo: 'sem_email' };
+    var diasParaPrazo = Math.round((prazo.getTime() - hojeData.getTime()) / 86400000);
+    return {
+      ok: true,
+      motivo: 'lembrete',
+      email: destino,
+      diasParaPrazo: diasParaPrazo,
+      dias: regra.dias,
+    };
+  }
+
   function linhaFonteParaPlano(valores, mapa, meta) {
     meta = meta || {};
     function col(campo) {
@@ -573,6 +646,7 @@ var Logica = (function () {
       }
       var prazoChegando = n.prazo;
       n.ultimo_email_em = velho.ultimo_email_em || '';
+      n.ultimo_lembrete_em = velho.ultimo_lembrete_em || '';
       n.emails_enviados = Number(velho.emails_enviados) || 0;
       n.followup = velho.followup || n.followup || '';
       n.reprogramacoes = Number(velho.reprogramacoes) || 0;
@@ -585,6 +659,7 @@ var Logica = (function () {
         n.reprogramacoes = reprogramacoesAposPrazo(velho, prazoChegando);
         n.emails_enviados = 0;
         n.ultimo_email_em = '';
+        n.ultimo_lembrete_em = '';
       }
       return n;
     });
@@ -936,14 +1011,32 @@ var Logica = (function () {
       }
       return out;
     }
-    var tituloChave = opts.escalacao ? 'mail_titulo_hierarquia' : 'mail_titulo';
-    var introChave = opts.escalacao ? 'mail_intro_hierarquia' : 'mail_intro';
-    var tituloPadrao = opts.escalacao ? 'Escalação: ação ainda atrasada' : 'Ação com prazo vencido';
-    var introPadrao = opts.escalacao
-      ? 'O responsável já foi avisado neste prazo. Este é um aviso separado para o próximo nível, porque o atraso continua.'
-      : 'Este follow-up é enviado a partir de 1 dia de atraso, uma vez por dia, até o prazo ser reprogramado.';
+    var lembrete = !!opts.lembrete;
+    var diasParaPrazo = dec.diasParaPrazo;
+    var tituloChave = lembrete
+      ? 'mail_titulo_lembrete'
+      : (opts.escalacao ? 'mail_titulo_hierarquia' : 'mail_titulo');
+    var introChave = lembrete
+      ? (diasParaPrazo === 0 ? 'mail_intro_lembrete_hoje' : 'mail_intro_lembrete')
+      : (opts.escalacao ? 'mail_intro_hierarquia' : 'mail_intro');
+    var tituloPadrao = lembrete
+      ? 'Lembrete de ação'
+      : (opts.escalacao ? 'Escalação: ação ainda atrasada' : 'Ação com prazo vencido');
+    var introPadrao = lembrete
+      ? (diasParaPrazo === 0
+        ? 'Esta ação vence hoje.'
+        : 'Faltam {n} dia(s) para o prazo. Este lembrete sai uma vez por dia até o vencimento.')
+      : (opts.escalacao
+        ? 'O responsável já foi avisado neste prazo. Este é um aviso separado para o próximo nível, porque o atraso continua.'
+        : 'Este follow-up é enviado a partir de 1 dia de atraso, uma vez por dia, até o prazo ser reprogramado.');
+    var rotuloQuando = lembrete ? 'mail_rotulo_lembrete' : 'mail_rotulo_atraso';
+    var rotuloQuandoPadrao = lembrete ? 'Lembrete' : 'Atraso';
     var atraso = '';
-    if (dec.diasAtraso != null) {
+    if (lembrete) {
+      atraso = diasParaPrazo === 0
+        ? tm('mail_vence_hoje', 'Vence hoje')
+        : tm('mail_faltam', 'Faltam {n} dia(s)', { n: diasParaPrazo });
+    } else if (dec.diasAtraso != null) {
       atraso = tm('mail_atraso', '{n} dia(s) em {data}', {
         n: dec.diasAtraso,
         data: hoje ? formatarDataBr(paraData(hoje)) : '',
@@ -986,7 +1079,7 @@ var Logica = (function () {
       '<h1 style="font-size:22px;margin:0 0 8px;font-weight:600;letter-spacing:-0.03em;color:#F4F6FA">' +
         escaparHtml(tm(tituloChave, tituloPadrao)) + '</h1>',
       '<p style="color:#A8B2C5;margin:0 0 20px;font-size:14px;line-height:1.5">' +
-        escaparHtml(tm(introChave, introPadrao)) + '</p>',
+        escaparHtml(tm(introChave, introPadrao, { n: diasParaPrazo })) + '</p>',
       '<table style="width:100%;border-collapse:collapse">',
       linhaHtmlFollowUp_(tm('th_tema', 'Tema'), plano.tema),
       linhaHtmlFollowUp_(tm('th_divisao', 'Divisão'), plano.divisao),
@@ -995,7 +1088,7 @@ var Logica = (function () {
       linhaHtmlFollowUp_(tm('th_como', 'Como'), plano.como),
       linhaHtmlFollowUp_(tm('th_responsavel', 'Responsável'), plano.responsavel),
       linhaHtmlFollowUp_(tm('th_prazo', 'Prazo'), prazo),
-      linhaHtmlFollowUp_(tm('mail_rotulo_atraso', 'Atraso'), atraso),
+      linhaHtmlFollowUp_(tm(rotuloQuando, rotuloQuandoPadrao), atraso),
       linhaHtmlFollowUp_(tm('th_status', 'Status'), plano.status),
       linhaHtmlFollowUp_(tm('th_comentarios', 'Comentários'), plano.comentarios),
       '</table>',
@@ -1043,6 +1136,10 @@ var Logica = (function () {
     emailDestinoFollowUp: emailDestinoFollowUp,
     emailFollowUpPermitido: emailFollowUpPermitido,
     elegivelFollowUp: elegivelFollowUp,
+    normalizarModoLembrete: normalizarModoLembrete,
+    normalizarDiasLembrete: normalizarDiasLembrete,
+    regraLembrete: regraLembrete,
+    elegivelLembrete: elegivelLembrete,
     linhaFonteParaPlano: linhaFonteParaPlano,
     reprogramacoesAposPrazo: reprogramacoesAposPrazo,
     prazoMudouDeDia: prazoMudouDeDia,

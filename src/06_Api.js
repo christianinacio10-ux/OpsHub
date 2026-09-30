@@ -111,6 +111,11 @@ function apiHub() {
     controlesAdmin: Repo.ler(ABAS.controles),
     gatilho: estadoGatilho_(),
     emailsHierarquia: Logica.parseEmailsHierarquia(Cadastros.config().texto('emails_hierarquia', '')),
+    lembrete: Logica.regraLembrete({
+      lembrete_modo: Cadastros.config().texto('lembrete_modo', 'off'),
+      lembrete_dias: Cadastros.config().texto('lembrete_dias', '3'),
+      lembrete_email: Cadastros.config().texto('lembrete_email', ''),
+    }),
   };
 }
 
@@ -431,6 +436,7 @@ function payloadFollowUpArea_(dept) {
     emailsOff: regra.emailsOff,
     meuEmail: meu,
     emailsHierarquia: Logica.parseEmailsHierarquia(dept && dept.emails_hierarquia),
+    lembrete: Logica.regraLembrete(dept),
   };
 }
 
@@ -658,6 +664,42 @@ function apiAlternarEmailFollowUpArea(deptId, email) {
   return payloadPlanosArea_(deptPorId_(dept.id));
 }
 
+function gravarLembrete_(modo, dias, emailAtual) {
+  var regra = Logica.regraLembrete({ modo: modo, dias: dias, email: emailAtual });
+  if (regra.modo === 'eu') {
+    var email = Logica.texto(identificarUsuario_().email).toLowerCase();
+    if (!Logica.emailValido(email)) throw new Error(I18n.t(I18n.atual(), 'erro_lembrete_email'));
+    regra.email = email;
+  }
+  return regra;
+}
+
+function apiSalvarLembrete(modo, dias) {
+  instalarSistema();
+  var atual = Cadastros.config().texto('lembrete_email', '');
+  var regra = gravarLembrete_(modo, dias, atual);
+  gravarChaveConfig_('lembrete_modo', regra.modo, 'Lembrete antes do vencimento: off, eu ou pessoa');
+  gravarChaveConfig_('lembrete_dias', String(regra.dias), 'Dias de lembrete até o prazo, inclusive o vencimento');
+  if (regra.modo === 'eu') {
+    gravarChaveConfig_('lembrete_email', regra.email, 'E-mail que recebe o lembrete das ações no próprio nome');
+  }
+  return apiHub();
+}
+
+function apiSalvarLembreteArea(deptId, modo, dias) {
+  instalarSistema();
+  var gate = exigirAreaAberta_(deptId);
+  if (gate.bloqueado) return gate.bloqueado;
+  var regra = gravarLembrete_(modo, dias, gate.dept.lembrete_email);
+  Repo.atualizarRegistro(ABAS.departamentos, gate.dept._linha, {
+    lembrete_modo: regra.modo,
+    lembrete_dias: String(regra.dias),
+    lembrete_email: regra.modo === 'eu' ? regra.email : Logica.texto(gate.dept.lembrete_email),
+  });
+  Repo.limparMemoria();
+  return payloadPlanosArea_(deptPorId_(gate.dept.id));
+}
+
 function apiSalvarEmailsHierarquiaArea(deptId, parcial) {
   var gate = exigirAreaAberta_(deptId);
   if (gate.bloqueado) return gate.bloqueado;
@@ -694,6 +736,7 @@ function aplicarContagemPrazo_(patch, anterior) {
   if (Logica.prazoMudouDeDia(anterior, patch.prazo)) {
     patch.emails_enviados = 0;
     patch.ultimo_email_em = '';
+    patch.ultimo_lembrete_em = '';
   }
   return patch;
 }

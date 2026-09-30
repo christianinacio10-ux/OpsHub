@@ -35,7 +35,7 @@
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {} },
+    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {}, lembrete: { modo: 'off', dias: 3, email: '' } },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -943,6 +943,7 @@
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
       temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
+      lembrete: { modo: 'off', dias: 3, email: '' },
     };
   }
 
@@ -964,6 +965,37 @@
           '<div><button type="button" class="botao primario" data-salvar-hierarquia="' + escopo + '">' +
           t('salvar') + '</button></div>'
         : '<div class="secao-apoio" style="margin:0">' + t('hierarquia_sem_pessoas') + '</div>') +
+      '</div>';
+  }
+
+  function blocoLembrete(escopo, regra) {
+    regra = regra || {};
+    var modo = regra.modo === 'eu' || regra.modo === 'pessoa' ? regra.modo : 'off';
+    var dias = Number(regra.dias);
+    if (!dias || dias < 1) dias = 3;
+    if (dias > 90) dias = 90;
+    function btn(id, rotulo) {
+      var on = modo === id;
+      return '<button type="button" class="cobranca-modo' + (on ? ' ativo' : '') +
+        '" data-lembrete-modo="' + id + '" data-lembrete-escopo="' + escopo +
+        '" aria-pressed="' + (on ? 'true' : 'false') + '">' + rotulo + '</button>';
+    }
+    return '<div class="bloco-lembrete" data-bloco-lembrete="' + escopo + '">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:0">' + t('lembrete_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('lembrete_apoio') + '</div>' +
+      '<div class="cobranca-modos" role="group">' +
+      btn('off', t('lembrete_off')) +
+      btn('eu', t('lembrete_eu')) +
+      btn('pessoa', t('lembrete_pessoa')) +
+      '</div>' +
+      '<div class="lembrete-dias-linha">' +
+      '<label>' + t('lembrete_dias') +
+      '<input type="number" min="1" max="90" step="1" data-lembrete-dias value="' + dias + '">' +
+      '</label>' +
+      '<button type="button" class="botao primario" data-salvar-lembrete="' + escopo + '">' +
+      t('salvar') + '</button>' +
+      '</div>' +
+      '<div class="secao-apoio" style="margin:0">' + t('lembrete_dias_apoio', { n: dias }) + '</div>' +
       '</div>';
   }
 
@@ -1059,6 +1091,7 @@
         ? t('planos_area_follow_so_eu_hint', { email: emailHint })
         : t('planos_area_cobrar_todos_hint')) +
       '</div>' +
+      blocoLembrete('area', fu.lembrete) +
       (listaPessoas
         ? '<div class="secao-titulo" style="font-size:13px;margin:4px 0 6px">' + t('planos_area_follow_pessoas') + '</div>' +
           listaPessoas
@@ -1188,6 +1221,7 @@
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
       temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
+      lembrete: { modo: 'off', dias: 3, email: '' },
     };
     if (resp.ok) {
       var d = Estado.deptAberto;
@@ -1543,6 +1577,7 @@
       '<div class="secao-titulo">' + t('mail_regra') + '</div>' +
       '<div class="secao-apoio">' + t('mail_regra_apoio') + '</div>' +
       chipsFollowUp() +
+      blocoLembrete('planta', Estado.hub && Estado.hub.lembrete) +
       '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">' +
       t('gatilho_selo', { estado: g.ativo ? t('gatilho_ativo') : t('gatilho_inativo'), hora: g.hora }) +
       '</div>' +
@@ -1877,6 +1912,30 @@
       return t('toast_nenhum_followup_agora');
     }
     return t('toast_nenhum_followup');
+  }
+
+  function salvarLembreteUi(escopo, modo, raiz) {
+    if (Estado.carregando) return;
+    var input = raiz && raiz.querySelector('[data-lembrete-dias]');
+    var dias = input ? input.value : 3;
+    if (escopo === 'area' && !(Estado.deptAberto && Estado.deptAberto.id)) return;
+    ocupar(true, t('ocupado_followup'), t('ocupado_lembrete_sub'));
+    var pedido = escopo === 'area'
+      ? chamar('apiSalvarLembreteArea', Estado.deptAberto.id, modo, dias)
+      : chamar('apiSalvarLembrete', modo, dias);
+    pedido.then(function (resp) {
+      ocupar(false);
+      if (escopo === 'area') aplicarPlanosArea(resp, { manterScroll: true });
+      else {
+        Estado.hub = resp;
+        Estado.configAba = 'mail';
+        render();
+      }
+      toast(t('toast_lembrete'));
+    }).catch(function (err) {
+      ocupar(false);
+      toast(err.message || err, true);
+    });
   }
 
   function toggleFollowUpTemaArea(nome) {
@@ -2321,6 +2380,30 @@
       }
       if (e.target.closest('#btn-followup')) {
         enviarFollowUpsAgoraUi();
+        return;
+      }
+      var lemModo = e.target.closest('[data-lembrete-modo]');
+      if (lemModo) {
+        e.preventDefault();
+        e.stopPropagation();
+        salvarLembreteUi(
+          lemModo.getAttribute('data-lembrete-escopo') || 'planta',
+          lemModo.getAttribute('data-lembrete-modo'),
+          lemModo.closest('[data-bloco-lembrete]')
+        );
+        return;
+      }
+      var lemSalvar = e.target.closest('[data-salvar-lembrete]');
+      if (lemSalvar) {
+        e.preventDefault();
+        e.stopPropagation();
+        var blocoLem = lemSalvar.closest('[data-bloco-lembrete]');
+        var ativoLem = blocoLem && blocoLem.querySelector('[data-lembrete-modo].ativo');
+        salvarLembreteUi(
+          lemSalvar.getAttribute('data-salvar-lembrete') || 'planta',
+          ativoLem ? ativoLem.getAttribute('data-lembrete-modo') : 'off',
+          blocoLem
+        );
         return;
       }
       var btnHier = e.target.closest('[data-salvar-hierarquia]');

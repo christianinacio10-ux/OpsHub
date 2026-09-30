@@ -116,6 +116,7 @@
   var gatilho = { ativo: false, quantidade: 0, hora: 8 };
   var temasFollowUp = [];
   var emailsHierarquiaPlanta = {};
+  var lembretePlanta = { modo: 'off', dias: 3, email: '' };
   var followupsEnviadosHoje = {};
   var followUpPorArea = {};
   var emailSessao = 'christian.inacio@averydennison.com';
@@ -142,7 +143,10 @@
 
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
-      followUpPorArea[deptId] = { temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailsHierarquia: {} };
+      followUpPorArea[deptId] = {
+        temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailsHierarquia: {},
+        lembrete: { modo: 'off', dias: 3, email: '' },
+      };
     }
     return followUpPorArea[deptId];
   }
@@ -158,6 +162,11 @@
       emailsOff: (fu.emailsOff || []).slice(),
       meuEmail: emailSessao,
       emailsHierarquia: Object.assign({}, fu.emailsHierarquia || {}),
+      lembrete: {
+        modo: (fu.lembrete && fu.lembrete.modo) || 'off',
+        dias: (fu.lembrete && fu.lembrete.dias) || 3,
+        email: (fu.lembrete && fu.lembrete.email) || '',
+      },
     };
   }
 
@@ -231,6 +240,11 @@
       controlesAdmin: controles,
       gatilho: gatilho,
       emailsHierarquia: Object.assign({}, emailsHierarquiaPlanta),
+      lembrete: {
+        modo: lembretePlanta.modo || 'off',
+        dias: lembretePlanta.dias || 3,
+        email: lembretePlanta.email || '',
+      },
     };
   }
 
@@ -274,7 +288,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.8' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.9' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -515,6 +529,31 @@
       var h = hub();
       h.planosArea = payloadArea(deptId, false);
       return h;
+    },
+    apiSalvarLembrete: function (modo, dias) {
+      modo = String(modo || 'off').toLowerCase();
+      if (modo !== 'eu' && modo !== 'pessoa') modo = 'off';
+      var n = parseInt(dias, 10);
+      if (!isFinite(n) || n < 1) n = 3;
+      if (n > 90) n = 90;
+      lembretePlanta.modo = modo;
+      lembretePlanta.dias = n;
+      if (modo === 'eu') lembretePlanta.email = emailSessao;
+      return hub();
+    },
+    apiSalvarLembreteArea: function (deptId, modo, dias) {
+      if (areaTrancada(deptId)) return payloadArea(deptId, true);
+      modo = String(modo || 'off').toLowerCase();
+      if (modo !== 'eu' && modo !== 'pessoa') modo = 'off';
+      var n = parseInt(dias, 10);
+      if (!isFinite(n) || n < 1) n = 3;
+      if (n > 90) n = 90;
+      var fu = followUpDept(deptId);
+      fu.lembrete = fu.lembrete || { modo: 'off', dias: 3, email: '' };
+      fu.lembrete.modo = modo;
+      fu.lembrete.dias = n;
+      if (modo === 'eu') fu.lembrete.email = emailSessao;
+      return payloadArea(deptId, false);
     },
     apiSalvarEmailsHierarquia: function (parcial) {
       mesclarHierarquiaMock_(emailsHierarquiaPlanta, parcial);
