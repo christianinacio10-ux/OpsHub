@@ -969,6 +969,14 @@ var Logica = (function () {
     return !!emailDestinoFollowUp({ email: email }, regra);
   }
 
+  /** Cópia do owner do hub. Não repete o destinatário. */
+  function copiaOwnerHub(destino, owner) {
+    var cc = texto(owner).toLowerCase();
+    var para = texto(destino).toLowerCase();
+    if (!emailValido(cc) || cc === para) return '';
+    return cc;
+  }
+
   function temSenhaPlanos(dept) {
     return !!texto(dept && dept.senha_planos);
   }
@@ -1156,6 +1164,7 @@ var Logica = (function () {
     patchFollowUpParaResponsavel: patchFollowUpParaResponsavel,
     emailDestinoFollowUp: emailDestinoFollowUp,
     emailFollowUpPermitido: emailFollowUpPermitido,
+    copiaOwnerHub: copiaOwnerHub,
     elegivelFollowUp: elegivelFollowUp,
     normalizarModoLembrete: normalizarModoLembrete,
     normalizarDiasLembrete: normalizarDiasLembrete,

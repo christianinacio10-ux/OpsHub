@@ -125,7 +125,17 @@ function apiHub() {
       lembrete_dias: Cadastros.config().texto('lembrete_dias', '3'),
       lembrete_email: Cadastros.config().texto('lembrete_email', ''),
     }),
+    ownerHub: Cadastros.config().texto('owner_hub_email', '').toLowerCase(),
   };
+}
+
+function apiSalvarOwnerHub(email) {
+  email = Logica.texto(email).toLowerCase();
+  if (email && !Logica.emailValido(email)) {
+    throw new Error(I18n.t(I18n.atual(), 'erro_owner_hub'));
+  }
+  gravarChaveConfig_('owner_hub_email', email, 'Owner do hub, em cópia nos e-mails das ações');
+  return apiHub();
 }
 
 function apiSalvarDepartamento(reg) {

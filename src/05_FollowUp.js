@@ -124,7 +124,7 @@ function enviarFollowUps(opcoes) {
             email: lem.email,
             assunto: assuntoFollowUp_(plano, { lembrete: true, diasParaPrazo: lem.diasParaPrazo }),
             status: 'OK',
-            detalhe: 'lembrete ' + lem.diasParaPrazo + 'd',
+            detalhe: detalheEnvio_('lembrete ' + lem.diasParaPrazo + 'd', lem.email),
           }]);
           enviados++;
         } catch (lemErr) {
@@ -160,7 +160,7 @@ function enviarFollowUps(opcoes) {
             email: hier,
             assunto: assuntoFollowUp_(plano, true),
             status: 'OK',
-            detalhe: 'escalacao atraso ' + dec.diasAtraso + 'd',
+            detalhe: detalheEnvio_('escalacao atraso ' + dec.diasAtraso + 'd', hier),
           }]);
         } catch (escalaErr) {
           erros++;
@@ -187,7 +187,7 @@ function enviarFollowUps(opcoes) {
         email: dec.email,
         assunto: assuntoFollowUp_(plano),
         status: 'OK',
-        detalhe: 'atraso ' + dec.diasAtraso + 'd',
+        detalhe: detalheEnvio_('atraso ' + dec.diasAtraso + 'd', dec.email),
       }]);
       enviados++;
     } catch (e) {
@@ -206,6 +206,11 @@ function enviarFollowUps(opcoes) {
 
   Repo.registrarLog('followup', erros ? 'ERRO' : 'OK', 'enviados=' + enviados + ' pulados=' + pulados + ' erros=' + erros);
   return { enviados: enviados, pulados: pulados, erros: erros };
+}
+
+function detalheEnvio_(base, destino) {
+  var cc = Logica.copiaOwnerHub(destino, Cadastros.config().texto('owner_hub_email', ''));
+  return cc ? base + ' cc ' + cc : base;
 }
 
 function emailHierarquiaDo_(plano, ctx) {
@@ -261,6 +266,8 @@ function enviarEmailAcao_(plano, dec, hoje, extra) {
 
   var nome = Cadastros.config().texto('remetente_nome', APP.nome);
   var opcoes = { htmlBody: html, name: nome };
+  var copia = Logica.copiaOwnerHub(destino, Cadastros.config().texto('owner_hub_email', ''));
+  if (copia) opcoes.cc = copia;
   if (blobLogo) opcoes.inlineImages = { logoAvery: blobLogo };
   var textoChave = lembrete ? 'mail_texto_lembrete' : (escalacao ? 'mail_texto_hierarquia' : 'mail_texto');
   GmailApp.sendEmail(destino, assuntoFollowUp_(plano, {

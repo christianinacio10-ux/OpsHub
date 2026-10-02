@@ -819,16 +819,24 @@ table.dados tr.risco td { box-shadow: none; }
 }
 .drawer-gestao .painel-planos table.dados {
   min-width: 1080px;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.drawer-gestao .painel-planos table.dados th {
+  vertical-align: middle;
+  background: #1A1918;
 }
 .drawer-gestao .painel-planos table.dados th:first-child,
 .drawer-gestao .painel-planos table.dados td:first-child {
-  position: static;
-  left: auto;
-  z-index: auto;
-  box-shadow: none;
-  min-width: 0;
-  max-width: none;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  box-shadow: 6px 0 8px -6px rgba(0,0,0,.55);
+}
+.drawer-gestao .painel-planos table.dados th:first-child {
+  top: 0;
+  z-index: 5;
+  background: #1A1918;
 }
 .drawer-gestao .painel-planos table.dados td.principal,
 .drawer-gestao .painel-planos table.dados td.como,
@@ -901,6 +909,15 @@ table.dados tr.risco td { box-shadow: none; }
   overflow: auto;
   box-sizing: border-box;
 }
+.owner-hub-linha {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  width: 100%;
+}
+.owner-hub-linha .busca { max-width: 360px; }
+.bloco-owner { width: 100%; margin: 4px 0 8px; }
 .bloco-hierarquia {
   width: 100%;
   display: flex;

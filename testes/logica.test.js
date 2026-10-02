@@ -263,6 +263,10 @@ var regraOff = Logica.regraFollowUpArea({
 });
 assert.strictEqual(Logica.emailFollowUpPermitido('carla@avery.com', regraOff), false);
 assert.strictEqual(Logica.emailFollowUpPermitido('ana@avery.com', regraOff), true);
+assert.strictEqual(Logica.copiaOwnerHub('carla@avery.com', 'owner@avery.com'), 'owner@avery.com');
+assert.strictEqual(Logica.copiaOwnerHub('owner@avery.com', 'owner@avery.com'), '');
+assert.strictEqual(Logica.copiaOwnerHub('carla@avery.com', ''), '');
+assert.strictEqual(Logica.copiaOwnerHub('carla@avery.com', 'nao-e-email'), '');
 assert.deepStrictEqual(Logica.alternarEmailOff('carla@avery.com', []), ['carla@avery.com']);
 assert.deepStrictEqual(Logica.alternarEmailOff('carla@avery.com', ['carla@avery.com']), []);
 assert.strictEqual(Logica.persistirEmailsOff(['Ana@x.com', 'ana@x.com']), '["ana@x.com"]');

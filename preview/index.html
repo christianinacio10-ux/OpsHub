@@ -825,16 +825,24 @@ table.dados tr.risco td { box-shadow: none; }
 }
 .drawer-gestao .painel-planos table.dados {
   min-width: 1080px;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.drawer-gestao .painel-planos table.dados th {
+  vertical-align: middle;
+  background: #1A1918;
 }
 .drawer-gestao .painel-planos table.dados th:first-child,
 .drawer-gestao .painel-planos table.dados td:first-child {
-  position: static;
-  left: auto;
-  z-index: auto;
-  box-shadow: none;
-  min-width: 0;
-  max-width: none;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  box-shadow: 6px 0 8px -6px rgba(0,0,0,.55);
+}
+.drawer-gestao .painel-planos table.dados th:first-child {
+  top: 0;
+  z-index: 5;
+  background: #1A1918;
 }
 .drawer-gestao .painel-planos table.dados td.principal,
 .drawer-gestao .painel-planos table.dados td.como,
@@ -907,6 +915,15 @@ table.dados tr.risco td { box-shadow: none; }
   overflow: auto;
   box-sizing: border-box;
 }
+.owner-hub-linha {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  width: 100%;
+}
+.owner-hub-linha .busca { max-width: 360px; }
+.bloco-owner { width: 100%; margin: 4px 0 8px; }
 .bloco-hierarquia {
   width: 100%;
   display: flex;
@@ -1766,6 +1783,7 @@ table.dados tr.risco td { box-shadow: none; }
   var temasFollowUp = [];
   var emailsHierarquiaPlanta = {};
   var lembretePlanta = { modo: 'off', dias: 3, email: '' };
+  var ownerHubEmail = '';
   var followupsEnviadosHoje = {};
   var followUpPorArea = {};
   var emailSessao = 'christian.inacio@averydennison.com';
@@ -1894,6 +1912,7 @@ table.dados tr.risco td { box-shadow: none; }
         dias: lembretePlanta.dias || 3,
         email: lembretePlanta.email || '',
       },
+      ownerHub: ownerHubEmail || '',
     };
   }
 
@@ -1937,7 +1956,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.13' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.14' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -2178,6 +2197,14 @@ table.dados tr.risco td { box-shadow: none; }
       var h = hub();
       h.planosArea = payloadArea(deptId, false);
       return h;
+    },
+    apiSalvarOwnerHub: function (email) {
+      email = String(email || '').trim().toLowerCase();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new Error('Informe um e-mail válido ou deixe o campo em branco.');
+      }
+      ownerHubEmail = email;
+      return hub();
     },
     apiSalvarLembrete: function (modo, dias) {
       modo = String(modo || 'off').toLowerCase();
@@ -2596,6 +2623,11 @@ var I18n = (function () {
       aba_prefix: 'aba',
       mail_regra: 'Regra de follow-up',
       mail_regra_apoio: 'Quando o prazo é atingido, o {app} espera 1 dia e então envia um e-mail por dia ao responsável, até a data ser reprogramada na planilha de origem. Sem e-mail cadastrado, nada é enviado — a linha mostra o aviso no tooltip.',
+      owner_hub_titulo: 'Owner do hub',
+      owner_hub_apoio: 'Esse e-mail recebe cópia de cada ação. O destinatário continua sendo o responsável da ação.',
+      owner_hub_ph: 'e-mail do owner',
+      erro_owner_hub: 'Informe um e-mail válido ou deixe o campo em branco.',
+      toast_owner_hub: 'Owner do hub atualizado.',
       temas_email: 'Temas que recebem e-mail',
       temas_email_apoio: 'Ligue ou desligue quais temas entram no follow-up. Com todos ligados, o comportamento é o de sempre: qualquer tema atrasado dispara.',
       importar_para_temas: 'Importe planos para ver os temas.',
@@ -2919,6 +2951,11 @@ var I18n = (function () {
       aba_prefix: 'sheet',
       mail_regra: 'Follow-up rule',
       mail_regra_apoio: 'When the due date is reached, {app} waits 1 day and then emails the owner once a day until the date is moved in the source sheet. With no email on file, nothing is sent — the row shows a tooltip warning.',
+      owner_hub_titulo: 'Hub owner',
+      owner_hub_apoio: 'This address is copied on each action. The recipient stays the person on the action.',
+      owner_hub_ph: 'owner email',
+      erro_owner_hub: 'Enter a valid email or leave the field blank.',
+      toast_owner_hub: 'Hub owner updated.',
       temas_email: 'Themes that receive email',
       temas_email_apoio: 'Turn themes on or off for follow-up. With all on, any overdue theme fires, as before.',
       importar_para_temas: 'Import plans to see themes.',
@@ -3242,6 +3279,11 @@ var I18n = (function () {
       aba_prefix: 'hoja',
       mail_regra: 'Regla de follow-up',
       mail_regra_apoio: 'Cuando se cumple el plazo, {app} espera 1 día y luego envía un correo al día al responsable, hasta que la fecha se reprograme en la hoja de origen. Sin correo registrado, no se envía nada — la fila muestra el aviso en el tooltip.',
+      owner_hub_titulo: 'Owner del hub',
+      owner_hub_apoio: 'Ese correo va en copia de cada acción. El destinatario sigue siendo el responsable de la acción.',
+      owner_hub_ph: 'correo del owner',
+      erro_owner_hub: 'Indique un correo válido o deje el campo en blanco.',
+      toast_owner_hub: 'Owner del hub actualizado.',
       temas_email: 'Temas que reciben correo',
       temas_email_apoio: 'Active o desactive qué temas entran en el follow-up. Con todos activos, cualquier tema vencido dispara, como siempre.',
       importar_para_temas: 'Importe planes para ver los temas.',
@@ -5100,11 +5142,24 @@ if (typeof module !== 'undefined' && module.exports) {
       '</div>';
   }
 
+  function blocoOwnerHub() {
+    var email = (Estado.hub && Estado.hub.ownerHub) || '';
+    return '<div class="bloco-owner">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:4px 0">' + t('owner_hub_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0 0 8px">' + t('owner_hub_apoio') + '</div>' +
+      '<div class="owner-hub-linha">' +
+      '<input class="busca" id="owner-hub-email" type="email" autocomplete="off" value="' +
+      escapar(email) + '" placeholder="' + escapar(t('owner_hub_ph')) + '">' +
+      '<button type="button" class="botao primario" id="btn-owner-hub">' + t('salvar') + '</button>' +
+      '</div></div>';
+  }
+
   function vistaMail() {
     var g = (Estado.hub && Estado.hub.gatilho) || { ativo: false, hora: 8 };
     return '<div class="painel"><div class="painel-topo" style="flex-direction:column;align-items:flex-start">' +
       '<div class="secao-titulo">' + t('mail_regra') + '</div>' +
       '<div class="secao-apoio">' + t('mail_regra_apoio') + '</div>' +
+      blocoOwnerHub() +
       chipsFollowUp() +
       blocoLembrete('planta', Estado.hub && Estado.hub.lembrete) +
       '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">' +
@@ -5943,6 +5998,21 @@ if (typeof module !== 'undefined' && module.exports) {
       }
       if (e.target.closest('#btn-followup')) {
         enviarFollowUpsAgoraUi();
+        return;
+      }
+      if (e.target.closest('#btn-owner-hub')) {
+        var campoOwner = $('owner-hub-email');
+        var emailOwner = campoOwner ? campoOwner.value : '';
+        ocupar(true, t('ocupado_followup'), t('ocupado_lembrete_sub'));
+        chamar('apiSalvarOwnerHub', emailOwner).then(function (hub) {
+          ocupar(false);
+          if (hub) Estado.hub = hub;
+          toast(t('toast_owner_hub'));
+          render();
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
         return;
       }
       var lemModo = e.target.closest('[data-lembrete-modo]');
