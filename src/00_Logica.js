@@ -928,13 +928,26 @@ var Logica = (function () {
 
   function regraFollowUpArea(dept) {
     dept = dept || {};
-    var bruto = texto(dept.followup_so_eu);
     return {
       temas: temasFollowUpArea(dept.followup_temas),
-      soEu: !bruto ? true : sim(dept.followup_so_eu),
+      soEu: sim(dept.followup_so_eu),
       gestorEmail: texto(dept.followup_gestor_email).toLowerCase(),
       emailsOff: parseEmailsOff(dept.followup_emails_off),
     };
+  }
+
+  /**
+   * O padrão antigo mandava toda a cobrança da área para o e-mail de quem
+   * abriu o painel. Vazio ou SIM volta para o responsável da ação.
+   * NAO explícito não muda. Quem ligar "só o meu e-mail" de novo continua valendo.
+   */
+  function patchFollowUpParaResponsavel(dept) {
+    dept = dept || {};
+    var bruto = texto(dept.followup_so_eu);
+    if (bruto && !sim(bruto)) return {};
+    var patch = { followup_so_eu: 'NAO' };
+    if (texto(dept.followup_gestor_email)) patch.followup_gestor_email = '';
+    return patch;
   }
 
   function emailDestinoFollowUp(acao, regra) {
@@ -1140,6 +1153,7 @@ var Logica = (function () {
     persistirEmailsOff: persistirEmailsOff,
     alternarEmailOff: alternarEmailOff,
     regraFollowUpArea: regraFollowUpArea,
+    patchFollowUpParaResponsavel: patchFollowUpParaResponsavel,
     emailDestinoFollowUp: emailDestinoFollowUp,
     emailFollowUpPermitido: emailFollowUpPermitido,
     elegivelFollowUp: elegivelFollowUp,

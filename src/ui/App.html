@@ -36,7 +36,7 @@
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {}, lembrete: { modo: 'off', dias: 3, email: '' } },
+    planosAreaFollowUp: { temas: ['__NONE__'], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {}, lembrete: { modo: 'off', dias: 3, email: '' } },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -952,7 +952,7 @@
 
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
+      temas: ['__NONE__'], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
       lembrete: { modo: 'off', dias: 3, email: '' },
     };
   }
@@ -1052,7 +1052,7 @@
 
   function barraCobrancaPlano() {
     var fu = followUpAreaAtual();
-    var soEu = fu.soEu !== false;
+    var soEu = fu.soEu === true;
     var emailHint = fu.gestorEmail || fu.meuEmail || '—';
     var nOn = (Estado.planosArea || []).filter(function (p) { return !!p.followup; }).length;
     var nTot = (Estado.planosArea || []).length;
@@ -1282,7 +1282,7 @@
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
+      temas: ['__NONE__'], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
       lembrete: { modo: 'off', dias: 3, email: '' },
     };
     if (resp.ok) {
@@ -2272,7 +2272,7 @@
         e.stopPropagation();
         var deptEmail = Estado.deptAberto && Estado.deptAberto.id;
         if (!deptEmail || Estado.carregando) return;
-        if (followUpAreaAtual().soEu !== false) return;
+        if (followUpAreaAtual().soEu === true) return;
         ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
         chamar('apiAlternarEmailFollowUpArea', deptEmail, followEmail.getAttribute('data-followup-email'))
           .then(function (resp) {
