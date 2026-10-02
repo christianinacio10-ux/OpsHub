@@ -144,7 +144,7 @@
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
       followUpPorArea[deptId] = {
-        temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailsHierarquia: {},
+        temas: ['__NONE__'], soEu: false, gestorEmail: '', emailsOff: [], emailsHierarquia: {},
         lembrete: { modo: 'off', dias: 3, email: '' },
       };
     }
@@ -157,8 +157,8 @@
     if (!temas.length) temas = ['__NONE__'];
     return {
       temas: temas,
-      soEu: fu.soEu !== false,
-      gestorEmail: fu.gestorEmail || emailSessao,
+      soEu: fu.soEu === true,
+      gestorEmail: fu.gestorEmail || '',
       emailsOff: (fu.emailsOff || []).slice(),
       meuEmail: emailSessao,
       emailsHierarquia: Object.assign({}, fu.emailsHierarquia || {}),
@@ -288,7 +288,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.12' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.13' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -378,8 +378,8 @@
             if (!fu.temas.length || (fu.temas.length === 1 && fu.temas[0] === '__NONE__')) return false;
             if (fu.temas.indexOf(p.tema) === -1) return false;
           }
-          if (fu.soEu !== false) {
-            if (!(fu.gestorEmail || emailSessao)) return false;
+          if (fu.soEu === true) {
+            if (!fu.gestorEmail) return false;
           } else {
             if (!p.tem_email) return false;
             var email = String(p.email || '').toLowerCase();
@@ -422,8 +422,8 @@
             if (!fu.temas.length || (fu.temas.length === 1 && fu.temas[0] === '__NONE__')) return false;
             if (fu.temas.indexOf(p.tema) === -1) return false;
           }
-          if (fu.soEu !== false) {
-            if (!(fu.gestorEmail || emailSessao)) return false;
+          if (fu.soEu === true) {
+            if (!fu.gestorEmail) return false;
           } else {
             if (!p.tem_email) return false;
             var email = String(p.email || '').toLowerCase();

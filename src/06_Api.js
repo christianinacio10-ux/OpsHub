@@ -40,7 +40,22 @@ function apiContexto() {
   };
 }
 
+function soltarEmailDoGestor_() {
+  if (Cadastros.config().texto('followup_destino', '') === 'responsavel') return;
+  Repo.ler(ABAS.departamentos).forEach(function (dept) {
+    var patch = Logica.patchFollowUpParaResponsavel(dept);
+    if (!dept._linha || !Object.keys(patch).length) return;
+    Repo.atualizarRegistro(ABAS.departamentos, dept._linha, patch);
+  });
+  gravarChaveConfig_(
+    'followup_destino',
+    'responsavel',
+    'Follow-up da área vai para o e-mail do responsável da ação'
+  );
+}
+
 function apiHub() {
+  soltarEmailDoGestor_();
   var hoje = hojeLocal_();
   var departamentos = Cadastros.departamentos().map(function (d) {
     return {
@@ -234,22 +249,6 @@ function apiAtualizar() {
   return hub;
 }
 
-function garantirGestorArea_(dept) {
-  if (!dept) return dept;
-  var regra = Logica.regraFollowUpArea(dept);
-  if (!regra.soEu) return dept;
-  var email = regra.gestorEmail || Logica.texto(identificarEmailSessao_()).toLowerCase();
-  if (!Logica.emailValido(email)) return dept;
-  var patch = {};
-  if (!regra.gestorEmail) patch.followup_gestor_email = email;
-  if (!Logica.texto(dept.followup_so_eu)) patch.followup_so_eu = 'SIM';
-  var chaves = Object.keys(patch);
-  if (!chaves.length) return dept;
-  Repo.atualizarRegistro(ABAS.departamentos, dept._linha, patch);
-  Repo.limparMemoria();
-  return deptPorId_(dept.id) || dept;
-}
-
 function motivoZeroFollowUp_(planos, ctx, hoje) {
   var nTema = 0;
   var nAcao = 0;
@@ -292,7 +291,6 @@ function apiPreverFollowUps(departamentoId) {
   if (departamentoId) {
     var gate = exigirAreaAberta_(departamentoId);
     if (gate.bloqueado) return { total: 0, temasJaEnviadosHoje: [], motivoZero: 'bloqueado' };
-    garantirGestorArea_(gate.dept);
   }
   var hoje = hojeLocal_();
   var ctx = ctxFollowUpPrevia_(departamentoId);
@@ -326,7 +324,6 @@ function apiEnviarFollowUpsAgora(forcar, departamentoId) {
   if (departamentoId) {
     var gate = exigirAreaAberta_(departamentoId);
     if (gate.bloqueado) return { enviados: 0, pulados: 0, erros: 0 };
-    garantirGestorArea_(gate.dept);
   }
   var areaForcada = !!(forcar && departamentoId);
   return enviarFollowUps({
@@ -605,7 +602,7 @@ function apiAlternarTemaFollowUpArea(deptId, nome) {
   if (!nome) throw new Error(I18n.t(I18n.atual(), 'erro_tema_vazio'));
   var gate = exigirAreaAberta_(deptId);
   if (gate.bloqueado) return gate.bloqueado;
-  var dept = garantirGestorArea_(deptPorId_(gate.dept.id));
+  var dept = deptPorId_(gate.dept.id);
   var todos = Logica.unicos(Logica.planosDoDepartamento(Cadastros.planosArea(), dept.id), 'tema');
   var atuais = Logica.regraFollowUpArea(dept).temas;
   var proximo = Logica.alternarTemaFollowUp(nome, atuais, todos);

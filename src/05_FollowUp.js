@@ -89,6 +89,7 @@ function decisaoLembrete_(plano, hoje, ctx) {
 
 function enviarFollowUps(opcoes) {
   instalarSistema();
+  if (typeof soltarEmailDoGestor_ === 'function') soltarEmailDoGestor_();
   opcoes = opcoes || {};
   var forcar = !!opcoes.forcar;
   var hoje = hojeLocal_();

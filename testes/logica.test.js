@@ -235,13 +235,14 @@ assert.strictEqual(
 var regraTodos = Logica.regraFollowUpArea({});
 assert.deepStrictEqual(regraTodos.temas, ['__NONE__'], 'área sem temas começa com nenhum ligado');
 assert.strictEqual(Logica.temaFollowUpHabilitado('TIER_3', regraTodos.temas), false);
-assert.strictEqual(regraTodos.soEu, true, 'área começa em cobrar só meu e-mail');
-assert.strictEqual(Logica.emailDestinoFollowUp({ email: 'carla@avery.com' }, regraTodos), '');
-assert.strictEqual(
-  Logica.emailDestinoFollowUp({ email: 'carla@avery.com' }, Object.assign({}, regraTodos, { gestorEmail: 'gestor@avery.com' })),
-  'gestor@avery.com',
-  'so eu redireciona para o gestor'
+assert.strictEqual(regraTodos.soEu, false, 'área começa no e-mail do responsável');
+assert.strictEqual(Logica.emailDestinoFollowUp({ email: 'carla@avery.com' }, regraTodos), 'carla@avery.com');
+assert.deepStrictEqual(Logica.patchFollowUpParaResponsavel({}), { followup_so_eu: 'NAO' });
+assert.deepStrictEqual(
+  Logica.patchFollowUpParaResponsavel({ followup_so_eu: 'SIM', followup_gestor_email: 'eu@avery.com' }),
+  { followup_so_eu: 'NAO', followup_gestor_email: '' }
 );
+assert.deepStrictEqual(Logica.patchFollowUpParaResponsavel({ followup_so_eu: 'NAO', followup_gestor_email: 'eu@avery.com' }), {});
 
 var regraSoEu = Logica.regraFollowUpArea({
   followup_so_eu: 'SIM',

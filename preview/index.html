@@ -1793,7 +1793,7 @@ table.dados tr.risco td { box-shadow: none; }
   function followUpDept(deptId) {
     if (!followUpPorArea[deptId]) {
       followUpPorArea[deptId] = {
-        temas: ['__NONE__'], soEu: true, gestorEmail: emailSessao, emailsOff: [], emailsHierarquia: {},
+        temas: ['__NONE__'], soEu: false, gestorEmail: '', emailsOff: [], emailsHierarquia: {},
         lembrete: { modo: 'off', dias: 3, email: '' },
       };
     }
@@ -1806,8 +1806,8 @@ table.dados tr.risco td { box-shadow: none; }
     if (!temas.length) temas = ['__NONE__'];
     return {
       temas: temas,
-      soEu: fu.soEu !== false,
-      gestorEmail: fu.gestorEmail || emailSessao,
+      soEu: fu.soEu === true,
+      gestorEmail: fu.gestorEmail || '',
       emailsOff: (fu.emailsOff || []).slice(),
       meuEmail: emailSessao,
       emailsHierarquia: Object.assign({}, fu.emailsHierarquia || {}),
@@ -1937,7 +1937,7 @@ table.dados tr.risco td { box-shadow: none; }
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.12' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.13' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -2027,8 +2027,8 @@ table.dados tr.risco td { box-shadow: none; }
             if (!fu.temas.length || (fu.temas.length === 1 && fu.temas[0] === '__NONE__')) return false;
             if (fu.temas.indexOf(p.tema) === -1) return false;
           }
-          if (fu.soEu !== false) {
-            if (!(fu.gestorEmail || emailSessao)) return false;
+          if (fu.soEu === true) {
+            if (!fu.gestorEmail) return false;
           } else {
             if (!p.tem_email) return false;
             var email = String(p.email || '').toLowerCase();
@@ -2071,8 +2071,8 @@ table.dados tr.risco td { box-shadow: none; }
             if (!fu.temas.length || (fu.temas.length === 1 && fu.temas[0] === '__NONE__')) return false;
             if (fu.temas.indexOf(p.tema) === -1) return false;
           }
-          if (fu.soEu !== false) {
-            if (!(fu.gestorEmail || emailSessao)) return false;
+          if (fu.soEu === true) {
+            if (!fu.gestorEmail) return false;
           } else {
             if (!p.tem_email) return false;
             var email = String(p.email || '').toLowerCase();
@@ -3503,7 +3503,7 @@ if (typeof module !== 'undefined' && module.exports) {
     formFonteArea: {},
     filtrosArea: filtrosVazios(),
     ordemArea: { campo: 'prazo', dir: 'asc' },
-    planosAreaFollowUp: { temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {}, lembrete: { modo: 'off', dias: 3, email: '' } },
+    planosAreaFollowUp: { temas: ['__NONE__'], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {}, lembrete: { modo: 'off', dias: 3, email: '' } },
     etapasArea: { fonte: true, quadro: false },
     _etapasAreaDoCache: false,
   };
@@ -4419,7 +4419,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
   function followUpAreaAtual() {
     return Estado.planosAreaFollowUp || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
+      temas: ['__NONE__'], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
       lembrete: { modo: 'off', dias: 3, email: '' },
     };
   }
@@ -4519,7 +4519,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
   function barraCobrancaPlano() {
     var fu = followUpAreaAtual();
-    var soEu = fu.soEu !== false;
+    var soEu = fu.soEu === true;
     var emailHint = fu.gestorEmail || fu.meuEmail || '—';
     var nOn = (Estado.planosArea || []).filter(function (p) { return !!p.followup; }).length;
     var nTot = (Estado.planosArea || []).length;
@@ -4749,7 +4749,7 @@ if (typeof module !== 'undefined' && module.exports) {
     Estado.fontesArea = resp.precisaSenha ? [] : (resp.fontes || []);
     Estado.planosAreaKpis = resp.kpis || { total: 0, abertos: 0, atrasados: 0, semEmail: 0, concluidos: 0 };
     Estado.planosAreaFollowUp = resp.followup || {
-      temas: ['__NONE__'], soEu: true, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
+      temas: ['__NONE__'], soEu: false, gestorEmail: '', emailsOff: [], meuEmail: '', emailsHierarquia: {},
       lembrete: { modo: 'off', dias: 3, email: '' },
     };
     if (resp.ok) {
@@ -5739,7 +5739,7 @@ if (typeof module !== 'undefined' && module.exports) {
         e.stopPropagation();
         var deptEmail = Estado.deptAberto && Estado.deptAberto.id;
         if (!deptEmail || Estado.carregando) return;
-        if (followUpAreaAtual().soEu !== false) return;
+        if (followUpAreaAtual().soEu === true) return;
         ocupar(true, t('ocupado_followup'), t('ocupado_followup_sub'));
         chamar('apiAlternarEmailFollowUpArea', deptEmail, followEmail.getAttribute('data-followup-email'))
           .then(function (resp) {
