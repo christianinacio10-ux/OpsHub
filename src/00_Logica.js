@@ -977,6 +977,15 @@ var Logica = (function () {
     return cc;
   }
 
+  /** "Nome" <email>, para o Gmail mostrar a pessoa e não só "para mim". */
+  function enderecoComNome(nome, email) {
+    email = texto(email).toLowerCase();
+    if (!emailValido(email)) return '';
+    nome = texto(nome).replace(/["<>]/g, '').replace(/\s+/g, ' ').trim();
+    if (!nome) return email;
+    return '"' + nome + '" <' + email + '>';
+  }
+
   function temSenhaPlanos(dept) {
     return !!texto(dept && dept.senha_planos);
   }
@@ -1025,6 +1034,8 @@ var Logica = (function () {
     var hoje = opts.hoje;
     var prazo = opts.prazo || formatarDataBr(paraData(plano.prazo));
     var emailPessoa = texto(opts.email || dec.email || plano.email);
+    var nomePessoa = texto(plano.responsavel);
+    var copiaEmail = texto(opts.copia);
     var logoSrc = texto(opts.logoSrc);
     var idioma = (typeof I18n !== 'undefined' && I18n.normalizar)
       ? I18n.normalizar(opts.idioma || (I18n.atual && I18n.atual()) || 'pt')
@@ -1092,11 +1103,17 @@ var Logica = (function () {
       '</div></td></tr>',
       emailPessoa
         ? ('<tr><td style="padding:0 0 16px">' +
-          '<table role="presentation" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #C9C3BB;border-radius:10px">' +
-          '<tr><td style="padding:10px 16px;font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#1A1918">' +
+          '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#ffffff;border:1px solid #C9C3BB;border-radius:10px">' +
+          '<tr><td style="padding:12px 16px;font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#1A1918">' +
           '<span style="color:#7C776F;font-size:11px;display:block;margin-bottom:3px">' +
-          escaparHtml(tm('mail_rotulo_email', 'E-mail')) + '</span>' +
-          '<strong style="font-weight:600">' + escaparHtml(emailPessoa) + '</strong>' +
+          escaparHtml(tm('mail_para', 'Para')) + '</span>' +
+          '<strong style="font-weight:600">' + escaparHtml(nomePessoa || emailPessoa) + '</strong>' +
+          (nomePessoa ? '<span style="display:block;color:#1A1918;margin-top:2px">' + escaparHtml(emailPessoa) + '</span>' : '') +
+          (copiaEmail
+            ? ('<span style="color:#7C776F;font-size:11px;display:block;margin:10px 0 3px">' +
+              escaparHtml(tm('mail_copia', 'Cópia')) + '</span>' +
+              '<span style="display:block">' + escaparHtml(copiaEmail) + '</span>')
+            : '') +
           '</td></tr></table></td></tr>')
         : '',
       '<tr><td>',
@@ -1165,6 +1182,7 @@ var Logica = (function () {
     emailDestinoFollowUp: emailDestinoFollowUp,
     emailFollowUpPermitido: emailFollowUpPermitido,
     copiaOwnerHub: copiaOwnerHub,
+    enderecoComNome: enderecoComNome,
     elegivelFollowUp: elegivelFollowUp,
     normalizarModoLembrete: normalizarModoLembrete,
     normalizarDiasLembrete: normalizarDiasLembrete,

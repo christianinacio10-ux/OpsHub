@@ -267,6 +267,9 @@ assert.strictEqual(Logica.copiaOwnerHub('carla@avery.com', 'owner@avery.com'), '
 assert.strictEqual(Logica.copiaOwnerHub('owner@avery.com', 'owner@avery.com'), '');
 assert.strictEqual(Logica.copiaOwnerHub('carla@avery.com', ''), '');
 assert.strictEqual(Logica.copiaOwnerHub('carla@avery.com', 'nao-e-email'), '');
+assert.strictEqual(Logica.enderecoComNome('Lilian Oliveira', 'lilian@avery.com'), '"Lilian Oliveira" <lilian@avery.com>');
+assert.strictEqual(Logica.enderecoComNome('', 'lilian@avery.com'), 'lilian@avery.com');
+assert.strictEqual(Logica.enderecoComNome('Lilian', 'nao'), '');
 assert.deepStrictEqual(Logica.alternarEmailOff('carla@avery.com', []), ['carla@avery.com']);
 assert.deepStrictEqual(Logica.alternarEmailOff('carla@avery.com', ['carla@avery.com']), []);
 assert.strictEqual(Logica.persistirEmailsOff(['Ana@x.com', 'ana@x.com']), '["ana@x.com"]');
