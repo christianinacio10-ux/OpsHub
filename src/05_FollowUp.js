@@ -232,31 +232,54 @@ function assuntoFollowUp_(plano, flags) {
   var curto = oque.slice(0, 80);
   var vars = { oque: curto, prazo: prazo, n: flags && flags.diasParaPrazo };
   if (lembrete) {
-    if (flags.diasParaPrazo === 0) return I18n.t(idioma, 'mail_assunto_lembrete_hoje', vars);
-    return I18n.t(idioma, 'mail_assunto_lembrete', vars);
+    if (flags.diasParaPrazo === 0) return comQuem_(I18n.t(idioma, 'mail_assunto_lembrete_hoje', vars), plano);
+    return comQuem_(I18n.t(idioma, 'mail_assunto_lembrete', vars), plano);
   }
   if (escalacao) {
-    if (prazo) return I18n.t(idioma, 'mail_assunto_hierarquia_prazo', vars);
-    return I18n.t(idioma, 'mail_assunto_hierarquia', vars);
+    if (prazo) return comQuem_(I18n.t(idioma, 'mail_assunto_hierarquia_prazo', vars), plano);
+    return comQuem_(I18n.t(idioma, 'mail_assunto_hierarquia', vars), plano);
   }
-  if (prazo) return I18n.t(idioma, 'mail_assunto_prazo', vars);
-  return I18n.t(idioma, 'mail_assunto', vars);
+  if (prazo) return comQuem_(I18n.t(idioma, 'mail_assunto_prazo', vars), plano);
+  return comQuem_(I18n.t(idioma, 'mail_assunto', vars), plano);
+}
+
+function comQuem_(assunto, plano) {
+  var quem = Logica.texto(plano && plano.responsavel);
+  return quem ? assunto + ' — ' + quem : assunto;
+}
+
+function textoDestinatarios_(idioma, plano, para, copia) {
+  var nome = Logica.texto(plano && plano.responsavel) || para;
+  var linhas = [I18n.t(idioma, 'mail_para') + ': ' + nome + ' <' + para + '>'];
+  if (copia) linhas.push(I18n.t(idioma, 'mail_copia') + ': ' + copia);
+  return linhas.join('\n');
+}
+
+function tirarDaCaixaDeEntrada_(assunto) {
+  try {
+    var busca = 'in:inbox newer_than:2d "' + String(assunto || '').replace(/"/g, '') + '"';
+    var threads = GmailApp.search(busca, 0, 8);
+    for (var i = 0; i < threads.length; i++) threads[i].moveToArchive();
+  } catch (e) {}
 }
 
 function enviarEmailAcao_(plano, dec, hoje, extra) {
   extra = extra || {};
-  var destino = extra.email || dec.email;
+  var destino = Logica.texto(extra.email || dec.email).toLowerCase();
   var escalacao = !!extra.escalacao;
   var lembrete = !!extra.lembrete;
   var prazo = Logica.formatarDataBr(Logica.paraData(plano.prazo));
   var idioma = I18n.atual();
   var blobLogo = blobLogoAvery_();
+  var copia = Logica.copiaOwnerHub(destino, Cadastros.config().texto('owner_hub_email', ''));
+  var conta = identificarEmailSessao_();
   var html = Logica.htmlFollowUp({
     plano: plano,
     dec: dec,
     hoje: hoje,
     prazo: prazo,
     email: destino,
+    copia: copia,
     logoSrc: blobLogo ? 'cid:logoAvery' : '',
     idioma: idioma,
     nomeApp: APP.nome,
@@ -265,20 +288,25 @@ function enviarEmailAcao_(plano, dec, hoje, extra) {
   });
 
   var nome = Cadastros.config().texto('remetente_nome', APP.nome);
-  var opcoes = { htmlBody: html, name: nome };
-  var copia = Logica.copiaOwnerHub(destino, Cadastros.config().texto('owner_hub_email', ''));
-  if (copia) opcoes.cc = copia;
-  if (blobLogo) opcoes.inlineImages = { logoAvery: blobLogo };
-  var textoChave = lembrete ? 'mail_texto_lembrete' : (escalacao ? 'mail_texto_hierarquia' : 'mail_texto');
-  GmailApp.sendEmail(destino, assuntoFollowUp_(plano, {
+  var assunto = assuntoFollowUp_(plano, {
     escalacao: escalacao,
     lembrete: lembrete,
     diasParaPrazo: dec && dec.diasParaPrazo,
-  }), I18n.t(idioma, textoChave, {
+  });
+  var opcoes = { htmlBody: html, name: nome };
+  if (copia) opcoes.cc = Logica.enderecoComNome('', copia);
+  if (blobLogo) opcoes.inlineImages = { logoAvery: blobLogo };
+  var textoChave = lembrete ? 'mail_texto_lembrete' : (escalacao ? 'mail_texto_hierarquia' : 'mail_texto');
+  var texto = textoDestinatarios_(idioma, plano, destino, copia) + '\n' + I18n.t(idioma, textoChave, {
     oque: Logica.texto(plano.oque),
     prazo: prazo,
     n: dec && dec.diasParaPrazo,
-  }), opcoes);
+  });
+  GmailApp.sendEmail(Logica.enderecoComNome(plano.responsavel, destino), assunto, texto, opcoes);
+  if (conta && conta !== destino && conta !== copia) {
+    try { Utilities.sleep(300); } catch (e) {}
+    tirarDaCaixaDeEntrada_(assunto);
+  }
 }
 
 function blobLogoAvery_() {
