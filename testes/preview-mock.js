@@ -117,6 +117,7 @@
   var temasFollowUp = [];
   var emailsHierarquiaPlanta = {};
   var lembretePlanta = { modo: 'off', dias: 3, email: '' };
+  var ownerHubEmail = '';
   var followupsEnviadosHoje = {};
   var followUpPorArea = {};
   var emailSessao = 'christian.inacio@averydennison.com';
@@ -245,6 +246,7 @@
         dias: lembretePlanta.dias || 3,
         email: lembretePlanta.email || '',
       },
+      ownerHub: ownerHubEmail || '',
     };
   }
 
@@ -288,7 +290,7 @@
   var api = {
     apiContexto: function () {
       return {
-        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.13' },
+        app: { nome: (typeof APP_NOME === 'string' && APP_NOME) || 'OpsHub', versao: '1.6.14' },
         usuario: { email: 'christian.inacio@averydennison.com', nome: 'christian inacio', iniciais: 'CI' },
         gatilho: gatilho,
       };
@@ -529,6 +531,14 @@
       var h = hub();
       h.planosArea = payloadArea(deptId, false);
       return h;
+    },
+    apiSalvarOwnerHub: function (email) {
+      email = String(email || '').trim().toLowerCase();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new Error('Informe um e-mail válido ou deixe o campo em branco.');
+      }
+      ownerHubEmail = email;
+      return hub();
     },
     apiSalvarLembrete: function (modo, dias) {
       modo = String(modo || 'off').toLowerCase();

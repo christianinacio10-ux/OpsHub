@@ -9,7 +9,7 @@
  */
 var APP = {
   nome: 'OpsHub',
-  versao: '1.6.13',
+  versao: '1.6.14',
 };
 
 var ABAS = {
@@ -70,6 +70,7 @@ var CONFIG_PADRAO = [
   ['lembrete_modo', 'off', 'Lembrete antes do vencimento: off, eu (ações no meu e-mail) ou pessoa (responsável do plano)'],
   ['lembrete_dias', '3', 'Quantos dias até o prazo, inclusive o vencimento, o lembrete sai por e-mail'],
   ['lembrete_email', '', 'E-mail que recebe o lembrete das ações no próprio nome'],
+  ['owner_hub_email', '', 'Owner do hub, em cópia nos e-mails das ações'],
 ];
 
 if (typeof I18n !== 'undefined' && I18n.definirNome) I18n.definirNome(APP.nome);

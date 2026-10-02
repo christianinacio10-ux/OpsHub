@@ -1633,11 +1633,24 @@
       '</div>';
   }
 
+  function blocoOwnerHub() {
+    var email = (Estado.hub && Estado.hub.ownerHub) || '';
+    return '<div class="bloco-owner">' +
+      '<div class="secao-titulo" style="font-size:13px;margin:4px 0">' + t('owner_hub_titulo') + '</div>' +
+      '<div class="secao-apoio" style="margin:0 0 8px">' + t('owner_hub_apoio') + '</div>' +
+      '<div class="owner-hub-linha">' +
+      '<input class="busca" id="owner-hub-email" type="email" autocomplete="off" value="' +
+      escapar(email) + '" placeholder="' + escapar(t('owner_hub_ph')) + '">' +
+      '<button type="button" class="botao primario" id="btn-owner-hub">' + t('salvar') + '</button>' +
+      '</div></div>';
+  }
+
   function vistaMail() {
     var g = (Estado.hub && Estado.hub.gatilho) || { ativo: false, hora: 8 };
     return '<div class="painel"><div class="painel-topo" style="flex-direction:column;align-items:flex-start">' +
       '<div class="secao-titulo">' + t('mail_regra') + '</div>' +
       '<div class="secao-apoio">' + t('mail_regra_apoio') + '</div>' +
+      blocoOwnerHub() +
       chipsFollowUp() +
       blocoLembrete('planta', Estado.hub && Estado.hub.lembrete) +
       '<div class="selo ' + (g.ativo ? 'ok' : 'aberto') + '">' +
@@ -2476,6 +2489,21 @@
       }
       if (e.target.closest('#btn-followup')) {
         enviarFollowUpsAgoraUi();
+        return;
+      }
+      if (e.target.closest('#btn-owner-hub')) {
+        var campoOwner = $('owner-hub-email');
+        var emailOwner = campoOwner ? campoOwner.value : '';
+        ocupar(true, t('ocupado_followup'), t('ocupado_lembrete_sub'));
+        chamar('apiSalvarOwnerHub', emailOwner).then(function (hub) {
+          ocupar(false);
+          if (hub) Estado.hub = hub;
+          toast(t('toast_owner_hub'));
+          render();
+        }).catch(function (err) {
+          ocupar(false);
+          toast(err.message || err, true);
+        });
         return;
       }
       var lemModo = e.target.closest('[data-lembrete-modo]');
